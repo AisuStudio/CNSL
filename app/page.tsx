@@ -56,9 +56,13 @@ export default function Home() {
     // ids already offered in `cnsl.seededIds`, so adding NEW seed tasks later
     // merges them once, while a task the user deleted stays deleted.
     const SEEDED_KEY = "cnsl.seededIds";
+    // Only ids 6–20 (the original roadmap) get pushed into EXISTING boards.
+    // 21+ are demo-only seed tasks the user already created → fresh boards
+    // (the GitHub Pages demo) still get them via initialTasks, but they are
+    // never merged into an existing board (no duplicates).
     const roadmapSeeds = initialTasks.filter((t) => {
       const n = Number(t.id.replace("task_", ""));
-      return Number.isFinite(n) && n >= 6;
+      return Number.isFinite(n) && n >= 6 && n <= 20;
     });
     let seeded: string[] | null = null;
     try {
@@ -77,9 +81,19 @@ export default function Home() {
     const seededSet = new Set(seeded);
     if (saved) {
       const have = new Set(nextTasks.map((t) => t.id));
+      // also dedup by project::task so re-seeding existing CNSL tasks (that the
+      // user already has under different ids) doesn't create duplicates.
+      const haveKey = new Set(
+        nextTasks.map((t) => `${t.project}::${t.task}`.toLowerCase())
+      );
       let n = nextTasks.reduce((m, t) => Math.max(m, t.number), 0);
       const toAdd = roadmapSeeds
-        .filter((t) => !seededSet.has(t.id) && !have.has(t.id))
+        .filter(
+          (t) =>
+            !seededSet.has(t.id) &&
+            !have.has(t.id) &&
+            !haveKey.has(`${t.project}::${t.task}`.toLowerCase())
+        )
         .map((t) => ({ ...t, number: ++n })); // renumber after current max
       if (toAdd.length) nextTasks = [...nextTasks, ...toAdd];
     }
