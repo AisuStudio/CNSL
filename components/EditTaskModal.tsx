@@ -20,6 +20,21 @@ const META = "#323238";
 const C1 = "#c1bfb9";
 const ACCENT = "var(--color-accent)";
 
+/* Parse "H:MM" / "HH:MM" (or a plain minute count) into minutes (#133). */
+function parseHM(s: string, fallback: number): number {
+  const t = s.trim();
+  if (!t) return 0;
+  if (t.includes(":")) {
+    const [h, m] = t.split(":");
+    const hh = parseInt(h, 10);
+    const mm = parseInt(m, 10);
+    if (isNaN(hh) && isNaN(mm)) return fallback;
+    return (isNaN(hh) ? 0 : hh) * 60 + (isNaN(mm) ? 0 : mm);
+  }
+  const n = parseInt(t, 10);
+  return isNaN(n) ? fallback : n;
+}
+
 const inputStyle: React.CSSProperties = {
   border: `1px solid ${C1}`,
   borderRadius: "6px",
@@ -128,6 +143,7 @@ export default function EditTaskModal({
   const [complexity, setComplexity] = useState<Complexity | null>(
     task.complexity
   );
+  const [timeText, setTimeText] = useState(formatHM(task.trackedMinutes));
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -145,6 +161,7 @@ export default function EditTaskModal({
       status,
       urgency,
       complexity,
+      trackedMinutes: parseHM(timeText, task.trackedMinutes),
     });
   }
 
@@ -257,9 +274,32 @@ export default function EditTaskModal({
             <span>
               <b>Date Created:</b> {formatDate(task.createdAt)}
             </span>
-            <span>
-              <b>Time Spent:</b> {formatHM(task.trackedMinutes)}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              <b>Time Spent:</b>
+              <input
+                value={timeText}
+                onChange={(e) => setTimeText(e.target.value)}
+                placeholder="HH:MM"
+                aria-label="Time spent (HH:MM)"
+                style={{
+                  width: "52px",
+                  height: "18px",
+                  border: `1px solid ${META}`,
+                  borderRadius: "4px",
+                  background: "transparent",
+                  color: META,
+                  fontFamily: "var(--font-family-mono)",
+                  fontSize: "10px",
+                  padding: "0 5px",
+                  outline: "none",
+                }}
+              />
             </span>
+            {task.completedAt && (
+              <span>
+                <b>Completed:</b> {formatDate(task.completedAt)}
+              </span>
+            )}
           </div>
           <textarea
             value={description}

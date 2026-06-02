@@ -214,7 +214,8 @@ export default function Home() {
   function toggleTimer(id: string) {
     setTasks((prev) =>
       prev.map((t) => {
-        if (t.id !== id) return { ...t, isTracking: false };
+        // Timers run in parallel (#130) — leave other tasks untouched.
+        if (t.id !== id) return t;
         const starting = !t.isTracking;
         return {
           ...t,

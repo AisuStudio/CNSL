@@ -20,8 +20,9 @@ discontinued, I decided to build my own. CNSL has been my daily driver since
 **May 2026**.
 
 It's a single board with **six views** of the same tasks, **inline editing** of
-every field, a **play/pause time tracker** (one timer at a time, auto-flips a
-task to *in progress*), **drag-to-change-status** on the Kanban board, and a
+every field, a **play/pause time tracker** (minute-accurate, runs several in
+parallel, auto-flips a task to *in progress*), **drag-to-change-status** on the
+Kanban board, and a
 **footer log** to dump thoughts fast and triage them into tasks later.
 Everything is exportable as Markdown or JSON — per project — so an AI assistant
 can read the board and help analyze velocity or spot where to optimize. Built
@@ -42,9 +43,9 @@ back in after TYME shut down.
   (collapsible, colour-coded groups), *Log* (capture inbox), *Archive*.
 - **Inline editing:** status, urgency, and poker (Fibonacci) as quick-adjust
   dropdowns; click a task to open a detail modal.
-- **Time tracking:** a play/pause control per task, minute-accurate, single
-  active timer, auto-sets *in progress*; a completion timestamp is recorded when
-  a task is done.
+- **Time tracking:** a play/pause control per task, minute-accurate, multiple
+  timers can run in parallel, auto-sets *in progress*, and time is editable by
+  hand; a completion timestamp is recorded when a task is done.
 - **Capture → triage:** log a thought from the footer in one keystroke, then
   turn it into a task (with project/epic autocomplete) when you have a moment.
 - **Drag & drop:** move a Kanban card between lanes to change its status.
