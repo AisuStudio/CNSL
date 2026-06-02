@@ -1,0 +1,64 @@
+/* ───────────────────────────────────────────────────────────
+   CNSL — Design Tokens
+   Single source of truth for colors, typography, spacing.
+   Consumed by globals.css and exposed to Tailwind via @theme.
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --color-bg: #18171e;
+  --color-bg-deep: #0f0e14; /* darker inset — header buttons / active view */
+  --color-surface: #212126;
+  --color-border: #323238;
+  --color-border-subtle: #93928e;
+
+  /* Text */
+  --color-text-primary: #e9e7df;
+  --color-text-muted: #93928e;
+  --color-text-on-light: #1f1934;
+  --color-text-secondary: #c1bfb9; /* NEW — modal labels / secondary text */
+
+  /* Accent */
+  --color-accent: #5100ff;
+  --color-running: #3fae6b; /* active timer — green */
+
+  /* Modal overlay (designer spec) */
+  --overlay-bg: rgba(33, 33, 38, 0.1); /* #212126 @ 10% */
+  --overlay-blur: 3px;
+
+  /* Typography */
+  --font-family: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+  --font-family-mono: var(--font-ia-mono), "iA Writer Mono", ui-monospace, monospace;
+
+  --text-logo: 24px;        /* CNSL logo */
+  --text-base: 16px;        /* headers, body */
+  --text-sm: 14px;
+  --text-modal: 12px;       /* NEW — modal text ("12 pt") */
+  --text-xs: 10px;          /* kanban card description */
+  --text-2xs: 8px;          /* kanban card project/epic */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+
+  /* Layout (from SVG reference @ 1366×768) */
+  --row-height: 37.1px;
+  --header-height: 113.9px;
+  --header-row1-height: 76.8px;   /* logo + tabs row */
+  --footer-height: 83px;
+  --canvas-width: 1366px;
+  --sidebar-width: 190px;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Radii */
+  --radius-pill: 9999px;
+  --radius-button: 11.4px;
+  --radius-card: 4px;
+}

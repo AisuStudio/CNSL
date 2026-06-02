@@ -1,0 +1,151 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Fonts are loaded via next/font/local in app/layout.tsx and exposed as
+   --font-public-sans / --font-ia-mono (used by the tokens above). */
+
+/* ─── Expose tokens to Tailwind utilities ──────────────────
+   Lets us use classes like bg-bg, text-muted, border-border. */
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-muted: var(--color-text-muted);
+  --color-accent: var(--color-accent);
+  --font-sans: var(--font-family);
+  --font-mono: var(--font-family-mono);
+}
+
+/* ─── Base ──────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Thin custom scrollbar to echo the SVG scrollbar treatment */
+.cnsl-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-subtle) transparent;
+}
+.cnsl-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+.cnsl-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cnsl-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 7px;
+  border: 4px solid transparent;
+  background-clip: content-box;
+}
+.cnsl-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-subtle);
+  background-clip: content-box;
+}
+
+/* ─── App shell layout ─────────────────────────────────── */
+.cnsl-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Sidebar + content row, below the top bar */
+.cnsl-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Content column (right of the sidebar); anchor for the floating footer */
+.cnsl-content {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The fixed grid templates mirror the SVG column boundaries
+   (values are proportional fr units derived from x-coordinates
+   at the 1366px reference width, so they scale fluidly). */
+.grid-backlog {
+  display: grid;
+  grid-template-columns:
+    69fr 75fr 150fr 150fr 190fr 140fr 160fr 120fr 130fr 160fr;
+}
+.grid-kanban {
+  display: grid;
+  grid-template-columns:
+    69fr 179.6fr 296.9fr 163.9fr 164fr 492.6fr;
+}
+
+/* Keep the table usable on smaller viewports via horizontal scroll */
+.cnsl-canvas {
+  min-width: 1100px;
+}
+
+/* ─── Interaction polish (#128): hovers, click & focus states ─── */
+
+/* Smooth feedback on all clickable controls */
+button,
+[role="button"],
+select,
+a {
+  transition:
+    background-color 120ms ease,
+    filter 120ms ease,
+    opacity 120ms ease,
+    transform 80ms ease;
+}
+
+/* Hover feedback on buttons (icons brighten, filled buttons lighten) */
+button:hover,
+[role="button"]:hover {
+  filter: brightness(1.12);
+}
+/* Pressed state */
+button:active,
+[role="button"]:active {
+  filter: brightness(0.94);
+  transform: translateY(0.5px);
+}
+
+/* Row hover in the data area (not the column header, which lives above main) */
+main .grid-backlog:hover,
+main .grid-kanban:hover {
+  background: rgba(233, 231, 223, 0.04);
+}
+
+/* Keyboard / touch focus ring for accessibility ("tab") */
+button:focus-visible,
+[role="button"]:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
