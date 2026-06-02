@@ -40,7 +40,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         onKeyDown={(e) => {
           if (e.key === "Enter") submit();
         }}
-        placeholder="What are you working on"
+        placeholder="Blurps, thoughts, ideas go here …"
         className="outline-none"
         style={{
           flex: 1,
