@@ -23,9 +23,25 @@ export interface Task {
   complexity: Complexity | null; // displayed as "Poker"
   isTracking: boolean; // Play/Pause — is the timer running?
   trackedMinutes: number; // accumulated time in minutes; displayed as "Time" (HH:MM)
+  // Minutes tracked per calendar day ("YYYY-MM-DD" → minutes), for real
+  // "worked today" totals (#132/#134). trackedMinutes stays the all-time total.
+  dailyMinutes?: Record<string, number>;
   description: string; // free-text notes (UI column "DESCRIPTION", was "Comment")
   archived?: boolean; // hidden from active views, shown in the Archive view
   completedAt?: string; // ISO timestamp set when status becomes "done" (#123)
+}
+
+// Local calendar day key "YYYY-MM-DD" (not UTC — matches the user's day).
+export function dayKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Minutes a task accrued on a given day key.
+export function minutesOnDay(t: Task, key: string): number {
+  return t.dailyMinutes?.[key] ?? 0;
 }
 
 // A raw capture from the footer input — the "tracking log" inbox.

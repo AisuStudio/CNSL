@@ -17,6 +17,8 @@ import {
   initialTasks,
   taskSortValue,
   formatHM,
+  dayKey,
+  minutesOnDay,
   type Task,
   type LogEntry,
 } from "@/lib/mock-data";
@@ -236,9 +238,19 @@ export default function Home() {
   useEffect(() => {
     if (!anyTracking) return;
     const id = setInterval(() => {
+      const key = dayKey();
       setTasks((prev) =>
         prev.map((t) =>
-          t.isTracking ? { ...t, trackedMinutes: t.trackedMinutes + 1 } : t
+          t.isTracking
+            ? {
+                ...t,
+                trackedMinutes: t.trackedMinutes + 1,
+                dailyMinutes: {
+                  ...t.dailyMinutes,
+                  [key]: (t.dailyMinutes?.[key] ?? 0) + 1,
+                },
+              }
+            : t
         )
       );
     }, 60_000);
@@ -363,8 +375,12 @@ export default function Home() {
 
   // Today view: urgency=today, column-sort applies (shared), but done/canceled
   // are stably pushed to the bottom (#118 follow-up).
+  // Today = planned for today (urgency) OR actually worked on today (#132).
   const todayTasks = useMemo(() => {
-    const t = sortedTasks.filter((x) => x.urgency === "today");
+    const key = dayKey();
+    const t = sortedTasks.filter(
+      (x) => x.urgency === "today" || minutesOnDay(x, key) > 0
+    );
     const closed = (s: string) => s === "done" || s === "canceled";
     return [
       ...t.filter((x) => !closed(x.status)),
@@ -372,12 +388,15 @@ export default function Home() {
     ];
   }, [sortedTasks]);
 
-  // Bottom-line totals for the Today view (#134).
+  // Bottom-line totals for the Today view (#134) — real minutes worked *today*
+  // (per-day tracking), summed across every task, not cumulative time.
   const todayTotals = useMemo(() => {
-    const minutes = todayTasks.reduce((s, t) => s + (t.trackedMinutes || 0), 0);
+    const key = dayKey();
+    const minutes = tasks.reduce((s, t) => s + minutesOnDay(t, key), 0);
+    const worked = tasks.filter((t) => minutesOnDay(t, key) > 0).length;
     const done = todayTasks.filter((t) => t.status === "done").length;
-    return { minutes, count: todayTasks.length, done };
-  }, [todayTasks]);
+    return { minutes, count: todayTasks.length, done, worked };
+  }, [tasks, todayTasks]);
 
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>

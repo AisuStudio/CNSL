@@ -38,8 +38,9 @@ back in after TYME shut down.
 
 ### What it does
 
-- **Six views, one dataset:** *Today* (only today's tasks, done sink to the
-  bottom), *Backlog* (sortable table), *Kanban* (status board), *Project*
+- **Six views, one dataset:** *Today* (tasks planned for or actually worked on
+  today, with a real per-day "worked hours" total; done sink to the bottom),
+  *Backlog* (sortable table), *Kanban* (status board), *Project*
   (collapsible, colour-coded groups), *Log* (capture inbox), *Archive*.
 - **Inline editing:** status, urgency, and poker (Fibonacci) as quick-adjust
   dropdowns; click a task to open a detail modal.
