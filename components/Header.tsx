@@ -26,11 +26,13 @@ export default function Header({
   onViewChange,
   onNewTask,
   onToggleSidebar,
+  onLogoClick,
 }: {
   view: View;
   onViewChange: (v: View) => void;
   onNewTask?: () => void;
   onToggleSidebar?: () => void;
+  onLogoClick?: () => void;
 }) {
   return (
     <header
@@ -47,7 +49,16 @@ export default function Header({
         className="flex h-full items-center"
         style={{ paddingLeft: "35px", paddingRight: "24px" }}
       >
-        <CnslLogo size={34} />
+        <button
+          type="button"
+          onClick={onLogoClick}
+          aria-label="About CNSL"
+          title="About CNSL"
+          className="flex items-center"
+          style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+        >
+          <CnslLogo size={34} />
+        </button>
 
         <div className="ml-8 flex items-center gap-3">
           {onNewTask && (

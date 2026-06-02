@@ -11,6 +11,7 @@ import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
 import TrackingLogView from "@/components/TrackingLogView";
 import EditTaskModal from "@/components/EditTaskModal";
+import InfoModal from "@/components/InfoModal";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -36,6 +37,7 @@ export default function Home() {
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -379,6 +381,7 @@ export default function Home() {
         onViewChange={setView}
         onNewTask={() => openCreate()}
         onToggleSidebar={() => setSidebarOpen((o) => !o)}
+        onLogoClick={() => setShowInfo(true)}
       />
 
       <div className="cnsl-body">
@@ -468,6 +471,8 @@ export default function Home() {
           onArchive={setArchived}
         />
       )}
+
+      {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
     </div>
   );
 }
