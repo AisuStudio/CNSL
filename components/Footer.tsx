@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LogIcon } from "./icons";
 
 export default function Footer({ onTrack }: { onTrack: (text: string) => void }) {
   const [text, setText] = useState("");
@@ -55,23 +56,39 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         }}
       />
 
-      {/* Log button */}
+      {/* Log button — text + icon */}
       <button
         type="button"
         onClick={submit}
+        className="flex items-center justify-center"
         style={{
-          width: "86.9px",
+          gap: "10px",
           height: "45.5px",
+          padding: "0 22px",
           background: "var(--color-accent)",
           color: "var(--color-text-primary)",
           borderRadius: "8px",
           fontWeight: 700,
           fontSize: "var(--text-base)",
           cursor: "pointer",
+          flexShrink: 0,
         }}
       >
         Log
+        <LogIcon color="var(--color-text-primary)" />
       </button>
+
+      {/* Explainer */}
+      <span
+        style={{
+          maxWidth: "150px",
+          fontSize: "10px",
+          lineHeight: 1.3,
+          color: "var(--color-text-on-light)", // #1f1934, readable on the grey bar
+        }}
+      >
+        Log your thoughts and reminders quickly and sort them out later.
+      </span>
     </footer>
   );
 }
