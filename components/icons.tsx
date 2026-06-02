@@ -33,6 +33,17 @@ export function FolderTabIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function InfoIcon({ color = "currentColor" }: { color?: string }) {
+  // "i" in a circle — opens the CNSL explainer.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.2" stroke={color} strokeWidth="1.6" />
+      <circle cx="10" cy="6.1" r="1.05" fill={color} />
+      <rect x="9.1" y="8.7" width="1.8" height="6" rx="0.9" fill={color} />
+    </svg>
+  );
+}
+
 export function PlayIcon({ color = "currentColor" }: { color?: string }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

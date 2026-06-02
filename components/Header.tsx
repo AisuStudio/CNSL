@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderTabIcon, PlusIcon, SidebarIcon } from "./icons";
+import { InfoIcon, PlusIcon, SidebarIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import { VIEW_DEFS } from "./viewDefs";
 
@@ -135,7 +135,21 @@ export default function Header({
           >
             Aisu.Studio
           </span>
-          <FolderTabIcon color="var(--color-text-muted)" />
+          <button
+            type="button"
+            onClick={onLogoClick}
+            aria-label="About CNSL"
+            title="About CNSL"
+            className="flex items-center justify-center"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+            }}
+          >
+            <InfoIcon color="var(--color-text-muted)" />
+          </button>
         </div>
       </div>
     </header>
