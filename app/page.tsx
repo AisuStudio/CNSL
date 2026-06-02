@@ -34,6 +34,7 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
 export default function Home() {
   const [view, setView] = useState<View>("backlog");
+  const [todayMode, setTodayMode] = useState<"tasks" | "worked">("tasks");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [sort, setSort] = useState<Sort>(null);
@@ -375,27 +376,28 @@ export default function Home() {
 
   // Today view: urgency=today, column-sort applies (shared), but done/canceled
   // are stably pushed to the bottom (#118 follow-up).
-  // Today = planned for today (urgency) OR actually worked on today (#132).
+  // Today view has two modes (toggle):
+  //  • "tasks"  → planned for today (urgency = today)
+  //  • "worked" → only tasks with real minutes tracked today (#132/#134)
   const todayTasks = useMemo(() => {
     const key = dayKey();
-    const t = sortedTasks.filter(
-      (x) => x.urgency === "today" || minutesOnDay(x, key) > 0
+    const t = sortedTasks.filter((x) =>
+      todayMode === "worked" ? minutesOnDay(x, key) > 0 : x.urgency === "today"
     );
     const closed = (s: string) => s === "done" || s === "canceled";
     return [
       ...t.filter((x) => !closed(x.status)),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [sortedTasks]);
+  }, [sortedTasks, todayMode]);
 
-  // Bottom-line totals for the Today view (#134) — real minutes worked *today*
-  // (per-day tracking), summed across every task, not cumulative time.
+  // Bottom-line totals (#134) — real minutes worked *today* (per-day tracking),
+  // summed across every task, not cumulative time.
   const todayTotals = useMemo(() => {
     const key = dayKey();
     const minutes = tasks.reduce((s, t) => s + minutesOnDay(t, key), 0);
-    const worked = tasks.filter((t) => minutesOnDay(t, key) > 0).length;
     const done = todayTasks.filter((t) => t.status === "done").length;
-    return { minutes, count: todayTasks.length, done, worked };
+    return { minutes, count: todayTasks.length, done };
   }, [tasks, todayTasks]);
 
   function setArchived(id: string, archived: boolean) {
@@ -481,6 +483,53 @@ export default function Home() {
         )}
         {view === "today" && (
           <>
+            {/* Mode toggle: planned-for-today vs actually-worked-today */}
+            <div
+              style={{
+                display: "flex",
+                padding: "10px 17px",
+                borderBottom: "1px solid var(--color-border)",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-bg-deep)",
+                }}
+              >
+                {([
+                  ["tasks", "Today tasks"],
+                  ["worked", "Hours worked today"],
+                ] as const).map(([mode, label]) => {
+                  const active = todayMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setTodayMode(mode)}
+                      aria-pressed={active}
+                      style={{
+                        padding: "6px 14px",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "var(--text-base)",
+                        fontWeight: active ? 700 : 400,
+                        background: active ? "var(--color-accent)" : "transparent",
+                        color: active
+                          ? "#e9e7df"
+                          : "var(--color-text-muted)",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <BacklogView
               tasks={todayTasks}
               onUpdate={updateTask}
@@ -488,6 +537,8 @@ export default function Home() {
               onEditTask={openEdit}
               onArchive={(id) => setArchived(id, true)}
             />
+
+            {/* Bottom line — counter depends on the active mode (#134) */}
             <div
               className="flex items-center justify-between"
               style={{
@@ -498,15 +549,20 @@ export default function Home() {
               }}
             >
               <span style={{ color: "var(--color-text-muted)" }}>
-                {todayTotals.count} task{todayTotals.count === 1 ? "" : "s"} today
-                {todayTotals.done > 0 ? ` · ${todayTotals.done} done` : ""}
+                {todayTotals.done > 0 ? `${todayTotals.done} done` : " "}
               </span>
-              <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
-                Worked today{" "}
-                <span style={{ fontFamily: "var(--font-family-mono)", color: "var(--color-running)" }}>
-                  {formatHM(todayTotals.minutes)}
+              {todayMode === "worked" ? (
+                <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
+                  Worked today{" "}
+                  <span style={{ fontFamily: "var(--font-family-mono)", color: "var(--color-running)" }}>
+                    {formatHM(todayTotals.minutes)}
+                  </span>
                 </span>
-              </span>
+              ) : (
+                <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
+                  {todayTotals.count} task{todayTotals.count === 1 ? "" : "s"} today
+                </span>
+              )}
             </div>
           </>
         )}
