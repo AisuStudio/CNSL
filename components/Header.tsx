@@ -12,6 +12,9 @@ export type View =
   | "log"
   | "archive";
 
+// Views moved into the sidebar (#141). Set true to restore the header switcher.
+const SHOW_VIEW_SWITCHER = false;
+
 const ICON_BTN: React.CSSProperties = {
   width: "35.1px",
   height: "34.2px",
@@ -87,7 +90,9 @@ export default function Header({
             </button>
           )}
 
-          {/* Icon-only segmented view switcher (hidden on mobile — use sidebar) */}
+          {/* Icon-only segmented view switcher. Views now live in the sidebar
+              (#141); flip SHOW_VIEW_SWITCHER to true to bring this back. */}
+          {SHOW_VIEW_SWITCHER && (
           <div
             className="cnsl-view-switcher flex items-center"
             style={{ borderRadius: "8px", overflow: "hidden", gap: "2px" }}
@@ -123,6 +128,7 @@ export default function Header({
               );
             })}
           </div>
+          )}
         </div>
 
         <div className="cnsl-workspace ml-auto flex items-center gap-3">
