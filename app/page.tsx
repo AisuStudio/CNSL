@@ -179,7 +179,24 @@ export default function Home() {
       if (updated.status === "done" && prevTask?.status !== "done")
         completedAt = new Date().toISOString();
       else if (updated.status !== "done") completedAt = undefined;
-      const final = { ...updated, completedAt };
+      let final = { ...updated, completedAt };
+
+      // Manually changing the time counts toward today's bucket, so
+      // "Hours worked today" reflects manual entry too (#132/#134/#133).
+      const delta =
+        (updated.trackedMinutes || 0) - (prevTask?.trackedMinutes || 0);
+      if (delta !== 0) {
+        const key = dayKey();
+        const base = prevTask?.dailyMinutes ?? updated.dailyMinutes ?? {};
+        final = {
+          ...final,
+          dailyMinutes: {
+            ...base,
+            [key]: Math.max(0, (base[key] ?? 0) + delta),
+          },
+        };
+      }
+
       return prevTask
         ? prev.map((t) => (t.id === updated.id ? final : t))
         : [...prev, final];
