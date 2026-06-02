@@ -16,6 +16,7 @@ import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
   taskSortValue,
+  formatHM,
   type Task,
   type LogEntry,
 } from "@/lib/mock-data";
@@ -371,6 +372,13 @@ export default function Home() {
     ];
   }, [sortedTasks]);
 
+  // Bottom-line totals for the Today view (#134).
+  const todayTotals = useMemo(() => {
+    const minutes = todayTasks.reduce((s, t) => s + (t.trackedMinutes || 0), 0);
+    const done = todayTasks.filter((t) => t.status === "done").length;
+    return { minutes, count: todayTasks.length, done };
+  }, [todayTasks]);
+
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>
       prev.map((t) => {
@@ -453,13 +461,35 @@ export default function Home() {
           />
         )}
         {view === "today" && (
-          <BacklogView
-            tasks={todayTasks}
-            onUpdate={updateTask}
-            onToggleTimer={toggleTimer}
-            onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
-          />
+          <>
+            <BacklogView
+              tasks={todayTasks}
+              onUpdate={updateTask}
+              onToggleTimer={toggleTimer}
+              onEditTask={openEdit}
+              onArchive={(id) => setArchived(id, true)}
+            />
+            <div
+              className="flex items-center justify-between"
+              style={{
+                padding: "14px 17px",
+                borderTop: "2px solid var(--color-border-subtle)",
+                background: "var(--color-surface)",
+                fontSize: "var(--text-base)",
+              }}
+            >
+              <span style={{ color: "var(--color-text-muted)" }}>
+                {todayTotals.count} task{todayTotals.count === 1 ? "" : "s"} today
+                {todayTotals.done > 0 ? ` · ${todayTotals.done} done` : ""}
+              </span>
+              <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
+                Worked today{" "}
+                <span style={{ fontFamily: "var(--font-family-mono)", color: "var(--color-running)" }}>
+                  {formatHM(todayTotals.minutes)}
+                </span>
+              </span>
+            </div>
+          </>
         )}
         {view === "kanban" && (
           <KanbanView
