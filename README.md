@@ -1,10 +1,15 @@
 # CNSL
 
-A fast, keyboard-friendly task tracker — Next.js (App Router) + Tailwind CSS v4.
-Multiple views (Today · Backlog · Kanban · Project · Log · Archive), inline
-editing, a Play/Pause time tracker, drag-to-change status, and a capture →
-triage log. **Phase 1 is fully client-side** (browser `localStorage`); Phase 2
-adds a real backend (Prisma + Postgres).
+**CNSL** (short for *console* — like a gaming console: a small tool that does a
+lot) is a self-hostable task tracker and organizer that gives you several views
+over one set of tasks — **Today · Backlog · Kanban · Project · Log · Archive**.
+It pairs fast inline editing with a one-click time tracker and a capture-first
+log for thoughts and reminders. It runs fully in the browser today (no account,
+no server) and is architected to grow into a self-hosted, multi-user app.
+
+Built with **Next.js (App Router), React, TypeScript and Tailwind CSS v4**.
+**Phase 1 is fully client-side** (browser `localStorage`); Phase 2 adds a real
+backend (Prisma + Postgres). Full write-up: [`PROJECT.md`](./PROJECT.md).
 
 ## Run locally
 
