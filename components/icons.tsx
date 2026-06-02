@@ -100,12 +100,13 @@ export function LogIcon({ color = "currentColor" }: { color?: string }) {
 }
 
 export function TodayIcon({ color = "currentColor" }: { color?: string }) {
-  // Calendar with a marked day — the "Today" view (20×20).
+  // CNSL custom "Today" calendar glyph (CNSL_Icon_Today.svg).
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" fill="none">
-      <rect x="1" y="2.5" width="18" height="16.5" rx="2" stroke={color} strokeWidth="2" />
-      <rect x="1" y="2.5" width="18" height="5" fill={color} />
-      <circle cx="10" cy="13" r="2.6" fill={color} />
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <path d="M0,20h20V0h-3.5v5.5H3.5V0H0v20ZM3.5,9h13v7.5H3.5v-7.5Z" />
+        <rect x="5.5" y="11" width="9" height="3.5" />
+      </g>
     </svg>
   );
 }
