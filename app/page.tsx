@@ -221,6 +221,8 @@ export default function Home() {
           ...t,
           isTracking: starting,
           status: starting ? "in_progress" : t.status,
+          // starting → it's what you're on today (#137)
+          urgency: starting ? "today" : t.urgency,
           // starting → in_progress (not done), so clear any completedAt
           completedAt: starting ? undefined : t.completedAt,
         };
@@ -371,7 +373,20 @@ export default function Home() {
 
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, archived } : t))
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        // Archiving implies the task is finished → auto-done (#138)
+        if (archived && t.status !== "done") {
+          return {
+            ...t,
+            archived,
+            status: "done",
+            isTracking: false,
+            completedAt: t.completedAt ?? new Date().toISOString(),
+          };
+        }
+        return { ...t, archived };
+      })
     );
     setModalTask(null);
   }
