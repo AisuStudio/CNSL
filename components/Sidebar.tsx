@@ -14,7 +14,7 @@ export default function Sidebar({
 }) {
   return (
     <aside
-      className="shrink-0"
+      className="cnsl-sidebar shrink-0"
       style={{
         width: open ? "var(--sidebar-width)" : "0px",
         minWidth: 0,

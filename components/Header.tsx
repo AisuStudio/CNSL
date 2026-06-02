@@ -87,9 +87,9 @@ export default function Header({
             </button>
           )}
 
-          {/* Icon-only segmented view switcher */}
+          {/* Icon-only segmented view switcher (hidden on mobile — use sidebar) */}
           <div
-            className="flex items-center"
+            className="cnsl-view-switcher flex items-center"
             style={{ borderRadius: "8px", overflow: "hidden", gap: "2px" }}
           >
             {VIEW_DEFS.map((v) => {
@@ -125,7 +125,7 @@ export default function Header({
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="cnsl-workspace ml-auto flex items-center gap-3">
           <span
             style={{
               color: "var(--color-text-muted)",

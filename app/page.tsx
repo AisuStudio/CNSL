@@ -22,6 +22,7 @@ import {
 import { loadState, saveState, newId } from "@/lib/storage";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
 import { coworkTasks } from "@/lib/coworkTasks";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 export type Sort = { key: string; dir: "asc" | "desc" } | null;
 
@@ -37,6 +38,13 @@ export default function Home() {
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+
+  // On phones the sidebar is an overlay drawer — start closed so the table
+  // gets the full width; auto-close whenever we drop into the mobile breakpoint.
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [isMobile]);
   const [showInfo, setShowInfo] = useState(false);
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
@@ -385,7 +393,31 @@ export default function Home() {
       />
 
       <div className="cnsl-body">
-        {sidebarOpen && <Sidebar view={view} onViewChange={setView} />}
+        {sidebarOpen && (
+          <Sidebar
+            view={view}
+            onViewChange={(v) => {
+              setView(v);
+              if (isMobile) setSidebarOpen(false);
+            }}
+          />
+        )}
+        {/* Dim backdrop behind the mobile drawer; tap to dismiss */}
+        {sidebarOpen && isMobile && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              top: "var(--header-row1-height)",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0,0,0,0.45)",
+              zIndex: 44,
+            }}
+          />
+        )}
 
         <div className="cnsl-content">
           <TableHeader view={view} sort={sort} onSort={toggleSort} />

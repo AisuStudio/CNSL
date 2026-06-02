@@ -149,3 +149,55 @@ a:focus-visible {
   outline-offset: 1px;
   border-radius: 4px;
 }
+
+/* ─── Mobile (#129): responsive pass ≤768px ─────────────────────
+   Phones get a compact, no-horizontal-scroll layout:
+   - table → 4 essential columns (NR · Act · Task · Status); rest in the modal
+   - sidebar → overlay drawer instead of pushing content
+   - header → drop the icon switcher (views live in the sidebar) + workspace
+   - footer → drop the explainer, keep input + Log */
+@media (max-width: 768px) {
+  /* No forced wide canvas — fit the viewport */
+  .cnsl-canvas {
+    min-width: 0;
+  }
+
+  /* Backlog/Today/Project/Archive rows + header: keep only the essentials */
+  .grid-backlog {
+    grid-template-columns: 34px 40px 1fr 104px;
+  }
+  .grid-backlog > :nth-child(3),  /* PROJECT */
+  .grid-backlog > :nth-child(4),  /* EPIC */
+  .grid-backlog > :nth-child(6),  /* URGENCY */
+  .grid-backlog > :nth-child(8),  /* POKER */
+  .grid-backlog > :nth-child(9),  /* TIME */
+  .grid-backlog > :nth-child(10)  /* DESCRIPTION */ {
+    display: none;
+  }
+
+  /* Kanban stays a board — let it scroll horizontally rather than squish */
+  .grid-kanban {
+    min-width: 720px;
+  }
+
+  /* Sidebar becomes a fixed overlay drawer (rendered only when open) */
+  .cnsl-sidebar {
+    position: fixed;
+    top: var(--header-row1-height);
+    left: 0;
+    bottom: 0;
+    z-index: 45;
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Header: hide the segmented switcher + workspace label to fit narrow */
+  .cnsl-view-switcher,
+  .cnsl-workspace {
+    display: none;
+  }
+
+  /* Footer: drop the explainer so input + Log fit */
+  .cnsl-footer-explainer {
+    display: none;
+  }
+}

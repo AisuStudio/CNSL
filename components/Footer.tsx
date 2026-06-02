@@ -80,6 +80,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
 
       {/* Explainer */}
       <span
+        className="cnsl-footer-explainer"
         style={{
           maxWidth: "150px",
           fontSize: "10px",
