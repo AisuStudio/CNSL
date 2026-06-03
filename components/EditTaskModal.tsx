@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   type Task,
   type Status,
@@ -12,9 +12,9 @@ import {
   formatHM,
   formatDate,
 } from "@/lib/mock-data";
+import SidePanel from "./SidePanel";
 
-/* ── Modal palette (light card per SVG) ── */
-const CARD_BG = "#e9e7df";
+/* ── Light-card palette (matches SidePanel) ── */
 const INK = "#212126";
 const META = "#323238";
 const C1 = "#c1bfb9";
@@ -102,16 +102,6 @@ function PillField({
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-      <path
-        d="M21 2 L13 11 L21 20 L20 21 L11 12.5 L2 21 L1 20 L9.5 11 L1 2 L2 1 L11 9.5 L20 1 Z"
-        fill="#18171e"
-      />
-    </svg>
-  );
-}
 
 export default function EditTaskModal({
   task,
@@ -145,12 +135,6 @@ export default function EditTaskModal({
   );
   const [timeText, setTimeText] = useState(formatHM(task.trackedMinutes));
 
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
-
   function save() {
     onSubmit({
       ...task,
@@ -166,64 +150,18 @@ export default function EditTaskModal({
   }
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(var(--overlay-blur))",
-        WebkitBackdropFilter: "blur(var(--overlay-blur))",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
+    <SidePanel
+      title={isNew ? "New task" : "Edit task"}
+      width={500}
+      onClose={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "500px",
-          maxWidth: "94vw",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          background: CARD_BG,
-          borderRadius: "8px",
-          color: INK,
-          fontFamily: "var(--font-family)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-          padding: "16px 20px 20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-      >
-        {/* Task + close */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <input
-            value={taskText}
-            onChange={(e) => setTaskText(e.target.value)}
-            placeholder="Task"
-            style={{ ...inputStyle, flex: 1 }}
-          />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: "2px",
-              flexShrink: 0,
-            }}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <div style={{ height: "1px", background: C1 }} />
+      {/* Task title */}
+      <input
+        value={taskText}
+        onChange={(e) => setTaskText(e.target.value)}
+        placeholder="Task"
+        style={{ ...inputStyle, width: "100%" }}
+      />
 
         {/* Project / Epic */}
         <div style={{ display: "flex", gap: "16px" }}>
@@ -421,7 +359,6 @@ export default function EditTaskModal({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </SidePanel>
   );
 }
