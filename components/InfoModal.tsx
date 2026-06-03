@@ -22,6 +22,7 @@ const PARAGRAPHS = [
   "CNSL stands for Console — like a gaming console: a small tool that can do a lot for you. I've been carrying this idea around since 2006 — a little tracking system and organizer where I can collect and manage my tasks and see them in different views.",
   "So far I've used tools like Jira, Trello, Asana, Apple Notes, Notion … sometimes in combination — but I wanted something of my own that I (and others) can self-host. On top of that, TYME, the time-tracking app I used for freelance projects, discontinued its service.",
   "So in May 2026 I decided to build my own — and I've used it daily ever since.",
+  "Two things I'm especially fond of: the quick logger — one field to dump any blurb, thought or reminder in a keystroke and triage it into a task later; and one-click Markdown/JSON export of the whole board, so I can hand it to an AI assistant for a review or weekly recap. Few task apps offer that.",
 ];
 
 export default function InfoModal({ onClose }: { onClose: () => void }) {
