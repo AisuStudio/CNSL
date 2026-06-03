@@ -47,7 +47,7 @@
   --header-row1-height: 76.8px;   /* logo + tabs row */
   --footer-height: 83px;
   --canvas-width: 1366px;
-  --sidebar-width: 190px;
+  --sidebar-width: 60px;
 
   /* Spacing scale */
   --space-1: 4px;

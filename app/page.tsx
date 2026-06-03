@@ -12,13 +12,13 @@ import ArchiveView from "@/components/ArchiveView";
 import TrackingLogView from "@/components/TrackingLogView";
 import EditTaskModal from "@/components/EditTaskModal";
 import InfoModal from "@/components/InfoModal";
+import StatsView from "@/components/StatsView";
+import SettingsModal from "@/components/SettingsModal";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
   taskSortValue,
-  formatHM,
   dayKey,
-  minutesOnDay,
   type Task,
   type LogEntry,
 } from "@/lib/mock-data";
@@ -34,7 +34,6 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
 export default function Home() {
   const [view, setView] = useState<View>("backlog");
-  const [todayMode, setTodayMode] = useState<"tasks" | "worked">("tasks");
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [sort, setSort] = useState<Sort>(null);
@@ -50,6 +49,7 @@ export default function Home() {
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
   const [showInfo, setShowInfo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -393,29 +393,16 @@ export default function Home() {
 
   // Today view: urgency=today, column-sort applies (shared), but done/canceled
   // are stably pushed to the bottom (#118 follow-up).
-  // Today view has two modes (toggle):
-  //  • "tasks"  → planned for today (urgency = today)
-  //  • "worked" → only tasks with real minutes tracked today (#132/#134)
+  // Today = planned for today (urgency = today); done/canceled sink to bottom.
+  // (Worked-hours / counters moved to the Stats view.)
   const todayTasks = useMemo(() => {
-    const key = dayKey();
-    const t = sortedTasks.filter((x) =>
-      todayMode === "worked" ? minutesOnDay(x, key) > 0 : x.urgency === "today"
-    );
+    const t = sortedTasks.filter((x) => x.urgency === "today");
     const closed = (s: string) => s === "done" || s === "canceled";
     return [
       ...t.filter((x) => !closed(x.status)),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [sortedTasks, todayMode]);
-
-  // Bottom-line totals (#134) — real minutes worked *today* (per-day tracking),
-  // summed across every task, not cumulative time.
-  const todayTotals = useMemo(() => {
-    const key = dayKey();
-    const minutes = tasks.reduce((s, t) => s + minutesOnDay(t, key), 0);
-    const done = todayTasks.filter((t) => t.status === "done").length;
-    return { minutes, count: todayTasks.length, done };
-  }, [tasks, todayTasks]);
+  }, [sortedTasks]);
 
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>
@@ -452,6 +439,8 @@ export default function Home() {
         onNewTask={() => openCreate()}
         onToggleSidebar={() => setSidebarOpen((o) => !o)}
         onLogoClick={() => setShowInfo(true)}
+        onOpenInfo={() => setShowInfo(true)}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       <div className="cnsl-body">
@@ -499,90 +488,15 @@ export default function Home() {
           />
         )}
         {view === "today" && (
-          <>
-            {/* Mode toggle: planned-for-today vs actually-worked-today */}
-            <div
-              style={{
-                display: "flex",
-                padding: "10px 17px",
-                borderBottom: "1px solid var(--color-border)",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-flex",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  border: "1px solid var(--color-border)",
-                  background: "var(--color-bg-deep)",
-                }}
-              >
-                {([
-                  ["tasks", "Today tasks"],
-                  ["worked", "Hours worked today"],
-                ] as const).map(([mode, label]) => {
-                  const active = todayMode === mode;
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setTodayMode(mode)}
-                      aria-pressed={active}
-                      style={{
-                        padding: "6px 14px",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: "var(--text-base)",
-                        fontWeight: active ? 700 : 400,
-                        background: active ? "var(--color-accent)" : "transparent",
-                        color: active
-                          ? "#e9e7df"
-                          : "var(--color-text-muted)",
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <BacklogView
-              tasks={todayTasks}
-              onUpdate={updateTask}
-              onToggleTimer={toggleTimer}
-              onEditTask={openEdit}
-              onArchive={(id) => setArchived(id, true)}
-            />
-
-            {/* Bottom line — counter depends on the active mode (#134) */}
-            <div
-              className="flex items-center justify-between"
-              style={{
-                padding: "14px 17px",
-                borderTop: "2px solid var(--color-border-subtle)",
-                background: "var(--color-surface)",
-                fontSize: "var(--text-base)",
-              }}
-            >
-              <span style={{ color: "var(--color-text-muted)" }}>
-                {todayTotals.done > 0 ? `${todayTotals.done} done` : " "}
-              </span>
-              {todayMode === "worked" ? (
-                <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
-                  Worked today{" "}
-                  <span style={{ fontFamily: "var(--font-family-mono)", color: "var(--color-running)" }}>
-                    {formatHM(todayTotals.minutes)}
-                  </span>
-                </span>
-              ) : (
-                <span style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>
-                  {todayTotals.count} task{todayTotals.count === 1 ? "" : "s"} today
-                </span>
-              )}
-            </div>
-          </>
+          <BacklogView
+            tasks={todayTasks}
+            onUpdate={updateTask}
+            onToggleTimer={toggleTimer}
+            onEditTask={openEdit}
+            onArchive={(id) => setArchived(id, true)}
+          />
         )}
+        {view === "stats" && <StatsView tasks={tasks} />}
         {view === "kanban" && (
           <KanbanView
             tasks={sortedTasks}
@@ -643,6 +557,7 @@ export default function Home() {
       )}
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

@@ -2,10 +2,8 @@
 
 import {
   type Task,
-  type Urgency,
   type Status,
   type Complexity,
-  URGENCY_OPTIONS,
   STATUS_OPTIONS,
   COMPLEXITY_OPTIONS,
   STATUS_COLOR,
@@ -151,17 +149,6 @@ export default function TaskRow({
     >
       {t.task}
     </span>,
-    <CellSelect
-      key="urgency"
-      value={t.urgency}
-      onChange={(v) => onUpdate(t.id, "urgency", v as Urgency)}
-    >
-      {URGENCY_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </CellSelect>,
     <span key="status" className="flex w-full items-center gap-2">
       <StatusDot status={t.status} />
       <CellSelect
@@ -193,7 +180,6 @@ export default function TaskRow({
     >
       {formatHM(t.trackedMinutes)}
     </span>,
-    t.description,
   ];
 
   return (
@@ -224,7 +210,7 @@ export default function TaskRow({
                 ? "var(--color-text-muted)"
                 : "var(--color-text-primary)",
             fontSize: "var(--text-base)",
-            fontFamily: i === 8 ? "var(--font-family-mono)" : undefined,
+            fontFamily: i === 7 ? "var(--font-family-mono)" : undefined,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",

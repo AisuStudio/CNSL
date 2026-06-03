@@ -8,11 +8,9 @@ const BACKLOG_COLUMNS: Column[] = [
   { label: "PROJECT", key: "project" },
   { label: "EPIC", key: "epic" },
   { label: "TASK", key: "task" },
-  { label: "URGENCY", key: "urgency" },
   { label: "STATUS", key: "status" },
   { label: "POKER", key: "complexity" },
   { label: "TIME", key: "time" },
-  { label: "DESCRIPTION", key: "description" },
 ];
 
 const KANBAN_COLUMNS: Column[] = [
@@ -27,6 +25,7 @@ const KANBAN_COLUMNS: Column[] = [
 const TITLES: Partial<Record<string, string>> = {
   log: "TRACKING LOG",
   archive: "ARCHIVE",
+  stats: "STATS",
 };
 
 export default function TableHeader({

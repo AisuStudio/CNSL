@@ -1,6 +1,6 @@
 "use client";
 
-import { InfoIcon, PlusIcon, SidebarIcon } from "./icons";
+import { InfoIcon, PlusIcon, SidebarIcon, SettingsIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import { VIEW_DEFS } from "./viewDefs";
 
@@ -10,7 +10,8 @@ export type View =
   | "kanban"
   | "project"
   | "log"
-  | "archive";
+  | "archive"
+  | "stats";
 
 // Views moved into the sidebar (#141). Set true to restore the header switcher.
 const SHOW_VIEW_SWITCHER = false;
@@ -30,12 +31,16 @@ export default function Header({
   onNewTask,
   onToggleSidebar,
   onLogoClick,
+  onOpenInfo,
+  onOpenSettings,
 }: {
   view: View;
   onViewChange: (v: View) => void;
   onNewTask?: () => void;
   onToggleSidebar?: () => void;
   onLogoClick?: () => void;
+  onOpenInfo?: () => void;
+  onOpenSettings?: () => void;
 }) {
   return (
     <header
@@ -131,30 +136,26 @@ export default function Header({
           )}
         </div>
 
-        <div className="cnsl-workspace ml-auto flex items-center gap-3">
-          <span
-            style={{
-              color: "var(--color-text-muted)",
-              fontWeight: 700,
-              fontSize: "var(--text-base)",
-            }}
-          >
-            Aisu.Studio
-          </span>
+        <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
-            onClick={onLogoClick}
+            onClick={onOpenInfo}
             aria-label="About CNSL"
             title="About CNSL"
             className="flex items-center justify-center"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-            }}
+            style={ICON_BTN}
           >
             <InfoIcon color="var(--color-text-muted)" />
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Settings"
+            title="Settings"
+            className="flex items-center justify-center"
+            style={ICON_BTN}
+          >
+            <SettingsIcon color="var(--color-text-muted)" />
           </button>
         </div>
       </div>

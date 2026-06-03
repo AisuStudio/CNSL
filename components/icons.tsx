@@ -34,12 +34,50 @@ export function FolderTabIcon({ color = "currentColor" }: { color?: string }) {
 }
 
 export function InfoIcon({ color = "currentColor" }: { color?: string }) {
-  // "i" in a circle — opens the CNSL explainer.
+  // Block "i" — CNSL_Icon_Info.svg.
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <circle cx="10" cy="10" r="8.2" stroke={color} strokeWidth="1.6" />
-      <circle cx="10" cy="6.1" r="1.05" fill={color} />
-      <rect x="9.1" y="8.7" width="1.8" height="6" rx="0.9" fill={color} />
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect x="11" y="0" width="3.5" height="3.5" />
+        <polygon points="20 9 20 5.5 0 5.5 0 9 11 9 11 11 11 14.5 11 16.5 0 16.5 0 20 20 20 20 16.5 14.5 16.5 14.5 14.5 14.5 11 14.5 9 20 9" />
+      </g>
+    </svg>
+  );
+}
+
+export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
+  // Pixel-grid gear — CNSL_Icon_Settings.svg.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect width="3.5" height="3.5" />
+        <rect x="5.5" width="3.5" height="3.5" />
+        <rect x="11" width="3.5" height="3.5" />
+        <rect x="16.5" width="3.5" height="3.5" />
+        <rect y="5.5" width="3.5" height="3.5" />
+        <rect x="16.5" y="5.5" width="3.5" height="3.5" />
+        <rect y="11" width="3.5" height="3.5" />
+        <rect x="16.5" y="11" width="3.5" height="3.5" />
+        <rect y="16.5" width="3.5" height="3.5" />
+        <rect x="5.5" y="16.5" width="3.5" height="3.5" />
+        <rect x="11" y="16.5" width="3.5" height="3.5" />
+        <rect x="16.5" y="16.5" width="3.5" height="3.5" />
+        <path d="M5.5,5.5v9h9V5.5H5.5ZM9,11v-2h2v2h-2Z" />
+      </g>
+    </svg>
+  );
+}
+
+export function StatsIcon({ color = "currentColor" }: { color?: string }) {
+  // Bar-chart — CNSL_Icon_Stats (from the slim sidebar).
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect x="11" y="0" width="3.5" height="20" />
+        <rect x="0" y="5.5" width="3.5" height="14.5" />
+        <rect x="16.5" y="5.5" width="3.5" height="14.5" />
+        <rect x="5.5" y="11" width="3.5" height="9" />
+      </g>
     </svg>
   );
 }

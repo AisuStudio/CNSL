@@ -90,10 +90,11 @@ body {
 /* The fixed grid templates mirror the SVG column boundaries
    (values are proportional fr units derived from x-coordinates
    at the 1366px reference width, so they scale fluidly). */
+/* NR · ACT · PROJECT · EPIC · TASK · STATUS · POKER · TIME (New Layout 03) */
 .grid-backlog {
   display: grid;
   grid-template-columns:
-    69fr 75fr 150fr 150fr 190fr 140fr 160fr 120fr 130fr 160fr;
+    80fr 75fr 137fr 158fr 539fr 192fr 88fr 97fr;
 }
 .grid-kanban {
   display: grid;
@@ -162,16 +163,15 @@ a:focus-visible {
     min-width: 0;
   }
 
-  /* Backlog/Today/Project/Archive rows + header: keep only the essentials */
+  /* Backlog/Today/Project/Archive rows + header: keep only the essentials
+     (NR · ACT · TASK · STATUS) */
   .grid-backlog {
     grid-template-columns: 34px 40px 1fr 104px;
   }
   .grid-backlog > :nth-child(3),  /* PROJECT */
   .grid-backlog > :nth-child(4),  /* EPIC */
-  .grid-backlog > :nth-child(6),  /* URGENCY */
-  .grid-backlog > :nth-child(8),  /* POKER */
-  .grid-backlog > :nth-child(9),  /* TIME */
-  .grid-backlog > :nth-child(10)  /* DESCRIPTION */ {
+  .grid-backlog > :nth-child(7),  /* POKER */
+  .grid-backlog > :nth-child(8)   /* TIME */ {
     display: none;
   }
 

@@ -1,12 +1,12 @@
-// Shared definition of the 5 task views — used by the header icon switcher
-// and the sidebar VIEWS list.
+// Shared definition of the nav views — used by the slim sidebar.
+// Kanban is paused (#151) and intentionally not listed here.
 import {
   TodayIcon,
   ListIcon,
-  KanbanIcon,
   ProjectIcon,
   LogIcon,
   ArchiveIcon,
+  StatsIcon,
 } from "./icons";
 import type { View } from "./Header";
 
@@ -17,8 +17,8 @@ export const VIEW_DEFS: {
 }[] = [
   { key: "today", label: "Today", Icon: TodayIcon },
   { key: "backlog", label: "Backlog", Icon: ListIcon },
-  { key: "kanban", label: "Kanban", Icon: KanbanIcon },
-  { key: "project", label: "Project", Icon: ProjectIcon },
+  { key: "project", label: "Projects", Icon: ProjectIcon },
   { key: "log", label: "Log", Icon: LogIcon },
   { key: "archive", label: "Archive", Icon: ArchiveIcon },
+  { key: "stats", label: "Stats", Icon: StatsIcon },
 ];
