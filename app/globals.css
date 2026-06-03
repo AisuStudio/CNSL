@@ -180,22 +180,6 @@ a:focus-visible {
     min-width: 720px;
   }
 
-  /* Sidebar becomes a fixed overlay drawer (rendered only when open) */
-  .cnsl-sidebar {
-    position: fixed;
-    top: var(--header-row1-height);
-    left: 0;
-    bottom: 0;
-    z-index: 45;
-    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.5);
-  }
-
-  /* Header: hide the segmented switcher + workspace label to fit narrow */
-  .cnsl-view-switcher,
-  .cnsl-workspace {
-    display: none;
-  }
-
   /* Footer: drop the explainer so input + Log fit */
   .cnsl-footer-explainer {
     display: none;
