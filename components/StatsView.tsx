@@ -29,10 +29,13 @@ export default function StatsView({ tasks }: { tasks: Task[] }) {
     (t) => t.completedAt && weekSet.has(dayKey(new Date(t.completedAt)))
   );
   const pokerWeek = doneWeek.reduce((s, t) => s + (t.complexity ?? 0), 0);
+  // All-time total — always includes manually-entered time, regardless of day.
+  const totalTracked = tasks.reduce((s, t) => s + (t.trackedMinutes || 0), 0);
 
   const cards: { label: string; value: string; accent?: boolean }[] = [
     { label: "Worked today", value: formatHM(workedToday), accent: true },
     { label: "Worked this week", value: formatHM(workedWeek) },
+    { label: "Total tracked (all-time)", value: formatHM(totalTracked) },
     { label: "Done this week", value: String(doneWeek.length) },
     { label: "Poker points (done, week)", value: String(pokerWeek) },
   ];
