@@ -151,6 +151,16 @@ a:focus-visible {
   border-radius: 4px;
 }
 
+/* Right side-panel (Settings, and later the edit card) */
+@keyframes cnsl-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes cnsl-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ─── Mobile (#129): responsive pass ≤768px ─────────────────────
    Phones get a compact, no-horizontal-scroll layout:
    - table → 4 essential columns (NR · Act · Task · Status); rest in the modal

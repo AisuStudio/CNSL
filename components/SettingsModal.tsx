@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SettingsIcon } from "./icons";
+import SidePanel from "./SidePanel";
 import type { Task } from "@/lib/mock-data";
 import {
   PROJECT_PALETTE,
@@ -15,21 +16,9 @@ type ColorCfg = {
   onReset: (name: string) => void;
 };
 
-const CARD_BG = "#e9e7df";
 const INK = "#212126";
 const C1 = "#c1bfb9";
 const MUTED = "#5a5862";
-
-function CloseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-      <path
-        d="M21 2 L13 11 L21 20 L20 21 L11 12.5 L2 21 L1 20 L9.5 11 L1 2 L2 1 L11 9.5 L20 1 Z"
-        fill="#18171e"
-      />
-    </svg>
-  );
-}
 
 type NameCount = { name: string; count: number };
 
@@ -272,90 +261,34 @@ export default function SettingsModal({
   onResetProjectColor: (name: string) => void;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
-
   const projects = countBy(tasks, "project");
   const epics = countBy(tasks, "epic");
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(var(--overlay-blur))",
-        WebkitBackdropFilter: "blur(var(--overlay-blur))",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
+    <SidePanel
+      title="Settings"
+      icon={<SettingsIcon color={INK} />}
+      width={520}
+      onClose={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "560px",
-          maxWidth: "94vw",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          background: CARD_BG,
-          borderRadius: "8px",
-          color: INK,
-          fontFamily: "var(--font-family)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
+      <p style={{ margin: 0, fontSize: "12px", color: MUTED, lineHeight: 1.5 }}>
+        Rename to tidy up, or pick &quot;Merge into…&quot; to fold one name into
+        another. Renaming to an existing name merges them. Tap a project&apos;s
+        colour dot to recolour its bar in the Project view.
+      </p>
+
+      <Section
+        title="Projects"
+        items={projects}
+        onRename={onRenameProject}
+        colors={{
+          get: (name) => getProjectColor(name, projectColors),
+          onSet: onSetProjectColor,
+          onReset: onResetProjectColor,
         }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <SettingsIcon color={INK} />
-          <span style={{ fontSize: "var(--text-logo)", fontWeight: 700, flex: 1 }}>
-            Settings
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: "2px",
-            }}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <div style={{ height: "1px", background: C1 }} />
-
-        <p style={{ margin: 0, fontSize: "12px", color: MUTED, lineHeight: 1.5 }}>
-          Rename to tidy up, or pick &quot;Merge into…&quot; to fold one name into
-          another. Renaming to an existing name merges them. Tap a project&apos;s
-          colour dot to recolour its bar in the Project view.
-        </p>
-
-        <Section
-          title="Projects"
-          items={projects}
-          onRename={onRenameProject}
-          colors={{
-            get: (name) => getProjectColor(name, projectColors),
-            onSet: onSetProjectColor,
-            onReset: onResetProjectColor,
-          }}
-        />
-        <div style={{ height: "1px", background: C1 }} />
-        <Section title="Epics" items={epics} onRename={onRenameEpic} />
-      </div>
-    </div>
+      />
+      <div style={{ height: "1px", background: C1 }} />
+      <Section title="Epics" items={epics} onRename={onRenameEpic} />
+    </SidePanel>
   );
 }
