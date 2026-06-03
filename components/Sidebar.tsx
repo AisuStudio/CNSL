@@ -95,13 +95,18 @@ export default function Sidebar({
         borderTopRightRadius: "8px",
         borderBottomRightRadius: "8px",
         paddingTop: "30px",
-        paddingBottom: "24px",
+        paddingBottom: "0px",
         overflow: "hidden",
         transition: "width 160ms ease",
         display: "flex",
         flexDirection: "column",
       }}
     >
+      {/* Scrollable section area — keeps Settings pinned + always visible */}
+      <div
+        className="cnsl-scroll"
+        style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto" }}
+      >
       {/* ── VIEWS (the table views of the Tracker) ── */}
       <SectionHeader>VIEWS</SectionHeader>
       {VIEW_DEFS.map((v) => {
@@ -140,9 +145,16 @@ export default function Sidebar({
       <ActiveItem label="Tracker" />
       <SoonItem label="Docs" />
       <SoonItem label="Calendar" />
+      </div>
 
-      {/* ── Settings pinned to the bottom (→ #146 lives here) ── */}
-      <div style={{ marginTop: "auto" }}>
+      {/* ── Settings: pinned footer, always visible (→ #146 lives here) ── */}
+      <div
+        style={{
+          borderTop: "1px solid var(--color-border)",
+          paddingTop: "14px",
+          paddingBottom: "14px",
+        }}
+      >
         <SoonItem label="Settings" />
       </div>
     </aside>
