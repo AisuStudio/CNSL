@@ -9,6 +9,8 @@ import {
   STATUS_LABEL,
   URGENCY_LABEL,
   formatHM,
+  dayKey,
+  minutesOnDay,
 } from "./mock-data";
 
 const CONTEXT_NOTE =
@@ -102,6 +104,61 @@ export function toMarkdown(
         ? `→ Backlog #${String(e.taskNumber ?? "").padStart(2, "0")}`
         : "(open)";
       lines.push(`- \`${e.ts}\` — ${e.text}  ${tail}`);
+    }
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+// Weekly review (#149): per-day worked time + tasks completed in the last 7
+// days with their poker points — a Markdown recap to paste into a chat.
+export function toWeeklyReview(tasks: Task[]): string {
+  const days: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(dayKey(d));
+  }
+  const daySet = new Set(days);
+  const workedByDay = days.map((k) => ({
+    day: k,
+    min: tasks.reduce((s, t) => s + minutesOnDay(t, k), 0),
+  }));
+  const workedTotal = workedByDay.reduce((s, d) => s + d.min, 0);
+  const done = tasks.filter(
+    (t) => t.completedAt && daySet.has(dayKey(new Date(t.completedAt)))
+  );
+  const poker = done.reduce((s, t) => s + (t.complexity ?? 0), 0);
+
+  const lines: string[] = [];
+  lines.push("# CNSL — Weekly Review");
+  lines.push("");
+  lines.push(`> ${CONTEXT_NOTE}`);
+  lines.push("");
+  lines.push(`Range: ${days[days.length - 1]} – ${days[0]} (last 7 days)`);
+  lines.push("");
+  lines.push("## Summary");
+  lines.push(`- Worked: **${formatHM(workedTotal)}** (${workedTotal} min)`);
+  lines.push(`- Tasks done: **${done.length}**`);
+  lines.push(`- Poker points (done): **${poker}**`);
+  lines.push("");
+  lines.push("## Worked per day");
+  for (const d of [...workedByDay].reverse()) {
+    lines.push(`- ${d.day}: ${formatHM(d.min)}`);
+  }
+  lines.push("");
+  lines.push("## Done this week");
+  if (done.length === 0) {
+    lines.push("_(none)_");
+  } else {
+    lines.push("| Project | Epic | Task | Poker | Time | Completed |");
+    lines.push("|---|---|---|---|---|---|");
+    for (const t of done) {
+      lines.push(
+        `| ${t.project} | ${t.epic} | ${t.task} | ${t.complexity ?? ""} | ${formatHM(
+          t.trackedMinutes
+        )} | ${dayKey(new Date(t.completedAt!))} |`
+      );
     }
   }
   lines.push("");

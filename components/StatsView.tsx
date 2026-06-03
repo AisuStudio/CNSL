@@ -1,6 +1,7 @@
 "use client";
 
 import { type Task, dayKey, minutesOnDay, formatHM } from "@/lib/mock-data";
+import { toWeeklyReview, copyText, downloadFile } from "@/lib/export";
 
 function lastNDays(n: number): string[] {
   const out: string[] = [];
@@ -80,6 +81,46 @@ export default function StatsView({ tasks }: { tasks: Task[] }) {
           </div>
         ))}
       </div>
+      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+        <button
+          type="button"
+          onClick={() => copyText(toWeeklyReview(tasks))}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "8px",
+            border: "none",
+            background: "var(--color-accent)",
+            color: "#e9e7df",
+            fontWeight: 700,
+            fontSize: "var(--text-base)",
+            cursor: "pointer",
+          }}
+        >
+          Copy weekly review (MD)
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            downloadFile(
+              `cnsl-weekly-${dayKey()}.md`,
+              toWeeklyReview(tasks),
+              "text/markdown"
+            )
+          }
+          style={{
+            padding: "8px 14px",
+            borderRadius: "8px",
+            border: "1px solid var(--color-border)",
+            background: "transparent",
+            color: "var(--color-text-primary)",
+            fontSize: "var(--text-base)",
+            cursor: "pointer",
+          }}
+        >
+          Download .md
+        </button>
+      </div>
+
       <p
         style={{
           color: "var(--color-text-muted)",
