@@ -326,6 +326,18 @@ export default function Home() {
     renameField("project", from, to);
   const renameEpic = (from: string, to: string) => renameField("epic", from, to);
 
+  // Project bar colours (#18) — override layer; auto = remove override.
+  function setProjectColor(name: string, color: string) {
+    setProjectColors((prev) => ({ ...prev, [name]: color }));
+  }
+  function resetProjectColor(name: string) {
+    setProjectColors((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
+
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
   function exportSuffix(project?: string) {
     const day = new Date().toISOString().slice(0, 10);
@@ -548,6 +560,9 @@ export default function Home() {
           tasks={tasks}
           onRenameProject={renameProject}
           onRenameEpic={renameEpic}
+          projectColors={projectColors}
+          onSetProjectColor={setProjectColor}
+          onResetProjectColor={resetProjectColor}
           onClose={() => setShowSettings(false)}
         />
       )}
