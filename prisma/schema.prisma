@@ -1,0 +1,203 @@
+// CNSL — Phase 2 schema (NOT wired up yet; planning/start artifact).
+// v1 foundation only; "later" tables are commented at the bottom.
+// See data/PHASE2-MODEL.md for the full model & roadmap.
+//
+// To use later:
+//   1) create a Supabase project, set DATABASE_URL / DIRECT_URL
+//   2) npm i -D prisma && npm i @prisma/client
+//   3) npx prisma migrate dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")     // pooled (PgBouncer) for the app
+  directUrl = env("DIRECT_URL")       // direct connection for migrations
+}
+
+// ─── Enums ──────────────────────────────────────────────
+enum Role {
+  owner
+  editor
+  viewer
+}
+
+enum BoardKind {
+  tracker
+  list
+  sport
+  doc
+  calendar
+  chat
+}
+
+enum Urgency {
+  today
+  this_week
+  later
+  unsorted
+}
+
+enum Status {
+  open
+  in_progress
+  review_input
+  done
+  canceled
+}
+
+// ─── Core skeleton ──────────────────────────────────────
+
+/// Mirror of Supabase auth.users (id == auth.uid()).
+model Profile {
+  id          String        @id @db.Uuid
+  displayName String?
+  createdAt   DateTime      @default(now())
+
+  ownedBoards Board[]       @relation("BoardOwner")
+  memberships BoardMember[]
+  tasks       Task[]        @relation("TaskCreatedBy")
+  timeEntries TimeEntry[]
+  logEntries  LogEntry[]
+}
+
+/// A container / workspace / list. `kind` decides what content hangs off it.
+model Board {
+  id         String        @id @default(uuid())
+  ownerId    String        @db.Uuid
+  owner      Profile       @relation("BoardOwner", fields: [ownerId], references: [id])
+  kind       BoardKind     @default(tracker)
+  name       String
+  color      String?
+  createdAt  DateTime      @default(now())
+  archivedAt DateTime?
+
+  members    BoardMember[]
+  tasks      Task[]
+}
+
+/// Who may access a board (= sharing). Role gates read/write.
+model BoardMember {
+  id        String   @id @default(uuid())
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @default(viewer)
+  createdAt DateTime @default(now())
+
+  @@unique([boardId, userId])
+}
+
+// ─── Content: Tracker (today's model) ───────────────────
+
+model Task {
+  id             String      @id @default(uuid())
+  boardId        String
+  board          Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  number         Int
+  project        String      @default("")
+  epic           String      @default("")
+  title          String      @default("") // the "task" text
+  description    String      @default("")
+  urgency        Urgency     @default(unsorted)
+  status         Status      @default(open)
+  complexity     Int? // poker
+  position       Float? // manual ordering
+  trackedMinutes Int         @default(0) // cached total; per-day in TimeEntry
+  archived       Boolean     @default(false)
+  createdById    String?     @db.Uuid
+  createdBy      Profile?    @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime    @default(now())
+  completedAt    DateTime?
+
+  timeEntries    TimeEntry[]
+
+  @@index([boardId])
+}
+
+// ─── Cross-cutting ──────────────────────────────────────
+
+/// Per-day tracked minutes (replaces the Phase-1 dailyMinutes map).
+model TimeEntry {
+  id      String   @id @default(uuid())
+  taskId  String
+  task    Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId  String   @db.Uuid
+  user    Profile  @relation(fields: [userId], references: [id])
+  day     DateTime @db.Date
+  minutes Int      @default(0)
+
+  @@unique([taskId, userId, day])
+}
+
+/// The quick-logger inbox (per user).
+model LogEntry {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  ts        DateTime @default(now())
+  processed Boolean  @default(false)
+  taskId    String?
+}
+
+// ─── Later (uncomment when building each tool) ──────────
+//
+// model Invite {
+//   id         String   @id @default(uuid())
+//   boardId    String
+//   email      String?
+//   token      String   @unique
+//   role       Role     @default(viewer)
+//   expiresAt  DateTime?
+//   acceptedBy String?  @db.Uuid
+//   createdAt  DateTime @default(now())
+// }
+//
+// model ListItem {      // kind='list' — shopping lists (#148)
+//   id        String   @id @default(uuid())
+//   boardId   String
+//   text      String
+//   checked   Boolean  @default(false)
+//   position  Float?
+//   createdAt DateTime @default(now())
+// }
+//
+// model Event {         // kind='calendar' (#142)
+//   id        String   @id @default(uuid())
+//   boardId   String
+//   title     String
+//   startsAt  DateTime
+//   endsAt    DateTime?
+//   allDay    Boolean  @default(false)
+//   createdAt DateTime @default(now())
+// }
+//
+// model Doc {           // kind='doc' (#143/#11)
+//   id        String   @id @default(uuid())
+//   boardId   String
+//   title     String
+//   body      String   @default("")
+//   updatedAt DateTime @updatedAt
+// }
+//
+// model Message {       // chat on a board (Supabase Realtime)
+//   id        String   @id @default(uuid())
+//   boardId   String
+//   userId    String   @db.Uuid
+//   body      String
+//   replyTo   String?
+//   createdAt DateTime @default(now())
+// }
+//
+// model Link {          // connect anything to anything (task↔event, task↔doc)
+//   id        String   @id @default(uuid())
+//   fromType  String
+//   fromId    String
+//   toType    String
+//   toId      String
+//   createdAt DateTime @default(now())
+// }

@@ -54,3 +54,7 @@ The workflow builds with:
 Backend + Strato hosting (Prisma/Postgres), User/Login, Share Board, Admin,
 offline sync, a Confluence-style doc editor. The same export format feeds an
 MCP server later for live Claude access. The live board (this app) tracks it.
+
+Full Phase-2 data model & roadmap (multi-tenant boards, sharing, tools, PWA):
+[`data/PHASE2-MODEL.md`](./data/PHASE2-MODEL.md). Starter schema:
+[`prisma/schema.prisma`](./prisma/schema.prisma).
