@@ -312,6 +312,20 @@ export default function Home() {
     );
   }
 
+  // Settings → Manage Projects & Epics (#146). Rename also serves as merge:
+  // renaming A to an existing name B unifies both groups. Case-only changes
+  // (infra → Infra) are normalisation; merging different names is cleanup.
+  function renameField(field: "project" | "epic", from: string, to: string) {
+    const next = to.trim();
+    if (next === from) return;
+    setTasks((prev) =>
+      prev.map((t) => (t[field] === from ? { ...t, [field]: next } : t))
+    );
+  }
+  const renameProject = (from: string, to: string) =>
+    renameField("project", from, to);
+  const renameEpic = (from: string, to: string) => renameField("epic", from, to);
+
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
   function exportSuffix(project?: string) {
     const day = new Date().toISOString().slice(0, 10);
@@ -529,7 +543,14 @@ export default function Home() {
       )}
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsModal
+          tasks={tasks}
+          onRenameProject={renameProject}
+          onRenameEpic={renameEpic}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   );
 }
