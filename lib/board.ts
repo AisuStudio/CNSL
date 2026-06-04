@@ -14,23 +14,27 @@ export async function ensureUserBoard(
     create: { id: userId, displayName: email ?? null },
   });
 
-  const existing = await prisma.board.findFirst({
+  let board = await prisma.board.findFirst({
     where: { ownerId: userId },
     orderBy: { createdAt: "asc" },
   });
-  if (existing) return existing.id;
+  if (!board) {
+    board = await prisma.board.create({
+      data: { ownerId: userId, kind: "tracker", name: "My Board" },
+    });
+  }
 
-  const board = await prisma.board.create({
-    data: { ownerId: userId, kind: "tracker", name: "My Board" },
-  });
-
-  // Seed the new board once from the CNSL roadmap.
-  await prisma.task.createMany({
-    data: initialTasks.map((t) => ({
-      id: t.id,
-      ...taskToDb(t, board.id, userId),
-    })),
-  });
+  // Seed the roadmap when the board is empty — covers a fresh board AND
+  // self-heals a board that was wiped (e.g. an empty-snapshot overwrite).
+  const count = await prisma.task.count({ where: { boardId: board.id } });
+  if (count === 0) {
+    await prisma.task.createMany({
+      data: initialTasks.map((t) => ({
+        id: t.id,
+        ...taskToDb(t, board!.id, userId),
+      })),
+    });
+  }
 
   return board.id;
 }

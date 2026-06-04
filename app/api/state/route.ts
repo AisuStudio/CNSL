@@ -55,10 +55,14 @@ export async function POST(req: NextRequest) {
 
   await prisma.$transaction(
     async (tx) => {
+      // Safety: never wipe a board with an empty snapshot. A failed/empty load
+      // must not be able to delete everything (the empty-overwrite data loss).
       const taskIds = tasks.map((t) => t.id);
-      await tx.task.deleteMany({
-        where: { boardId, id: { notIn: taskIds.length ? taskIds : ["__none__"] } },
-      });
+      if (taskIds.length > 0) {
+        await tx.task.deleteMany({
+          where: { boardId, id: { notIn: taskIds } },
+        });
+      }
       for (const t of tasks) {
         const data = taskToDb(t, boardId, user.id);
         await tx.task.upsert({
@@ -72,12 +76,11 @@ export async function POST(req: NextRequest) {
       }
 
       const logIds = log.map((l) => l.id);
-      await tx.logEntry.deleteMany({
-        where: {
-          userId: user.id,
-          id: { notIn: logIds.length ? logIds : ["__none__"] },
-        },
-      });
+      if (logIds.length > 0) {
+        await tx.logEntry.deleteMany({
+          where: { userId: user.id, id: { notIn: logIds } },
+        });
+      }
       for (const l of log) {
         const data = logToDb(l, user.id);
         await tx.logEntry.upsert({

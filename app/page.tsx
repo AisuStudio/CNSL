@@ -45,6 +45,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -76,7 +77,9 @@ export default function Home() {
           if (data.projectColors) setProjectColors(data.projectColors);
           setHydrated(true);
         })
-        .catch(() => setHydrated(true));
+        // On failure DO NOT hydrate — keeps the save effect off so an empty
+        // board can never overwrite real data in the DB (data-loss guard).
+        .catch(() => setLoadError(true));
       return;
     }
 
@@ -486,6 +489,48 @@ export default function Home() {
       prev.map((t) =>
         !t.archived && t.status === "done" ? { ...t, archived: true } : t
       )
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div
+        style={{
+          minHeight: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "16px",
+          padding: "20px",
+          textAlign: "center",
+        }}
+      >
+        <span style={{ color: "var(--color-text-primary)", fontSize: "var(--text-base)", fontWeight: 700 }}>
+          Couldn&apos;t load your board.
+        </span>
+        <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", maxWidth: "320px", lineHeight: 1.5 }}>
+          Your data is safe in the database — we just couldn&apos;t reach it, and
+          nothing was changed. Check your connection and try again.
+        </span>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          style={{
+            height: "40px",
+            padding: "0 18px",
+            borderRadius: "var(--radius-input)",
+            border: "none",
+            background: "var(--color-accent)",
+            color: "var(--color-text-primary)",
+            fontWeight: 700,
+            fontSize: "var(--text-base)",
+            cursor: "pointer",
+          }}
+        >
+          Reload
+        </button>
+      </div>
     );
   }
 
