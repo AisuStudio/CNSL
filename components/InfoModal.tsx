@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import CnslLogo from "./CnslLogo";
 
-const CARD_BG = "#e9e7df";
-const INK = "#212126";
-const C1 = "#c1bfb9";
+const INK = "var(--color-card-ink)";
 
 function CloseIcon() {
   return (
@@ -35,17 +33,12 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
+      className="cnsl-overlay"
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(var(--overlay-blur))",
-        WebkitBackdropFilter: "blur(var(--overlay-blur))",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px",
+        padding: "var(--space-5)",
       }}
     >
       <div
@@ -55,15 +48,15 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
           maxWidth: "94vw",
           maxHeight: "92vh",
           overflowY: "auto",
-          background: CARD_BG,
-          borderRadius: "8px",
+          background: "var(--color-card-bg)",
+          borderRadius: "var(--radius-container)",
           color: INK,
           fontFamily: "var(--font-family)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-          padding: "20px",
+          boxShadow: "var(--shadow-modal)",
+          padding: "var(--space-5)",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "var(--space-4)",
         }}
       >
         {/* Title row */}
@@ -87,7 +80,7 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div style={{ height: "1px", background: C1 }} />
+        <div className="cnsl-divider" />
 
         {/* Body */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

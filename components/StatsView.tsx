@@ -93,7 +93,7 @@ export default function StatsView({ tasks }: { tasks: Task[] }) {
             borderRadius: "8px",
             border: "none",
             background: "var(--color-accent)",
-            color: "#e9e7df",
+            color: "var(--color-text-primary)",
             fontWeight: 700,
             fontSize: "var(--text-base)",
             cursor: "pointer",

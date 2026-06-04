@@ -14,10 +14,10 @@ import {
 } from "@/lib/mock-data";
 import SidePanel from "./SidePanel";
 
-/* ── Light-card palette (matches SidePanel) ── */
-const INK = "#212126";
-const META = "#323238";
-const C1 = "#c1bfb9";
+/* ── Light-card palette → design tokens (see tokens.css) ── */
+const INK = "var(--color-card-ink)";
+const META = "var(--color-card-meta)";
+const C1 = "var(--color-card-border)";
 const ACCENT = "var(--color-accent)";
 
 /* Parse "H:MM" / "HH:MM" (or a plain minute count) into minutes (#133). */
@@ -348,7 +348,7 @@ export default function EditTaskModal({
                 width: "86.9px",
                 height: "45.5px",
                 background: ACCENT,
-                color: "#e9e7df",
+                color: "var(--color-text-primary)",
                 border: "none",
                 borderRadius: "11.4px",
                 fontWeight: 700,

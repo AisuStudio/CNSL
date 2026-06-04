@@ -16,9 +16,9 @@ type ColorCfg = {
   onReset: (name: string) => void;
 };
 
-const INK = "#212126";
-const C1 = "#c1bfb9";
-const MUTED = "#5a5862";
+const INK = "var(--color-card-ink)";
+const C1 = "var(--color-card-border)";
+const MUTED = "var(--color-card-muted)";
 
 type NameCount = { name: string; count: number };
 
@@ -106,7 +106,7 @@ function Section({
               }
               style={{
                 background: "var(--color-accent)",
-                color: "#e9e7df",
+                color: "var(--color-text-primary)",
                 border: "none",
                 borderRadius: "6px",
                 padding: "4px 10px",
@@ -287,7 +287,7 @@ export default function SettingsModal({
           onReset: onResetProjectColor,
         }}
       />
-      <div style={{ height: "1px", background: C1 }} />
+      <div className="cnsl-divider" />
       <Section title="Epics" items={epics} onRename={onRenameEpic} />
     </SidePanel>
   );

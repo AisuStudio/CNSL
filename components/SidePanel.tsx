@@ -2,10 +2,6 @@
 
 import { useEffect } from "react";
 
-const CARD_BG = "#e9e7df";
-const INK = "#212126";
-const C1 = "#c1bfb9";
-
 function CloseIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
@@ -42,13 +38,8 @@ export default function SidePanel({
   return (
     <div
       onClick={onClose}
+      className="cnsl-overlay"
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        background: "var(--overlay-bg)",
-        backdropFilter: "blur(var(--overlay-blur))",
-        WebkitBackdropFilter: "blur(var(--overlay-blur))",
         display: "flex",
         justifyContent: "flex-end",
         animation: "cnsl-fade-in 120ms ease",
@@ -62,14 +53,14 @@ export default function SidePanel({
           maxWidth: "100vw",
           height: "100%",
           overflowY: "auto",
-          background: CARD_BG,
-          color: INK,
+          background: "var(--color-card-bg)",
+          color: "var(--color-card-ink)",
           fontFamily: "var(--font-family)",
-          boxShadow: "-20px 0 60px rgba(0,0,0,0.45)",
-          padding: "20px",
+          boxShadow: "var(--shadow-panel)",
+          padding: "var(--space-5)",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "var(--space-4)",
           animation: "cnsl-slide-in-right 180ms ease",
         }}
       >
@@ -93,7 +84,7 @@ export default function SidePanel({
           </button>
         </div>
 
-        <div style={{ height: "1px", background: C1 }} />
+        <div className="cnsl-divider" />
 
         {children}
       </div>

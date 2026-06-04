@@ -48,8 +48,8 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
           height: "45.5px",
           background: "var(--color-text-primary)", // #e9e7df
           color: "var(--color-text-on-light)",
-          border: "1.8px solid #c1bfb9",
-          borderRadius: "8px",
+          border: "1.8px solid var(--color-card-border)",
+          borderRadius: "var(--radius-container)",
           paddingLeft: "18px",
           paddingRight: "16px",
           fontSize: "var(--text-base)",
