@@ -77,8 +77,9 @@ time_entry     per-day tracked minutes (replaces the dailyMinutes map)
   id, task_id → task, user_id → profile, day (date), minutes
   → Stats / weekly review aggregate over this, per day & per person
 
-log_entry      the quick-logger inbox (per user)
-  id, user_id, text, ts, processed, task_id?
+log_entry      the quick-logger inbox (per user — spans ALL tools)
+  id, user_id, text, ts, processed,
+  target_type?, target_id?   (what it was triaged into: task | note | event | …)
 
 message        chat on a board (#client comms) — Supabase Realtime pushes live
   id, board_id → board, user_id → profile, body, reply_to?, created_at
@@ -91,6 +92,29 @@ comment        threaded note on a board/task
 link           connect anything to anything (task↔event, task↔doc, …)
   id, from_type, from_id, to_type, to_id, created_by, created_at
 ```
+
+## Universal capture & triage (logger everywhere → becomes anything)
+
+The quick-logger is CNSL's signature: capture first, sort later. Architecturally
+it's a **single, user-global inbox** (`log_entry` is per-user, NOT tied to a
+board/tool), so:
+
+- **Logger everywhere:** the same footer input lives in every tool (Tracker,
+  Notes, Calendar, Lists). Wherever you are, a blurp lands in the *same* inbox —
+  no decision about "where does this go" at capture time.
+- **Triage = decide per entry what it becomes:** opening the Log shows each entry
+  with an action menu — **→ Task · → Note · → Event · → List item · → dismiss**.
+  Choosing one creates that content in the right tool, sets `processed`, and
+  records what it became via `target_type` + `target_id` (or a `link` row). The
+  entry stays (append-only) as history.
+
+This is a **generalisation of today's behaviour**, not a refactor: `→ Task`
+already works (`createTaskFromEntry` in `app/page.tsx`). When each new tool
+lands, it just registers as another triage target. No change to the foundation.
+
+- **v1 (now):** logger in the Tracker, `→ Task` only.
+- **As tools land:** logger rendered in each tool + the triage menu gains targets
+  (`note`, `event`, `list_item`, …), backed by `target_type`/`target_id`.
 
 ## Access model (the key to sharing)
 
