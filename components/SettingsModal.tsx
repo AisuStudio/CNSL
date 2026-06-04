@@ -11,6 +11,8 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 // Account: signed-in email + sign out (hidden in the login-less demo).
 function AccountSection() {
   const [email, setEmail] = useState<string | null>(null);
+  const [pw, setPw] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth
@@ -18,11 +20,27 @@ function AccountSection() {
       .then(({ data }) => setEmail(data.user?.email ?? null))
       .catch(() => {});
   }, []);
+  async function setPassword() {
+    if (pw.length < 6) {
+      setMsg("Min. 6 characters.");
+      return;
+    }
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.updateUser({ password: pw });
+    setMsg(error ? error.message : "Password set ✓ — use it to sign in anywhere.");
+    if (!error) setPw("");
+  }
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+  const btn: React.CSSProperties = {
+    height: "30px",
+    padding: "0 12px",
+    fontSize: "var(--text-modal)",
+    flexShrink: 0,
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       <div style={{ fontSize: "var(--text-sm)", fontWeight: 700 }}>Account</div>
@@ -30,15 +48,27 @@ function AccountSection() {
         <span style={{ flex: 1, color: "var(--color-card-muted)", fontSize: "var(--text-modal)" }}>
           {email ?? "…"}
         </span>
-        <button
-          type="button"
-          onClick={signOut}
-          className="cnsl-btn-ghost"
-          style={{ height: "30px", padding: "0 12px", fontSize: "var(--text-modal)" }}
-        >
+        <button type="button" onClick={signOut} className="cnsl-btn-ghost" style={btn}>
           Sign out
         </button>
       </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input
+          type="password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          placeholder="Set a password"
+          autoComplete="new-password"
+          className="cnsl-input"
+          style={{ height: "30px" }}
+        />
+        <button type="button" onClick={setPassword} className="cnsl-btn-ghost" style={btn}>
+          Set
+        </button>
+      </div>
+      {msg && (
+        <span style={{ fontSize: "11px", color: "var(--color-card-muted)" }}>{msg}</span>
+      )}
     </div>
   );
 }
