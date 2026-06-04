@@ -1,9 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SettingsIcon } from "./icons";
 import SidePanel from "./SidePanel";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Task } from "@/lib/mock-data";
+
+const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+
+// Account: signed-in email + sign out (hidden in the login-less demo).
+function AccountSection() {
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth
+      .getUser()
+      .then(({ data }) => setEmail(data.user?.email ?? null))
+      .catch(() => {});
+  }, []);
+  async function signOut() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div style={{ fontSize: "var(--text-sm)", fontWeight: 700 }}>Account</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ flex: 1, color: "var(--color-card-muted)", fontSize: "var(--text-modal)" }}>
+          {email ?? "…"}
+        </span>
+        <button
+          type="button"
+          onClick={signOut}
+          className="cnsl-btn-ghost"
+          style={{ height: "30px", padding: "0 12px", fontSize: "var(--text-modal)" }}
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
 import {
   PROJECT_PALETTE,
   getProjectColor,
@@ -271,6 +309,13 @@ export default function SettingsModal({
       width={520}
       onClose={onClose}
     >
+      {!DEMO && (
+        <>
+          <AccountSection />
+          <div className="cnsl-divider" />
+        </>
+      )}
+
       <p style={{ margin: 0, fontSize: "12px", color: MUTED, lineHeight: 1.5 }}>
         Rename to tidy up, or pick &quot;Merge into…&quot; to fold one name into
         another. Renaming to an existing name merges them. Tap a project&apos;s

@@ -34,7 +34,7 @@ const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
 export default function Home() {
   const [view, setView] = useState<View>("backlog");
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [sort, setSort] = useState<Sort>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
@@ -55,6 +55,32 @@ export default function Home() {
   useEffect(() => {
     if (didLoad.current) return;
     didLoad.current = true;
+
+    // Catch up running timers across the load gap (capped); used by both paths.
+    const catchUp = (arr: Task[]) => {
+      const nowMs = Date.now();
+      return arr.map((t) =>
+        t.isTracking && !t.trackingStartedAt
+          ? { ...t, trackingStartedAt: new Date(nowMs).toISOString() }
+          : accrueTracking(t, nowMs)
+      );
+    };
+
+    // Real app: load the board from the DB-backed API (auth via middleware).
+    if (!DEMO) {
+      fetch("/api/state")
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data) => {
+          setTasks(catchUp(data.tasks ?? []));
+          setLog(data.log ?? []);
+          if (data.projectColors) setProjectColors(data.projectColors);
+          setHydrated(true);
+        })
+        .catch(() => setHydrated(true));
+      return;
+    }
+
+    // Demo (GitHub Pages): localStorage + roadmap seed merge.
     const saved = loadState();
     // Data-safety guard: only seed when there is genuinely no prior board.
     // If a key existed but failed to load (corrupt — loadState has backed it up
@@ -145,24 +171,26 @@ export default function Home() {
       window.localStorage.setItem(REPAIR_KEY, "1");
     }
 
-    // Catch up timers across the reload gap (capped): a task left running
-    // accrues the elapsed time and re-anchors. Migrate older running tasks that
-    // predate trackingStartedAt by anchoring them from now.
-    const nowMs = Date.now();
-    nextTasks = nextTasks.map((t) =>
-      t.isTracking && !t.trackingStartedAt
-        ? { ...t, trackingStartedAt: new Date(nowMs).toISOString() }
-        : accrueTracking(t, nowMs)
-    );
-
-    setTasks(nextTasks);
+    setTasks(catchUp(nextTasks));
     setHydrated(true);
   }, []);
 
-  // Persist whenever tasks/log/colors change — but only after hydration, and
-  // using STATE `hydrated` so this effect never fires with stale initial data.
+  // Persist on change (post-hydration). Demo → localStorage; real → debounced
+  // snapshot POST to the API.
   useEffect(() => {
-    if (hydrated) saveState({ tasks, log, projectColors });
+    if (!hydrated) return;
+    if (DEMO) {
+      saveState({ tasks, log, projectColors });
+      return;
+    }
+    const id = setTimeout(() => {
+      fetch("/api/state", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tasks, log, projectColors }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(id);
   }, [tasks, log, projectColors, hydrated]);
 
   // Quick-adjust: patch a single field of one task.

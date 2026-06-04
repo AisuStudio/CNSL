@@ -68,11 +68,12 @@ model Board {
   id         String        @id @default(uuid())
   ownerId    String        @db.Uuid
   owner      Profile       @relation("BoardOwner", fields: [ownerId], references: [id])
-  kind       BoardKind     @default(tracker)
-  name       String
-  color      String?
-  createdAt  DateTime      @default(now())
-  archivedAt DateTime?
+  kind          BoardKind  @default(tracker)
+  name          String
+  color         String?
+  projectColors Json?      // per-project bar colour overrides (#18)
+  createdAt     DateTime   @default(now())
+  archivedAt    DateTime?
 
   members    BoardMember[]
   tasks      Task[]
@@ -139,10 +140,11 @@ model LogEntry {
   id        String   @id @default(uuid())
   userId    String   @db.Uuid
   user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  text      String
-  ts        DateTime @default(now())
-  processed Boolean  @default(false)
-  taskId    String?
+  text       String
+  ts         DateTime @default(now())
+  processed  Boolean  @default(false)
+  taskId     String?
+  taskNumber Int?
 }
 
 // ─── Later (uncomment when building each tool) ──────────
