@@ -56,25 +56,23 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         }}
       />
 
-      {/* Log button — text + icon */}
+      {/* Log button — icon only */}
       <button
         type="button"
         onClick={submit}
+        aria-label="Log"
+        title="Log"
         className="flex items-center justify-center"
         style={{
-          gap: "10px",
+          width: "45.5px",
           height: "45.5px",
-          padding: "0 22px",
           background: "var(--color-accent)",
           color: "var(--color-text-primary)",
           borderRadius: "8px",
-          fontWeight: 700,
-          fontSize: "var(--text-base)",
           cursor: "pointer",
           flexShrink: 0,
         }}
       >
-        Log
         <LogIcon color="var(--color-text-primary)" />
       </button>
 
