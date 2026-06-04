@@ -106,7 +106,8 @@ model Task {
   status         Status      @default(open)
   complexity     Int? // poker
   position       Float? // manual ordering
-  trackedMinutes Int         @default(0) // cached total; per-day in TimeEntry
+  trackedMinutes   Int       @default(0) // cached total; per-day in TimeEntry
+  trackingStartedAt DateTime? // anchor while the timer runs (timestamp-based)
   archived       Boolean     @default(false)
   createdById    String?     @db.Uuid
   createdBy      Profile?    @relation("TaskCreatedBy", fields: [createdById], references: [id])

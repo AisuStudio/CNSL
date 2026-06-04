@@ -233,6 +233,7 @@ export default function EditTaskModal({
                 }}
               />
             </span>
+            <span style={{ opacity: 0.7 }}>(edits count toward today)</span>
             {task.completedAt && (
               <span>
                 <b>Completed:</b> {formatDate(task.completedAt)}

@@ -19,6 +19,7 @@ import {
   initialTasks,
   taskSortValue,
   dayKey,
+  accrueTracking,
   type Task,
   type LogEntry,
 } from "@/lib/mock-data";
@@ -55,7 +56,14 @@ export default function Home() {
     if (didLoad.current) return;
     didLoad.current = true;
     const saved = loadState();
-    let nextTasks = saved ? saved.tasks : initialTasks;
+    // Data-safety guard: only seed when there is genuinely no prior board.
+    // If a key existed but failed to load (corrupt — loadState has backed it up
+    // to cnsl.v1.corrupt.*), start EMPTY rather than silently replacing real
+    // data with the seed. Prevents the "board reset to seed" data loss.
+    const hadKey =
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("cnsl.v1") !== null;
+    let nextTasks = saved ? saved.tasks : hadKey ? [] : initialTasks;
     if (saved) setLog(saved.log);
     if (saved?.projectColors) setProjectColors(saved.projectColors);
 
@@ -136,6 +144,16 @@ export default function Home() {
       if (missing.length) nextTasks = [...nextTasks, ...missing];
       window.localStorage.setItem(REPAIR_KEY, "1");
     }
+
+    // Catch up timers across the reload gap (capped): a task left running
+    // accrues the elapsed time and re-anchors. Migrate older running tasks that
+    // predate trackingStartedAt by anchoring them from now.
+    const nowMs = Date.now();
+    nextTasks = nextTasks.map((t) =>
+      t.isTracking && !t.trackingStartedAt
+        ? { ...t, trackingStartedAt: new Date(nowMs).toISOString() }
+        : accrueTracking(t, nowMs)
+    );
 
     setTasks(nextTasks);
     setHydrated(true);
@@ -224,48 +242,40 @@ export default function Home() {
     setIsNewTask(true);
   }
 
-  // Play/Pause: start this task's timer; only one runs at a time.
-  // Starting a timer also flips the task to "in_progress" (#115).
+  // Play/Pause. Timers run in parallel (#130); starting also flips the task to
+  // in_progress (#115) + today (#137). Time is timestamp-based: start sets the
+  // anchor, stop does a final catch-up and clears it.
   function toggleTimer(id: string) {
+    const nowMs = Date.now();
     setTasks((prev) =>
       prev.map((t) => {
-        // Timers run in parallel (#130) — leave other tasks untouched.
         if (t.id !== id) return t;
-        const starting = !t.isTracking;
-        return {
-          ...t,
-          isTracking: starting,
-          status: starting ? "in_progress" : t.status,
-          // starting → it's what you're on today (#137)
-          urgency: starting ? "today" : t.urgency,
-          // starting → in_progress (not done), so clear any completedAt
-          completedAt: starting ? undefined : t.completedAt,
-        };
+        if (!t.isTracking) {
+          return {
+            ...t,
+            isTracking: true,
+            trackingStartedAt: new Date(nowMs).toISOString(),
+            status: "in_progress",
+            urgency: "today",
+            completedAt: undefined,
+          };
+        }
+        // stopping → commit the final elapsed slice, then drop the anchor
+        const accrued = accrueTracking(t, nowMs);
+        return { ...accrued, isTracking: false, trackingStartedAt: undefined };
       })
     );
   }
 
-  // While a timer runs, accrue one minute every 60s.
+  // While a timer runs, commit elapsed wall-clock time every 30s (timestamp-
+  // based — robust to reloads / sleep / background; see accrueTracking).
   const anyTracking = tasks.some((t) => t.isTracking);
   useEffect(() => {
     if (!anyTracking) return;
     const id = setInterval(() => {
-      const key = dayKey();
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.isTracking
-            ? {
-                ...t,
-                trackedMinutes: t.trackedMinutes + 1,
-                dailyMinutes: {
-                  ...t.dailyMinutes,
-                  [key]: (t.dailyMinutes?.[key] ?? 0) + 1,
-                },
-              }
-            : t
-        )
-      );
-    }, 60_000);
+      const now = Date.now();
+      setTasks((prev) => prev.map((t) => accrueTracking(t, now)));
+    }, 30_000);
     return () => clearInterval(id);
   }, [anyTracking]);
 

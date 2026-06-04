@@ -28,13 +28,26 @@ function migrateTask(raw: Record<string, unknown>): Task {
   return raw as unknown as Task;
 }
 
+// Preserve an unreadable board before we ever risk replacing it, so a load
+// failure can never silently destroy data (the catastrophic seed-overwrite).
+function backupCorrupt(raw: string): void {
+  try {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    window.localStorage.setItem(`${KEY}.corrupt.${stamp}`, raw);
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
 export function loadState(): PersistedState | null {
   if (typeof window === "undefined") return null;
+  let raw: string | null = null;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.tasks) || !Array.isArray(parsed.log)) {
+      backupCorrupt(raw);
       return null;
     }
     return {
@@ -43,6 +56,7 @@ export function loadState(): PersistedState | null {
       projectColors: parsed.projectColors as ProjectColors | undefined,
     };
   } catch {
+    if (raw) backupCorrupt(raw);
     return null;
   }
 }
