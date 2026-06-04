@@ -5,60 +5,79 @@
    ─────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces */
-  --color-bg: #18171e;
-  --color-bg-deep: #0f0e14; /* darker inset — header buttons / active view */
-  --color-surface: #212126;
-  --color-border: #323238;
-  --color-border-subtle: #93928e;
+  /* ── App surfaces (dark theme) ───────────────────────── */
+  --color-bg:           #18171e;
+  --color-bg-deep:      #0f0e14;  /* header buttons / active states */
+  --color-surface:      #212126;  /* sidebar, table header */
+  --color-border:       #323238;
+  --color-border-subtle:#93928e;
 
-  /* Text */
+  /* ── App text (dark theme) ───────────────────────────── */
   --color-text-primary: #e9e7df;
-  --color-text-muted: #93928e;
-  --color-text-on-light: #1f1934;
-  --color-text-secondary: #c1bfb9; /* NEW — modal labels / secondary text */
+  --color-text-muted:   #93928e;
+  --color-text-on-light:#1f1934;  /* text on light bg (footer bar) */
+  --color-text-secondary:#c1bfb9; /* secondary labels */
 
-  /* Accent */
-  --color-accent: #5100ff;
-  --color-running: #3fae6b; /* active timer — green */
+  /* ── Accent & status ─────────────────────────────────── */
+  --color-accent:       #5100ff;
+  --color-running:      #3fae6b;  /* active timer — green */
 
-  /* Modal overlay (designer spec) */
-  --overlay-bg: rgba(33, 33, 38, 0.1); /* #212126 @ 10% */
+  /* ── Light-card palette (SidePanel, modals, Edit card) ── */
+  /* These appear whenever we render the light-bg panel/card */
+  --color-card-bg:      #e9e7df;  /* panel / modal background */
+  --color-card-ink:     #212126;  /* primary text on card */
+  --color-card-meta:    #323238;  /* meta strip text */
+  --color-card-border:  #c1bfb9;  /* input borders, dividers on card */
+  --color-card-muted:   #5a5862;  /* secondary text on card */
+
+  /* ── Overlay ─────────────────────────────────────────── */
+  --overlay-bg:   rgba(33, 33, 38, 0.1);
   --overlay-blur: 3px;
 
-  /* Typography */
-  --font-family: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+  /* ── Typography ──────────────────────────────────────── */
+  --font-family:      var(--font-public-sans), "Public Sans", system-ui, sans-serif;
   --font-family-mono: var(--font-ia-mono), "iA Writer Mono", ui-monospace, monospace;
 
-  --text-logo: 24px;        /* CNSL logo */
-  --text-base: 16px;        /* headers, body */
-  --text-sm: 14px;
-  --text-modal: 12px;       /* NEW — modal text ("12 pt") */
-  --text-xs: 10px;          /* kanban card description */
-  --text-2xs: 8px;          /* kanban card project/epic */
+  --text-logo:  24px;   /* CNSL wordmark */
+  --text-base:  16px;   /* body / headers */
+  --text-sm:    14px;
+  --text-modal: 12px;   /* modal / panel labels */
+  --text-xs:    10px;
+  --text-2xs:   8px;
 
   --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-bold: 700;
+  --weight-medium:  500;
+  --weight-bold:    700;
 
-  /* Layout (from SVG reference @ 1366×768) */
-  --row-height: 37.1px;
-  --header-height: 113.9px;
-  --header-row1-height: 76.8px;   /* logo + tabs row */
-  --footer-height: 83px;
-  --canvas-width: 1366px;
-  --sidebar-width: 60px;
+  /* ── Layout (SVG ref @ 1366×768) ─────────────────────── */
+  --row-height:          37.1px;
+  --header-height:       113.9px;
+  --header-row1-height:  76.8px;
+  --footer-height:       83px;
+  --canvas-width:        1366px;
+  --sidebar-width:       60px;
+  --panel-width:         500px;   /* right side-panel default */
 
-  /* Spacing scale */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
+  /* ── Spacing scale ───────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
 
-  /* Radii */
-  --radius-pill: 9999px;
-  --radius-button: 11.4px;
-  --radius-card: 4px;
+  /* ── Radii ───────────────────────────────────────────── */
+  --radius-pill:      9999px;
+  --radius-button:    11.4px;  /* action buttons */
+  --radius-input:     6px;     /* text inputs */
+  --radius-container: 8px;     /* panels, cards, rows */
+  --radius-small:     5px;     /* colour swatches, small chips */
+  --radius-card:      4px;     /* table cards (legacy alias) */
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-panel:  -20px 0 60px rgba(0, 0, 0, 0.45);  /* right side-panel */
+  --shadow-modal:   0 20px 60px rgba(0, 0, 0, 0.45);  /* centered modals */
+  --shadow-footer:  0 12px 32px rgba(0, 0, 0, 0.45);  /* floating footer */
 }

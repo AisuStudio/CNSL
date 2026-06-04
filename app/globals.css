@@ -4,177 +4,260 @@
 /* Fonts are loaded via next/font/local in app/layout.tsx and exposed as
    --font-public-sans / --font-ia-mono (used by the tokens above). */
 
-/* ─── Expose tokens to Tailwind utilities ──────────────────
+/* ─── Expose tokens to Tailwind utilities ───────────────────
    Lets us use classes like bg-bg, text-muted, border-border. */
 @theme inline {
-  --color-bg: var(--color-bg);
-  --color-surface: var(--color-surface);
-  --color-border: var(--color-border);
-  --color-border-subtle: var(--color-border-subtle);
-  --color-text-primary: var(--color-text-primary);
-  --color-text-muted: var(--color-text-muted);
-  --color-accent: var(--color-accent);
+  /* Dark app colours */
+  --color-bg:             var(--color-bg);
+  --color-bg-deep:        var(--color-bg-deep);
+  --color-surface:        var(--color-surface);
+  --color-border:         var(--color-border);
+  --color-border-subtle:  var(--color-border-subtle);
+  --color-text-primary:   var(--color-text-primary);
+  --color-text-muted:     var(--color-text-muted);
+  --color-accent:         var(--color-accent);
+  --color-running:        var(--color-running);
+  /* Light-card colours */
+  --color-card-bg:        var(--color-card-bg);
+  --color-card-ink:       var(--color-card-ink);
+  --color-card-border:    var(--color-card-border);
+  --color-card-muted:     var(--color-card-muted);
+  /* Fonts */
   --font-sans: var(--font-family);
   --font-mono: var(--font-family-mono);
 }
 
 /* ─── Base ──────────────────────────────────────────────── */
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
+html, body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  font-family: var(--font-family);
-  font-size: var(--text-base);
-  font-weight: var(--weight-regular);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  background:              var(--color-bg);
+  color:                   var(--color-text-primary);
+  font-family:             var(--font-family);
+  font-size:               var(--text-base);
+  font-weight:             var(--weight-regular);
+  -webkit-font-smoothing:  antialiased;
+  text-rendering:          optimizeLegibility;
 }
 
-/* Thin custom scrollbar to echo the SVG scrollbar treatment */
+/* ─── Scrollbar ──────────────────────────────────────────── */
 .cnsl-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-subtle) transparent;
 }
-.cnsl-scroll::-webkit-scrollbar {
-  width: 14px;
-}
-.cnsl-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
+.cnsl-scroll::-webkit-scrollbar       { width: 14px; }
+.cnsl-scroll::-webkit-scrollbar-track { background: transparent; }
 .cnsl-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 7px;
-  border: 4px solid transparent;
-  background-clip: content-box;
+  background:       var(--color-border);
+  border-radius:    7px;
+  border:           4px solid transparent;
+  background-clip:  content-box;
 }
 .cnsl-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-subtle);
-  background-clip: content-box;
+  background:       var(--color-border-subtle);
+  background-clip:  content-box;
 }
 
-/* ─── App shell layout ─────────────────────────────────── */
+/* ─── App shell layout ──────────────────────────────────── */
 .cnsl-app {
-  display: flex;
+  display:        flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
+  height:         100vh;
+  height:         100dvh;
+  overflow:       hidden;
 }
 
-/* Sidebar + content row, below the top bar */
 .cnsl-body {
-  display: flex;
-  flex: 1 1 auto;
+  display:    flex;
+  flex:       1 1 auto;
   min-height: 0;
 }
 
-/* Content column (right of the sidebar); anchor for the floating footer */
 .cnsl-content {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
+  position:       relative;
+  flex:           1 1 auto;
+  min-width:      0;
+  display:        flex;
   flex-direction: column;
 }
 
-/* The fixed grid templates mirror the SVG column boundaries
-   (values are proportional fr units derived from x-coordinates
-   at the 1366px reference width, so they scale fluidly). */
-/* NR · ACT · PROJECT · EPIC · TASK · STATUS · POKER · TIME (New Layout 03) */
+/* ─── Table grid (NR · ACT · PROJECT · EPIC · TASK · STATUS · POKER · TIME) */
 .grid-backlog {
-  display: grid;
-  grid-template-columns:
-    80fr 75fr 137fr 158fr 539fr 192fr 88fr 97fr;
+  display:               grid;
+  grid-template-columns: 80fr 75fr 137fr 158fr 539fr 192fr 88fr 97fr;
 }
 .grid-kanban {
-  display: grid;
-  grid-template-columns:
-    69fr 179.6fr 296.9fr 163.9fr 164fr 492.6fr;
+  display:               grid;
+  grid-template-columns: 69fr 179.6fr 296.9fr 163.9fr 164fr 492.6fr;
+}
+.cnsl-canvas { min-width: var(--canvas-width); }
+
+/* ─── Light-card / panel utility classes ────────────────────
+   Reusable for SidePanel, EditCard, Settings, InfoModal.
+   Replaces the scattered INK/C1/CARD_BG constants. */
+
+/* Overlay backdrop */
+.cnsl-overlay {
+  position:             fixed;
+  inset:                0;
+  z-index:              50;
+  background:           var(--overlay-bg);
+  backdrop-filter:      blur(var(--overlay-blur));
+  -webkit-backdrop-filter: blur(var(--overlay-blur));
 }
 
-/* Keep the table usable on smaller viewports via horizontal scroll */
-.cnsl-canvas {
-  min-width: 1100px;
+/* Text input on a light card */
+.cnsl-input {
+  background:   transparent;
+  color:        var(--color-card-ink);
+  border:       1px solid var(--color-card-border);
+  border-radius: var(--radius-input);
+  font-family:  var(--font-family);
+  font-size:    var(--text-base);
+  padding:      0 var(--space-3);
+  height:       32px;
+  outline:      none;
+  width:        100%;
+}
+.cnsl-input::placeholder { color: var(--color-card-muted); }
+
+/* Textarea on a light card */
+.cnsl-textarea {
+  display:      block;
+  width:        100%;
+  background:   transparent;
+  color:        var(--color-card-ink);
+  font-family:  var(--font-family);
+  font-size:    var(--text-base);
+  border:       none;
+  outline:      none;
+  resize:       vertical;
+  line-height:  1.4;
+  padding:      var(--space-2) var(--space-3);
 }
 
-/* ─── Interaction polish (#128): hovers, click & focus states ─── */
+/* Select (pill style) on a light card */
+.cnsl-select-pill {
+  height:        26px;
+  border-radius: var(--radius-pill);
+  background:    var(--color-card-border);
+  color:         var(--color-card-ink);
+  border:        none;
+  outline:       none;
+  font-size:     var(--text-modal);
+  font-family:   var(--font-family);
+  padding:       0 24px 0 var(--space-3);
+  cursor:        pointer;
+  appearance:    none;
+  -webkit-appearance: none;
+}
 
-/* Smooth feedback on all clickable controls */
-button,
-[role="button"],
-select,
-a {
+/* Primary action button (Save) */
+.cnsl-btn-primary {
+  background:    var(--color-accent);
+  color:         var(--color-card-bg);
+  border:        none;
+  border-radius: var(--radius-button);
+  font-weight:   var(--weight-bold);
+  font-size:     var(--text-base);
+  font-family:   var(--font-family);
+  padding:       0 var(--space-5);
+  height:        45.5px;
+  cursor:        pointer;
+  min-width:     87px;
+}
+
+/* Secondary action button (Delete, Archive, etc.) */
+.cnsl-btn-secondary {
+  background:    var(--color-card-border);
+  color:         var(--color-card-ink);
+  border:        none;
+  border-radius: var(--radius-button);
+  font-size:     var(--text-base);
+  font-family:   var(--font-family);
+  padding:       0 var(--space-4);
+  height:        45.5px;
+  cursor:        pointer;
+  min-width:     87px;
+}
+
+/* Ghost action button (Archive, Restore) */
+.cnsl-btn-ghost {
+  background:    transparent;
+  color:         var(--color-card-ink);
+  border:        1px solid var(--color-card-border);
+  border-radius: var(--radius-button);
+  font-size:     var(--text-base);
+  font-family:   var(--font-family);
+  padding:       0 var(--space-4);
+  height:        45.5px;
+  cursor:        pointer;
+}
+
+/* Divider on a light card */
+.cnsl-divider {
+  height:     1px;
+  background: var(--color-card-border);
+  flex-shrink: 0;
+}
+
+/* Meta strip (Nr / Date Created / Time Spent) */
+.cnsl-meta-strip {
+  display:       flex;
+  flex-wrap:     wrap;
+  gap:           4px var(--space-5);
+  background:    var(--color-card-border);
+  color:         var(--color-card-meta);
+  font-size:     var(--text-modal);
+  padding:       7px var(--space-3);
+  border-radius: var(--radius-input) var(--radius-input) 0 0;
+}
+
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes cnsl-slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes cnsl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Interaction polish ────────────────────────────────── */
+button, [role="button"], select, a {
   transition:
     background-color 120ms ease,
-    filter 120ms ease,
-    opacity 120ms ease,
-    transform 80ms ease;
+    filter           120ms ease,
+    opacity          120ms ease,
+    transform         80ms ease;
 }
+button:hover,      [role="button"]:hover  { filter: brightness(1.12); }
+button:active,     [role="button"]:active { filter: brightness(0.94); transform: translateY(0.5px); }
 
-/* Hover feedback on buttons (icons brighten, filled buttons lighten) */
-button:hover,
-[role="button"]:hover {
-  filter: brightness(1.12);
-}
-/* Pressed state */
-button:active,
-[role="button"]:active {
-  filter: brightness(0.94);
-  transform: translateY(0.5px);
-}
-
-/* Row hover in the data area (not the column header, which lives above main) */
 main .grid-backlog:hover,
-main .grid-kanban:hover {
-  background: rgba(233, 231, 223, 0.04);
-}
+main .grid-kanban:hover { background: rgba(233, 231, 223, 0.04); }
 
-/* Keyboard / touch focus ring for accessibility ("tab") */
 button:focus-visible,
 [role="button"]:focus-visible,
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline:        2px solid var(--color-accent);
   outline-offset: 1px;
-  border-radius: 4px;
+  border-radius:  4px;
 }
 
-/* Right side-panel (Settings, and later the edit card) */
-@keyframes cnsl-slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
-@keyframes cnsl-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* ─── Mobile (#129): responsive pass ≤768px ─────────────────────
-   Phones get a compact, no-horizontal-scroll layout:
-   - table → 4 essential columns (NR · Act · Task · Status); rest in the modal
-   - sidebar → overlay drawer instead of pushing content
-   - header → drop the icon switcher (views live in the sidebar) + workspace
-   - footer → drop the explainer, keep input + Log */
+/* ─── Mobile ≤768px ─────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* No forced wide canvas — fit the viewport */
-  .cnsl-canvas {
-    min-width: 0;
-  }
+  .cnsl-canvas { min-width: 0; }
 
-  /* Backlog/Today/Project/Archive rows + header: keep only the essentials
-     (NR · ACT · TASK · STATUS) */
   .grid-backlog {
     grid-template-columns: 34px 40px 1fr 104px;
   }
@@ -185,13 +268,6 @@ a:focus-visible {
     display: none;
   }
 
-  /* Kanban stays a board — let it scroll horizontally rather than squish */
-  .grid-kanban {
-    min-width: 720px;
-  }
-
-  /* Footer: drop the explainer so input + Log fit */
-  .cnsl-footer-explainer {
-    display: none;
-  }
+  .grid-kanban { min-width: 720px; }
+  .cnsl-footer-explainer { display: none; }
 }
