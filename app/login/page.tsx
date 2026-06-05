@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import CnslLogo from "@/components/CnslLogo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { BETA_CODE } from "@/lib/auth-config";
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [betaCode, setBetaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,8 +24,9 @@ export default function LoginPage() {
     }
   }, []);
 
-  async function signIn(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "signup") return register();
     setLoading(true);
     setError(null);
     setNote(null);
@@ -36,24 +40,34 @@ export default function LoginPage() {
     else window.location.href = "/app";
   }
 
-  // Fallback: email a magic link (works in a browser tab; for the installed
-  // PWA, set a password in Settings → Account and use that).
-  async function sendLink() {
-    if (!email.trim()) {
-      setError("Enter your email first.");
+  // Create an account with email + password, gated by the beta code. With email
+  // confirmation turned off in Supabase, signUp returns a session immediately so
+  // we go straight into the app (no confirmation link → no PKCE/cross-device
+  // breakage). If confirmation is still on, we tell the user to check their mail.
+  async function register() {
+    if (betaCode.trim() !== BETA_CODE) {
+      setError("Wrong beta code. Ask the CNSL team for the current one.");
       return;
     }
     setLoading(true);
     setError(null);
     setNote(null);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOtp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      password,
     });
     setLoading(false);
-    if (error) setError(error.message);
-    else setNote("Check your inbox — we emailed you a sign-in link.");
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    if (data.session) {
+      window.location.href = "/app";
+    } else {
+      setNote("Account created. You can sign in now with your email and password.");
+      setMode("signin");
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -80,7 +94,7 @@ export default function LoginPage() {
       }}
     >
       <form
-        onSubmit={signIn}
+        onSubmit={submit}
         style={{
           width: "360px",
           maxWidth: "94vw",
@@ -113,9 +127,20 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          autoComplete="current-password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
           style={inputStyle}
         />
+        {mode === "signup" && (
+          <input
+            type="text"
+            required
+            value={betaCode}
+            onChange={(e) => setBetaCode(e.target.value)}
+            placeholder="Beta code"
+            autoComplete="off"
+            style={inputStyle}
+          />
+        )}
         <button
           type="submit"
           disabled={loading}
@@ -131,12 +156,16 @@ export default function LoginPage() {
             opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? "…" : "Sign in"}
+          {loading ? "…" : mode === "signup" ? "Create account" : "Sign in"}
         </button>
 
         <button
           type="button"
-          onClick={sendLink}
+          onClick={() => {
+            setMode((m) => (m === "signin" ? "signup" : "signin"));
+            setError(null);
+            setNote(null);
+          }}
           disabled={loading}
           style={{
             background: "transparent",
@@ -148,7 +177,9 @@ export default function LoginPage() {
             textAlign: "center",
           }}
         >
-          New here, or no password yet? Email me a sign-in link
+          {mode === "signin"
+            ? "New here? Create an account"
+            : "Already have an account? Sign in"}
         </button>
 
         {note && (
