@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CnslLogo from "@/components/CnslLogo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -10,6 +10,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Surface the callback's failure (e.g. an expired/cross-device confirm link
+  // lands back here with ?error=auth) instead of silently showing the form.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "auth") {
+      setError(
+        "That sign-in link couldn't be verified — it may have expired or been opened in a different browser. Enter your email below to get a fresh link."
+      );
+    }
+  }, []);
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -138,7 +148,7 @@ export default function LoginPage() {
             textAlign: "center",
           }}
         >
-          No password yet? Email me a sign-in link
+          New here, or no password yet? Email me a sign-in link
         </button>
 
         {note && (

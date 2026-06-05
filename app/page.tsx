@@ -350,7 +350,7 @@ function LoginCard() {
     });
     setLoading(false);
     if (error) setError(error.message);
-    else setNote("Check your inbox — we emailed you a sign-in link.");
+    else setNote("Check your inbox — we emailed you a sign-in link. New here? It doubles as your sign-up; click it to create your account.");
   }
 
   const inputStyle: React.CSSProperties = {
@@ -465,7 +465,7 @@ function LoginCard() {
             textAlign: "center",
           }}
         >
-          No password yet? Email me a sign-in link
+          New here, or no password yet? Email me a sign-in link
         </button>
 
         {note && (
