@@ -147,6 +147,33 @@ model LogEntry {
   taskNumber Int?
 }
 
+// ─── Note Pad (board kind='doc') ────────────────────────
+
+/// Folder tree for notes. Flat in v1 (parentId null); nesting later.
+model Folder {
+  id        String   @id @default(uuid())
+  boardId   String
+  parentId  String? // → Folder.id (self-ref tree; plain column for now)
+  name      String
+  position  Float?
+  createdAt DateTime @default(now())
+
+  @@index([boardId])
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  boardId     String
+  folderId    String? // null = root
+  title       String   @default("")
+  body        String   @default("") // markdown
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([boardId])
+}
+
 // ─── Later (uncomment when building each tool) ──────────
 //
 // model Invite {
@@ -177,14 +204,6 @@ model LogEntry {
 //   endsAt    DateTime?
 //   allDay    Boolean  @default(false)
 //   createdAt DateTime @default(now())
-// }
-//
-// model Doc {           // kind='doc' (#143/#11)
-//   id        String   @id @default(uuid())
-//   boardId   String
-//   title     String
-//   body      String   @default("")
-//   updatedAt DateTime @updatedAt
 // }
 //
 // model Message {       // chat on a board (Supabase Realtime)

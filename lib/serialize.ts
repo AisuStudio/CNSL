@@ -1,10 +1,12 @@
 // Field mapping between the app model (lib/mock-data Task/LogEntry) and the
 // Prisma DB rows. Reused by the /api/state route both directions.
 import type { Task, LogEntry, Complexity } from "./mock-data";
+import type { Note } from "./notes";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
   LogEntry as DbLogEntry,
+  Note as DbNote,
 } from "@prisma/client";
 
 const VALID_POKER = [1, 2, 3, 5, 8, 13];
@@ -99,5 +101,28 @@ export function logToDb(l: LogEntry, userId: string) {
     processed: l.processed ?? false,
     taskId: l.taskId ?? null,
     taskNumber: l.taskNumber ?? null,
+  };
+}
+
+export function noteFromDb(row: DbNote): Note {
+  return {
+    id: row.id,
+    folderId: row.folderId ?? null,
+    title: row.title,
+    body: row.body,
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+export function noteToDb(n: Note, boardId: string, userId: string) {
+  return {
+    boardId,
+    folderId: n.folderId ?? null,
+    title: n.title ?? "",
+    body: n.body ?? "",
+    createdById: userId,
+    createdAt: n.createdAt ? new Date(n.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }

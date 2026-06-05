@@ -219,6 +219,50 @@ body {
   border-radius: var(--radius-input) var(--radius-input) 0 0;
 }
 
+/* ─── Note editor (TipTap / ProseMirror) ─────────────────── */
+.cnsl-prose {
+  outline: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  min-height: 320px;
+}
+.cnsl-prose:focus { outline: none; }
+.cnsl-prose h1 { font-size: 1.6em; font-weight: 700; margin: 0.6em 0 0.3em; }
+.cnsl-prose h2 { font-size: 1.3em; font-weight: 700; margin: 0.6em 0 0.3em; }
+.cnsl-prose h3 { font-size: 1.1em; font-weight: 700; margin: 0.5em 0 0.2em; }
+.cnsl-prose p { margin: 0.5em 0; }
+.cnsl-prose ul, .cnsl-prose ol { padding-left: 1.4em; margin: 0.5em 0; }
+.cnsl-prose li { margin: 0.15em 0; }
+.cnsl-prose a { color: var(--color-accent); text-decoration: underline; }
+.cnsl-prose code {
+  font-family: var(--font-family-mono);
+  background: var(--color-surface);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.cnsl-prose pre {
+  background: var(--color-surface);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.cnsl-prose pre code { background: none; padding: 0; }
+.cnsl-prose blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 12px;
+  color: var(--color-text-muted);
+  margin: 0.5em 0;
+}
+.cnsl-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 /* ─── Animations ────────────────────────────────────────── */
 @keyframes cnsl-slide-in-right {
   from { transform: translateX(100%); }

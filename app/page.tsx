@@ -15,6 +15,7 @@ import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
+import type { Note } from "@/lib/notes";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -38,6 +39,7 @@ export default function Home() {
   const [view, setView] = useState<View>("backlog");
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [sort, setSort] = useState<Sort>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
@@ -74,6 +76,7 @@ export default function Home() {
           setTasks(catchUp(data.tasks ?? []));
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
+          setNotes(data.notes ?? []);
           setHydrated(true);
         })
         // On failure DO NOT hydrate — keeps the save effect off so an empty
@@ -84,6 +87,7 @@ export default function Home() {
 
     // Demo (GitHub Pages): localStorage + roadmap seed merge.
     const saved = loadState();
+    if (saved?.notes) setNotes(saved.notes);
     // Data-safety guard: only seed when there is genuinely no prior board.
     // If a key existed but failed to load (corrupt — loadState has backed it up
     // to cnsl.v1.corrupt.*), start EMPTY rather than silently replacing real
@@ -182,18 +186,18 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated) return;
     if (DEMO) {
-      saveState({ tasks, log, projectColors });
+      saveState({ tasks, log, projectColors, notes });
       return;
     }
     const id = setTimeout(() => {
       fetch("/api/state", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tasks, log, projectColors }),
+        body: JSON.stringify({ tasks, log, projectColors, notes }),
       }).catch(() => {});
     }, 1500);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, hydrated]);
+  }, [tasks, log, projectColors, notes, hydrated]);
 
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123).
@@ -376,6 +380,31 @@ export default function Home() {
       delete next[name];
       return next;
     });
+  }
+
+  // ─── Note Pad ───────────────────────────────────────────
+  function createNote(): string {
+    const now = new Date().toISOString();
+    const note: Note = {
+      id: newId("note"),
+      folderId: null,
+      title: "Untitled",
+      body: "",
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes((prev) => [note, ...prev]);
+    return note.id;
+  }
+  function updateNote(id: string, patch: Partial<Note>) {
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === id ? { ...n, ...patch, updatedAt: new Date().toISOString() } : n
+      )
+    );
+  }
+  function deleteNote(id: string) {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
   }
 
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
@@ -612,7 +641,14 @@ export default function Home() {
         )}
               </>
             )}
-        {tool === "notepad" && <NotePad />}
+        {tool === "notepad" && (
+          <NotePad
+            notes={notes}
+            onCreate={createNote}
+            onUpdate={updateNote}
+            onDelete={deleteNote}
+          />
+        )}
         {tool === "log" && (
           <TrackingLogView
             log={log}

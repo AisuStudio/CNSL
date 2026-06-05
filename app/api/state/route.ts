@@ -1,15 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { ensureUserBoard } from "@/lib/board";
+import { ensureUserBoards } from "@/lib/board";
 import {
   taskFromDb,
   taskToDb,
   dailyMinutesToTimeEntries,
   logFromDb,
   logToDb,
+  noteFromDb,
+  noteToDb,
 } from "@/lib/serialize";
 import type { Task, LogEntry } from "@/lib/mock-data";
+import type { Note } from "@/lib/notes";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +31,21 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const boardId = await ensureUserBoard(user.id, user.email);
-  const [tasks, log, board] = await Promise.all([
-    prisma.task.findMany({ where: { boardId }, include: { timeEntries: true } }),
+  const { trackerId, notesId } = await ensureUserBoards(user.id, user.email);
+  const [tasks, log, board, notes] = await Promise.all([
+    prisma.task.findMany({
+      where: { boardId: trackerId },
+      include: { timeEntries: true },
+    }),
     prisma.logEntry.findMany({ where: { userId: user.id }, orderBy: { ts: "asc" } }),
-    prisma.board.findUnique({ where: { id: boardId } }),
+    prisma.board.findUnique({ where: { id: trackerId } }),
+    prisma.note.findMany({ where: { boardId: notesId }, orderBy: { updatedAt: "desc" } }),
   ]);
   return NextResponse.json({
     tasks: tasks.map(taskFromDb),
     log: log.map(logFromDb),
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
+    notes: notes.map(noteFromDb),
   });
 }
 
@@ -47,10 +55,11 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const boardId = await ensureUserBoard(user.id, user.email);
+  const { trackerId, notesId } = await ensureUserBoards(user.id, user.email);
   const body = await req.json();
   const tasks: Task[] = Array.isArray(body.tasks) ? body.tasks : [];
   const log: LogEntry[] = Array.isArray(body.log) ? body.log : [];
+  const notes: Note[] = Array.isArray(body.notes) ? body.notes : [];
   const projectColors = body.projectColors ?? {};
 
   await prisma.$transaction(
@@ -60,11 +69,11 @@ export async function POST(req: NextRequest) {
       const taskIds = tasks.map((t) => t.id);
       if (taskIds.length > 0) {
         await tx.task.deleteMany({
-          where: { boardId, id: { notIn: taskIds } },
+          where: { boardId: trackerId, id: { notIn: taskIds } },
         });
       }
       for (const t of tasks) {
-        const data = taskToDb(t, boardId, user.id);
+        const data = taskToDb(t, trackerId, user.id);
         await tx.task.upsert({
           where: { id: t.id },
           create: { id: t.id, ...data },
@@ -90,8 +99,24 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Notes (snapshot upsert on the notes board; same empty-payload guard)
+      const noteIds = notes.map((n) => n.id);
+      if (noteIds.length > 0) {
+        await tx.note.deleteMany({
+          where: { boardId: notesId, id: { notIn: noteIds } },
+        });
+      }
+      for (const n of notes) {
+        const data = noteToDb(n, notesId, user.id);
+        await tx.note.upsert({
+          where: { id: n.id },
+          create: { id: n.id, ...data },
+          update: data,
+        });
+      }
+
       await tx.board.update({
-        where: { id: boardId },
+        where: { id: trackerId },
         data: { projectColors },
       });
     },

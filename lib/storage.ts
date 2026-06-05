@@ -2,6 +2,7 @@
 // SQLite (source of truth) + the JSONL event-log export.
 
 import type { Task, LogEntry } from "./mock-data";
+import type { Note } from "./notes";
 import type { ProjectColors } from "./projectColors";
 
 // Back to v1 so existing user data is read again. (v2 was a mistaken reseed
@@ -12,6 +13,7 @@ export interface PersistedState {
   tasks: Task[];
   log: LogEntry[];
   projectColors?: ProjectColors; // per-project colour overrides (future UI)
+  notes?: Note[]; // Note Pad (demo / localStorage path)
 }
 
 // Migrate legacy task shape: { description: <taskText>, comment: <notes> }
@@ -54,6 +56,7 @@ export function loadState(): PersistedState | null {
       tasks: parsed.tasks.map(migrateTask),
       log: parsed.log as LogEntry[],
       projectColors: parsed.projectColors as ProjectColors | undefined,
+      notes: parsed.notes as Note[] | undefined,
     };
   } catch {
     if (raw) backupCorrupt(raw);
