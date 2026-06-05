@@ -3,7 +3,28 @@
 import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Paragraph from "@tiptap/extension-paragraph";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
 import { Markdown } from "tiptap-markdown";
+import NoteToolbar from "./NoteToolbar";
+
+// Paragraph that carries an optional `class` (used by the "Caption" type style).
+// Editor-only: the class is not preserved by the markdown serializer, so a
+// Caption reverts to a plain paragraph after reload (acceptable for Phase A).
+const ClassParagraph = Paragraph.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("class"),
+        renderHTML: (attrs) => (attrs.class ? { class: attrs.class } : {}),
+      },
+    };
+  },
+});
 
 // WYSIWYG editor. Body is stored as Markdown (no images). Switching notes
 // resets the content; typing serialises back to Markdown via tiptap-markdown.
@@ -15,7 +36,14 @@ export default function NoteEditor({
   onChange: (markdown: string) => void;
 }) {
   const editor = useEditor({
-    extensions: [StarterKit, Markdown],
+    extensions: [
+      StarterKit.configure({ paragraph: false }),
+      ClassParagraph,
+      Underline,
+      Link.configure({ openOnClick: false, autolink: true, linkOnPaste: true }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Markdown,
+    ],
     content: value,
     immediatelyRender: false,
     editorProps: { attributes: { class: "cnsl-prose" } },
@@ -33,5 +61,10 @@ export default function NoteEditor({
     }
   }, [value, editor]);
 
-  return <EditorContent editor={editor} />;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
+      <NoteToolbar editor={editor} />
+      <EditorContent editor={editor} />
+    </div>
+  );
 }

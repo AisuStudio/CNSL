@@ -228,19 +228,23 @@ body {
   min-height: 320px;
 }
 .cnsl-prose:focus { outline: none; }
-.cnsl-prose h1 { font-size: 1.6em; font-weight: 700; margin: 0.6em 0 0.3em; }
-.cnsl-prose h2 { font-size: 1.3em; font-weight: 700; margin: 0.6em 0 0.3em; }
-.cnsl-prose h3 { font-size: 1.1em; font-weight: 700; margin: 0.5em 0 0.2em; }
-.cnsl-prose p { margin: 0.5em 0; }
-.cnsl-prose ul, .cnsl-prose ol { padding-left: 1.4em; margin: 0.5em 0; }
+/* Type scale (px, per NotePad design): Title 36, Heading 20, Subheading 16.
+   Subheading stays beige/bold (lime is the toolbar hover colour, not H3). */
+.cnsl-prose h1 { font-size: 36px; font-weight: 700; line-height: 1.15; margin: 0.5em 0 0.3em; }
+.cnsl-prose h2 { font-size: 20px; font-weight: 700; line-height: 1.25; margin: 0.6em 0 0.3em; }
+.cnsl-prose h3 { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0.6em 0 0.2em; }
+.cnsl-prose p { font-size: 16px; font-weight: 400; margin: 0.5em 0; }
+.cnsl-prose ul, .cnsl-prose ol { font-size: 16px; padding-left: 1.4em; margin: 0.5em 0; }
 .cnsl-prose li { margin: 0.15em 0; }
-.cnsl-prose a { color: var(--color-accent); text-decoration: underline; }
+.cnsl-prose a { color: var(--color-accent); text-decoration: underline; cursor: pointer; }
+/* Caption — editor-only small muted block (does not survive markdown reload). */
+.cnsl-prose p.cnsl-caption { font-size: 10px; font-weight: 400; color: var(--color-text-muted); }
+/* Monospaced — inline `code` mark restyled with no background. */
 .cnsl-prose code {
   font-family: var(--font-family-mono);
-  background: var(--color-surface);
-  padding: 0.1em 0.3em;
-  border-radius: 4px;
-  font-size: 0.9em;
+  background: none;
+  padding: 0;
+  font-size: 16px;
 }
 .cnsl-prose pre {
   background: var(--color-surface);
@@ -262,6 +266,91 @@ body {
   height: 0;
   pointer-events: none;
 }
+
+/* ─── Note editor toolbar (Type_Bar / Type_Styler) ───────── */
+.cnsl-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  background: var(--color-bg-deep);
+  border-radius: 4px;
+}
+.cnsl-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.cnsl-tb-btn:hover { color: var(--color-lime); }
+.cnsl-tb-btn.is-active { color: var(--color-text-primary); background: rgba(233, 231, 223, 0.1); }
+.cnsl-tb-aa { font-weight: 700; }
+.cnsl-tb-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--color-border);
+}
+.cnsl-tb-current {
+  margin-left: auto;
+  padding-right: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--text-modal);
+}
+
+/* Type-style menu (the aA dropdown) */
+.cnsl-style-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 168px;
+  padding: 8px;
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.cnsl-tstyle {
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-family: var(--font-family);
+  transition: color 0.12s, background 0.12s;
+}
+.cnsl-tstyle:hover { color: var(--color-lime); }
+.cnsl-tstyle.is-active { color: var(--color-text-primary); background: rgba(233, 231, 223, 0.12); }
+/* Per-row previews mirror the actual type scale */
+.cnsl-tstyle.ts-title { font-size: 24px; font-weight: 700; }
+.cnsl-tstyle.ts-heading { font-size: 18px; font-weight: 700; }
+.cnsl-tstyle.ts-subheading { font-size: 16px; font-weight: 700; }
+.cnsl-tstyle.ts-paragraph { font-size: 16px; font-weight: 400; }
+.cnsl-tstyle.ts-bulleted,
+.cnsl-tstyle.ts-numbered { font-size: 16px; font-weight: 400; }
+.cnsl-tstyle.ts-caption { font-size: 11px; font-weight: 400; color: var(--color-text-muted); }
+.cnsl-tstyle.ts-mono { font-size: 15px; font-weight: 400; font-family: var(--font-family-mono); }
+.cnsl-tstyle.ts-caption:hover,
+.cnsl-tstyle.ts-mono:hover { color: var(--color-lime); }
 
 /* ─── Animations ────────────────────────────────────────── */
 @keyframes cnsl-slide-in-right {

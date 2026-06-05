@@ -7,3 +7,6 @@ next-env.d.ts
 .DS_Store
 .env*
 /prisma/dev.db
+
+# Local snapshot / notes — keep out of the repo for now
+/SNAPSHOT.md
