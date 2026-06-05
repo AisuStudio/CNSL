@@ -27,6 +27,8 @@ const iaMono = localFont({
 export const metadata: Metadata = {
   title: "CNSL",
   description: "CNSL — task management",
+  // Beta: keep the whole site out of search engines (crawl + index).
+  robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
