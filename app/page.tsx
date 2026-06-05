@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import CnslLogo from "@/components/CnslLogo";
-import { LogIcon, TaskTrackerIcon, NotePadIcon, TodayIcon, StatsIcon } from "@/components/icons";
+import { LogIcon, TaskTrackerIcon, NotePadIcon, TodayIcon, StatsIcon, DragDotsIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /* ───────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ const TOOLS = [
 const SOON = [
   { icon: TodayIcon, label: "Calendar" },
   { icon: StatsIcon, label: "Scheduler" },
+  { icon: DragDotsIcon, label: "More" },
 ];
 
 export default function StartPage() {
@@ -98,7 +99,6 @@ export default function StartPage() {
             <br />
             Desktop and mobile <span style={{ color: "var(--color-lime)" }}>*</span>
             <br />
-            <br />
             And you also can share boards with your friends &amp; family
           </p>
           <p
@@ -113,19 +113,18 @@ export default function StartPage() {
           </p>
         </header>
 
-        {/* Bottom row: tools + login */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "clamp(20px, 3vw, 40px)",
-            alignItems: "start",
-          }}
-        >
-          <ToolsPanel />
-          <LoginCard />
-        </div>
+        {/* Tools card (left) — login panel is centered separately */}
+        <ToolsPanel />
       </div>
+
+      {/* Sign-in panel — centered in the viewport (h + v) on desktop */}
+      <div className="start-login">
+        <LoginCard />
+      </div>
+
+      {/* Aisu Studio logo — bottom-right, right-aligned like the BETA badge */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/homepage/aisu-studio.svg" alt="Aisu Studio" className="start-aisu" />
     </div>
   );
 }
@@ -195,19 +194,31 @@ function BackdropArt() {
         pointerEvents: "none",
       }}
     >
-      {/* Giant blurred CNSL monogram (noise + layer-blur baked into the PNG) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/homepage/blurred-logo.png" alt="" className="start-logo-glow" />
-      {/* Dashed lime squiggle (exact Figma path; dash 40 / gap 60, round caps) */}
+      {/* Purple dashed squiggle 1 (dash 40 / gap 60, round caps) */}
       <svg
         viewBox="0 0 895 1069"
         preserveAspectRatio="xMidYMid meet"
         className="start-squiggle"
       >
         <path
-          d="M887.069 39.3695C571.389 96.0932 -452.104 759.514 324.765 1030.8"
+          d="M887.069 39.3696C571.389 96.0933 -452.104 759.514 324.765 1030.8"
           fill="none"
-          stroke="var(--color-lime)"
+          stroke="var(--color-accent)"
+          strokeWidth="80"
+          strokeDasharray="40 60"
+          strokeLinecap="round"
+        />
+      </svg>
+      {/* Purple dashed squiggle 2 (wider sweep) */}
+      <svg
+        viewBox="0 0 1515 860"
+        preserveAspectRatio="xMidYMid meet"
+        className="start-squiggle-2"
+      >
+        <path
+          d="M1498.85 223.239C542.25 -170.274 -422.844 86.9738 282.014 832.314"
+          fill="none"
+          stroke="var(--color-accent)"
           strokeWidth="80"
           strokeDasharray="40 60"
           strokeLinecap="round"
