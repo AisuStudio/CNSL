@@ -1,6 +1,6 @@
 "use client";
 
-import { InfoIcon, PlusIcon, SidebarIcon, SettingsIcon } from "./icons";
+import { InfoIcon, PlusIcon, SettingsIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import { TOOL_DEFS } from "./viewDefs";
 
@@ -30,7 +30,6 @@ export default function Header({
   tool,
   onToolChange,
   onNewTask,
-  onToggleSidebar,
   onLogoClick,
   onOpenInfo,
   onOpenSettings,
@@ -38,7 +37,6 @@ export default function Header({
   tool: Tool;
   onToolChange: (t: Tool) => void;
   onNewTask?: () => void;
-  onToggleSidebar?: () => void;
   onLogoClick?: () => void;
   onOpenInfo?: () => void;
   onOpenSettings?: () => void;
@@ -83,23 +81,16 @@ export default function Header({
             </button>
           )}
 
-          {onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              aria-label="Toggle sidebar"
-              title="Toggle sidebar"
-              className="flex items-center justify-center"
-              style={ICON_BTN}
-            >
-              <SidebarIcon color="var(--color-text-muted)" />
-            </button>
-          )}
-
-          {/* Tool switcher: Task Tracker · Note Pad · Log */}
+          {/* Tool switcher: Task Tracker · Note Pad · Log — connected segments */}
           <div
             className="flex items-center"
-            style={{ borderRadius: "8px", overflow: "hidden", gap: "2px", marginLeft: "8px" }}
+            style={{
+              borderRadius: "8px",
+              overflow: "hidden",
+              gap: "2px",
+              marginLeft: "4px",
+              background: "var(--color-bg)",
+            }}
           >
             {TOOL_DEFS.map((t) => {
               const active = tool === t.key;
@@ -114,16 +105,13 @@ export default function Header({
                   style={{
                     width: "47px",
                     height: "34.2px",
-                    borderRadius: "8px",
-                    background: active
-                      ? "var(--color-bg-deep)"
-                      : "transparent",
+                    background: "var(--color-bg-deep)",
                     border: "none",
                     cursor: "pointer",
                   }}
                 >
                   <t.Icon
-                    color={active ? "var(--color-accent)" : "var(--color-text-muted)"}
+                    color={active ? "var(--color-card-bg)" : "var(--color-text-muted)"}
                   />
                 </button>
               );

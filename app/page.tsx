@@ -42,9 +42,6 @@ export default function Home() {
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
-  // Slim 60px rail — persistent (in-flow) on every viewport; the toggle
-  // collapses it when more table width is needed.
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -542,14 +539,13 @@ export default function Home() {
         tool={tool}
         onToolChange={setTool}
         onNewTask={() => openCreate()}
-        onToggleSidebar={() => setSidebarOpen((o) => !o)}
         onLogoClick={() => setShowInfo(true)}
         onOpenInfo={() => setShowInfo(true)}
         onOpenSettings={() => setShowSettings(true)}
       />
 
       <div className="cnsl-body">
-        {sidebarOpen && tool === "tracker" && (
+        {tool === "tracker" && (
           <Sidebar view={view} onViewChange={setView} />
         )}
 
