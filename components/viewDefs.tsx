@@ -1,15 +1,29 @@
-// Shared definition of the nav views — used by the slim sidebar.
-// Kanban is paused (#151) and intentionally not listed here.
+// Two levels of navigation:
+//   TOOL_DEFS  → the header tool-switcher (Task Tracker · Note Pad · Log)
+//   VIEW_DEFS  → the slim sidebar = sub-views of the Task Tracker tool
 import {
   TodayIcon,
   ListIcon,
   ProjectIcon,
-  LogIcon,
   ArchiveIcon,
   StatsIcon,
+  TaskTrackerIcon,
+  NotePadIcon,
+  LogIcon,
 } from "./icons";
-import type { View } from "./Header";
+import type { View, Tool } from "./Header";
 
+export const TOOL_DEFS: {
+  key: Tool;
+  label: string;
+  Icon: (props: { color?: string }) => React.ReactElement;
+}[] = [
+  { key: "tracker", label: "Task Tracker", Icon: TaskTrackerIcon },
+  { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
+  { key: "log", label: "Log", Icon: LogIcon },
+];
+
+// Task Tracker sub-views (Kanban paused #151; Log is now a header tool).
 export const VIEW_DEFS: {
   key: View;
   label: string;
@@ -18,7 +32,6 @@ export const VIEW_DEFS: {
   { key: "today", label: "Today", Icon: TodayIcon },
   { key: "backlog", label: "Backlog", Icon: ListIcon },
   { key: "project", label: "Projects", Icon: ProjectIcon },
-  { key: "log", label: "Log", Icon: LogIcon },
   { key: "archive", label: "Archive", Icon: ArchiveIcon },
   { key: "stats", label: "Stats", Icon: StatsIcon },
 ];

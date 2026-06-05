@@ -68,6 +68,34 @@ export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function TaskTrackerIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL_Icon_TaskTracker.svg
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect x="5.5" width="9" height="3.5" />
+        <rect y="5.5" width="3.5" height="9" />
+        <rect x="11" y="5.5" width="3.5" height="3.5" />
+        <rect x="16.5" y="5.5" width="3.5" height="9" />
+        <rect x="5.5" y="16.5" width="9" height="3.5" />
+      </g>
+    </svg>
+  );
+}
+
+export function NotePadIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL_Icon_NotePad.svg
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <polygon points="14.5 9 14.5 5.5 11 5.5 5.5 5.5 5.5 9 11 9 14.5 9" />
+        <polygon points="16.5 5.5 16.5 16.5 3.5 16.5 3.5 3.5 14.5 3.5 14.5 0 0 0 0 20 20 20 20 5.5 16.5 5.5" />
+        <rect x="5.5" y="11" width="3.5" height="3.5" />
+      </g>
+    </svg>
+  );
+}
+
 export function StatsIcon({ color = "currentColor" }: { color?: string }) {
   // Bar-chart — CNSL_Icon_Stats (from the slim sidebar).
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Header, { type View } from "@/components/Header";
+import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
 import Footer from "@/components/Footer";
@@ -14,6 +14,7 @@ import EditTaskModal from "@/components/EditTaskModal";
 import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
+import NotePad from "@/components/NotePad";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -33,6 +34,7 @@ export type Sort = { key: string; dir: "asc" | "desc" } | null;
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
 export default function Home() {
+  const [tool, setTool] = useState<Tool>("tracker");
   const [view, setView] = useState<View>("backlog");
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -537,8 +539,8 @@ export default function Home() {
   return (
     <div className="cnsl-app">
       <Header
-        view={view}
-        onViewChange={setView}
+        tool={tool}
+        onToolChange={setTool}
         onNewTask={() => openCreate()}
         onToggleSidebar={() => setSidebarOpen((o) => !o)}
         onLogoClick={() => setShowInfo(true)}
@@ -547,18 +549,24 @@ export default function Home() {
       />
 
       <div className="cnsl-body">
-        {sidebarOpen && (
+        {sidebarOpen && tool === "tracker" && (
           <Sidebar view={view} onViewChange={setView} />
         )}
 
         <div className="cnsl-content">
-          <TableHeader view={view} sort={sort} onSort={toggleSort} />
+          <TableHeader
+            view={tool === "tracker" ? view : tool}
+            sort={sort}
+            onSort={toggleSort}
+          />
 
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main
             className="cnsl-scroll flex-1 overflow-auto"
             style={{ paddingBottom: "104px" }}
           >
+            {tool === "tracker" && (
+              <>
             {view === "backlog" && (
           <BacklogView
             tasks={sortedTasks}
@@ -606,7 +614,10 @@ export default function Home() {
             onArchiveAllDone={archiveAllDone}
           />
         )}
-        {view === "log" && (
+              </>
+            )}
+        {tool === "notepad" && <NotePad />}
+        {tool === "log" && (
           <TrackingLogView
             log={log}
             projects={projects}

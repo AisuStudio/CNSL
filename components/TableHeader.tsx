@@ -26,6 +26,7 @@ const TITLES: Partial<Record<string, string>> = {
   log: "TRACKING LOG",
   archive: "ARCHIVE",
   stats: "STATS",
+  notepad: "NOTE PAD",
 };
 
 export default function TableHeader({

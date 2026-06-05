@@ -2,8 +2,9 @@
 
 import { InfoIcon, PlusIcon, SidebarIcon, SettingsIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
-import { VIEW_DEFS } from "./viewDefs";
+import { TOOL_DEFS } from "./viewDefs";
 
+// Task Tracker sub-views (sidebar)
 export type View =
   | "today"
   | "backlog"
@@ -13,8 +14,8 @@ export type View =
   | "archive"
   | "stats";
 
-// Views moved into the sidebar (#141). Set true to restore the header switcher.
-const SHOW_VIEW_SWITCHER = false;
+// Top-level tools (header switcher)
+export type Tool = "tracker" | "notepad" | "log";
 
 const ICON_BTN: React.CSSProperties = {
   width: "35.1px",
@@ -26,16 +27,16 @@ const ICON_BTN: React.CSSProperties = {
 };
 
 export default function Header({
-  view,
-  onViewChange,
+  tool,
+  onToolChange,
   onNewTask,
   onToggleSidebar,
   onLogoClick,
   onOpenInfo,
   onOpenSettings,
 }: {
-  view: View;
-  onViewChange: (v: View) => void;
+  tool: Tool;
+  onToolChange: (t: Tool) => void;
   onNewTask?: () => void;
   onToggleSidebar?: () => void;
   onLogoClick?: () => void;
@@ -95,45 +96,39 @@ export default function Header({
             </button>
           )}
 
-          {/* Icon-only segmented view switcher. Views now live in the sidebar
-              (#141); flip SHOW_VIEW_SWITCHER to true to bring this back. */}
-          {SHOW_VIEW_SWITCHER && (
+          {/* Tool switcher: Task Tracker · Note Pad · Log */}
           <div
-            className="cnsl-view-switcher flex items-center"
-            style={{ borderRadius: "8px", overflow: "hidden", gap: "2px" }}
+            className="flex items-center"
+            style={{ borderRadius: "8px", overflow: "hidden", gap: "2px", marginLeft: "8px" }}
           >
-            {VIEW_DEFS.map((v) => {
-              const active = view === v.key;
+            {TOOL_DEFS.map((t) => {
+              const active = tool === t.key;
               return (
                 <button
-                  key={v.key}
+                  key={t.key}
                   type="button"
-                  onClick={() => onViewChange(v.key)}
+                  onClick={() => onToolChange(t.key)}
                   aria-pressed={active}
-                  title={v.label}
+                  title={t.label}
                   className="flex items-center justify-center"
                   style={{
                     width: "47px",
                     height: "34.2px",
+                    borderRadius: "8px",
                     background: active
                       ? "var(--color-bg-deep)"
-                      : "var(--color-bg)",
+                      : "transparent",
                     border: "none",
                     cursor: "pointer",
                   }}
                 >
-                  <v.Icon
-                    color={
-                      active
-                        ? "var(--color-accent)"
-                        : "var(--color-text-muted)"
-                    }
+                  <t.Icon
+                    color={active ? "var(--color-accent)" : "var(--color-text-muted)"}
                   />
                 </button>
               );
             })}
           </div>
-          )}
         </div>
 
         <div className="ml-auto flex items-center gap-3">
