@@ -276,7 +276,7 @@ function ToolsPanel() {
       </ul>
 
       <a
-        href="https://github.com/AisuStudio/CNSL"
+        href="https://aisustudio.github.io/CNSL"
         target="_blank"
         rel="noopener noreferrer"
         style={{
