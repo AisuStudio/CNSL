@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // `token_hash` (verifyOtp) flow so it works regardless of the email template.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/app";
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;

@@ -23,7 +23,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) setError(error.message);
-    else window.location.href = "/";
+    else window.location.href = "/app";
   }
 
   // Fallback: email a magic link (works in a browser tab; for the installed

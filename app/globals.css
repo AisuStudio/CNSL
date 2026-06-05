@@ -315,3 +315,50 @@ a:focus-visible {
   .grid-kanban { min-width: 720px; }
   .cnsl-footer-explainer { display: none; }
 }
+
+/* ─── Start page (/) decorative artwork ─────────────────── */
+.start-squiggle {
+  position: absolute;
+  top: -8%;
+  height: 116%;
+  width: auto;
+  /* offset so the squiggle clears the light hero text */
+  left: 250px;
+  z-index: 0; /* squiggle sits behind the blurred logo */
+}
+.start-logo-glow {
+  position: absolute;
+  top: 50%;
+  left: 40%;
+  width: 666px;
+  height: 666px;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  z-index: 1; /* blurred logo sits in front, softly veiling the squiggle */
+}
+@media (max-width: 768px) {
+  /* Badge flows above the hero instead of overlapping the headline */
+  .start-topbar {
+    position: static !important;
+    display: flex;
+    justify-content: flex-end;
+    padding: 44px 20px 0;
+  }
+  /* Hero hugs the top; cards flow naturally instead of fold-pinning */
+  .start-main { justify-content: flex-start !important; padding-top: 16px !important; }
+  /* Keep the lime squiggle off the lime headline on narrow screens */
+  .start-squiggle {
+    top: auto;
+    left: auto;
+    bottom: -6%;
+    right: -30%;
+    height: 70%;
+  }
+  .start-logo-glow {
+    left: 75%;
+    width: 90vw;
+    height: auto;
+    opacity: 0.4;
+  }
+}

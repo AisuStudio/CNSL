@@ -33,18 +33,20 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isPublic =
+    path === "/" || // public start/landing page (has its own login form)
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
     path.startsWith("/api"); // API routes self-guard (return 401)
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/"; // unauthenticated → start page (login lives there)
     return NextResponse.redirect(url);
   }
-  if (user && path.startsWith("/login")) {
+  // Already-signed-in users skip the marketing/login surfaces → straight to app.
+  if (user && (path === "/" || path.startsWith("/login"))) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 

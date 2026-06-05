@@ -20,6 +20,7 @@
 
   /* ── Accent & status ─────────────────────────────────── */
   --color-accent:       #5100ff;
+  --color-lime:         #d9ff01;  /* marketing/start-page heading & accent */
   --color-running:      #3fae6b;  /* active timer — green */
 
   /* ── Light-card palette (SidePanel, modals, Edit card) ── */
