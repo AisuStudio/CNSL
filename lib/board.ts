@@ -1,10 +1,34 @@
 // Idempotent provisioning. Ensures the user's Profile + their two tool boards:
-//   tracker (kind='tracker', seeded with the roadmap)
+//   tracker (kind='tracker', seeded with one friendly welcome task)
 //   notes   (kind='doc', with a welcome note)
 // Empty tracker boards re-seed (self-heals a wiped board).
 import { prisma } from "./prisma";
-import { initialTasks } from "./mock-data";
+import type { Task } from "./mock-data";
 import { taskToDb } from "./serialize";
+
+// Friendly first-run seed for a brand-new user's tracker board. One welcoming
+// task — NOT the internal CNSL roadmap. IDs are intentionally omitted so the DB
+// assigns a unique uuid per row/user (passing the fixed seed ids collided across
+// users and broke the first board load for everyone after the first signup).
+function welcomeTasks(): Task[] {
+  return [
+    {
+      id: "", // unused — taskToDb omits id, so the DB's uuid() default applies
+      number: 1,
+      createdAt: new Date().toISOString(),
+      project: "CNSL",
+      epic: "Look & Learn",
+      task: "Here's your first CNSL Task",
+      urgency: "unsorted",
+      status: "open",
+      complexity: null,
+      isTracking: false,
+      trackedMinutes: 0,
+      description:
+        "Hey welcome to CNSL! Look around the boards and tools. Hover the icons, it will reveal their secret power.\n\nEnjoy,\nDom",
+    },
+  ];
+}
 
 export async function ensureUserBoards(
   userId: string,
@@ -28,11 +52,9 @@ export async function ensureUserBoards(
   }
   const taskCount = await prisma.task.count({ where: { boardId: tracker.id } });
   if (taskCount === 0) {
+    // Omit id → DB assigns a unique uuid per row (no cross-user PK collision).
     await prisma.task.createMany({
-      data: initialTasks.map((t) => ({
-        id: t.id,
-        ...taskToDb(t, tracker!.id, userId),
-      })),
+      data: welcomeTasks().map((t) => taskToDb(t, tracker!.id, userId)),
     });
   }
 
