@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import { LogIcon, TaskTrackerIcon, NotePadIcon, TodayIcon, StatsIcon, DragDotsIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -365,24 +366,54 @@ function LoginCard() {
     width: "100%",
   };
 
+  // The static GitHub-Pages demo has no Supabase backend, so swap the sign-in
+  // form for a button that drops visitors straight into the tool (/app).
+  const isDemo = process.env.NEXT_PUBLIC_DEMO === "true";
+  const cardStyle: React.CSSProperties = {
+    background: "var(--color-surface)",
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-container)",
+    padding: "var(--space-6)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "var(--space-3)",
+  };
+  const logoRow = (
+    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-2)" }}>
+      <CnslLogo size={28} />
+      <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
+    </div>
+  );
+
   return (
     <div style={{ marginLeft: "auto", width: "100%", maxWidth: "360px" }}>
-      <form
-        onSubmit={signIn}
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-container)",
-          padding: "var(--space-6)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-3)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-2)" }}>
-          <CnslLogo size={28} />
-          <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
+      {isDemo ? (
+        <div style={cardStyle}>
+          {logoRow}
+          <p style={{ margin: 0, fontSize: "var(--text-sm)", lineHeight: 1.4, color: "var(--color-text-muted)" }}>
+            You&rsquo;re viewing the public demo — no sign-in needed.
+          </p>
+          <Link
+            href="/app"
+            style={{
+              height: "44px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "var(--radius-input)",
+              background: "var(--color-accent)",
+              color: "var(--color-text-primary)",
+              fontWeight: 700,
+              fontSize: "var(--text-base)",
+              textDecoration: "none",
+            }}
+          >
+            Enter the demo →
+          </Link>
         </div>
+      ) : (
+      <form onSubmit={signIn} style={cardStyle}>
+        {logoRow}
 
         <input
           type="email"
@@ -444,6 +475,7 @@ function LoginCard() {
           <p style={{ color: "#e0709a", fontSize: "var(--text-sm)", margin: 0 }}>{error}</p>
         )}
       </form>
+      )}
 
       <p
         style={{
