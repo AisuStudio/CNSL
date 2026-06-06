@@ -5,6 +5,8 @@ import { SettingsIcon } from "./icons";
 import SidePanel from "./SidePanel";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Task } from "@/lib/mock-data";
+import type { RestoreCandidate } from "@/lib/restore";
+import BackupRestoreSection from "./BackupRestoreSection";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
@@ -319,6 +321,9 @@ export default function SettingsModal({
   projectColors,
   onSetProjectColor,
   onResetProjectColor,
+  onBackup,
+  onRestoreToLog,
+  onRestoreToBacklog,
   onClose,
 }: {
   tasks: Task[];
@@ -327,6 +332,9 @@ export default function SettingsModal({
   projectColors: ProjectColors;
   onSetProjectColor: (name: string, color: string) => void;
   onResetProjectColor: (name: string) => void;
+  onBackup: () => void;
+  onRestoreToLog: (cands: RestoreCandidate[]) => void;
+  onRestoreToBacklog: (cands: RestoreCandidate[]) => void;
   onClose: () => void;
 }) {
   const projects = countBy(tasks, "project");
@@ -364,6 +372,13 @@ export default function SettingsModal({
       />
       <div className="cnsl-divider" />
       <Section title="Epics" items={epics} onRename={onRenameEpic} />
+      <div className="cnsl-divider" />
+      <BackupRestoreSection
+        tasks={tasks}
+        onBackup={onBackup}
+        onRestoreToLog={onRestoreToLog}
+        onRestoreToBacklog={onRestoreToBacklog}
+      />
     </SidePanel>
   );
 }

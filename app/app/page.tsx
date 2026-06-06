@@ -27,6 +27,7 @@ import {
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
+import { logText, type RestoreCandidate } from "@/lib/restore";
 import { coworkTasks } from "@/lib/coworkTasks";
 
 export type Sort = { key: string; dir: "asc" | "desc" } | null;
@@ -433,6 +434,52 @@ export default function Home() {
     );
   }
 
+  // ─── Backup & Restore (#44) ─────────────────────────────
+  // Backup = full board as JSON; Restore adds missing tasks (never deletes).
+  function backupDownload() {
+    downloadFile(
+      `cnsl-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      toJson(tasks, log),
+      "application/json"
+    );
+  }
+  function restoreToBacklog(cands: RestoreCandidate[]) {
+    if (cands.length === 0) return;
+    setTasks((prev) => {
+      let n = prev.reduce((m, t) => Math.max(m, t.number), 0);
+      const now = new Date().toISOString();
+      const add: Task[] = cands.map((c) => ({
+        id: newId("task"),
+        number: ++n,
+        createdAt: now,
+        project: c.project,
+        epic: c.epic,
+        task: c.task,
+        urgency: c.urgency,
+        status: c.status,
+        complexity: c.complexity,
+        isTracking: false,
+        trackedMinutes: 0,
+        description: c.description,
+        completedAt: c.status === "done" ? now : undefined,
+      }));
+      return [...prev, ...add];
+    });
+  }
+  function restoreToLog(cands: RestoreCandidate[]) {
+    if (cands.length === 0) return;
+    const base = Date.now();
+    setLog((prev) => [
+      ...prev,
+      ...cands.map((c, i) => ({
+        id: newId("log"),
+        ts: new Date(base + i * 1000).toISOString(),
+        text: logText(c),
+        processed: false,
+      })),
+    ]);
+  }
+
   // Existing projects/epics for the triage autocomplete.
   const projects = useMemo(
     () => Array.from(new Set(tasks.map((t) => t.project))).filter(Boolean),
@@ -713,6 +760,9 @@ export default function Home() {
           projectColors={projectColors}
           onSetProjectColor={setProjectColor}
           onResetProjectColor={resetProjectColor}
+          onBackup={backupDownload}
+          onRestoreToLog={restoreToLog}
+          onRestoreToBacklog={restoreToBacklog}
           onClose={() => setShowSettings(false)}
         />
       )}
