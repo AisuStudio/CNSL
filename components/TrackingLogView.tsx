@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LogEntry } from "@/lib/mock-data";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 function fmtTs(iso: string): string {
   const d = new Date(iso);
@@ -26,6 +27,7 @@ function EntryRow({
 }) {
   const [project, setProject] = useState("");
   const [epic, setEpic] = useState("");
+  const isMobile = useIsMobile();
 
   return (
     <div
@@ -36,6 +38,7 @@ function EntryRow({
         padding: "8px 16px",
         gap: "16px",
         opacity: entry.processed ? 0.55 : 1,
+        flexWrap: isMobile ? "wrap" : "nowrap",
       }}
     >
       {/* timestamp */}
@@ -74,7 +77,16 @@ function EntryRow({
           → Backlog #{String(entry.taskNumber ?? "").padStart(2, "0")}
         </span>
       ) : (
-        <div className="flex items-center" style={{ gap: "8px", flexShrink: 0 }}>
+        <div
+          className="flex"
+          style={{
+            gap: "8px",
+            flexShrink: 0,
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "stretch" : "center",
+            width: isMobile ? "100%" : undefined,
+          }}
+        >
           <input
             list="cnsl-projects"
             placeholder="Project"
@@ -82,8 +94,8 @@ function EntryRow({
             onChange={(e) => setProject(e.target.value)}
             className="outline-none"
             style={{
-              width: "120px",
-              height: "30px",
+              width: isMobile ? "100%" : "120px",
+              height: isMobile ? "44px" : "30px",
               padding: "0 10px",
               borderRadius: "6px",
               border: "1px solid var(--color-border)",
@@ -99,8 +111,8 @@ function EntryRow({
             onChange={(e) => setEpic(e.target.value)}
             className="outline-none"
             style={{
-              width: "120px",
-              height: "30px",
+              width: isMobile ? "100%" : "120px",
+              height: isMobile ? "44px" : "30px",
               padding: "0 10px",
               borderRadius: "6px",
               border: "1px solid var(--color-border)",
@@ -113,7 +125,7 @@ function EntryRow({
             type="button"
             onClick={() => onCreateTask(entry.id, project.trim(), epic.trim())}
             style={{
-              height: "30px",
+              height: isMobile ? "44px" : "30px",
               padding: "0 12px",
               borderRadius: "6px",
               background: "var(--color-accent)",
@@ -201,10 +213,11 @@ export default function TrackingLogView({
       <div
         className="flex items-center"
         style={{
-          height: "var(--row-height)",
+          minHeight: "var(--row-height)",
           borderBottom: "1px solid var(--color-border)",
-          padding: "0 16px",
+          padding: "8px 16px",
           gap: "16px",
+          flexWrap: "wrap",
         }}
       >
         <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>

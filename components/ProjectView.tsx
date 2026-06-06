@@ -8,6 +8,8 @@ import {
   type ProjectColors,
 } from "@/lib/projectColors";
 import TaskRow from "./TaskRow";
+import TaskCard from "./TaskCard";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { PlusIcon } from "./icons";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -31,6 +33,7 @@ export default function ProjectView({
   onExportProject: (project: string) => void;
   projectColors?: ProjectColors;
 }) {
+  const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -188,17 +191,28 @@ export default function ProjectView({
 
             {/* Tasks of this project */}
             {!isCollapsed &&
-              items.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  onUpdate={onUpdate}
-                  onToggleTimer={onToggleTimer}
-                  onEditTask={onEditTask}
-                  onArchive={onArchive}
-                  showUrgency
-                />
-              ))}
+              items.map((t) =>
+                isMobile ? (
+                  <TaskCard
+                    key={t.id}
+                    task={t}
+                    onUpdate={onUpdate}
+                    onToggleTimer={onToggleTimer}
+                    onEditTask={onEditTask}
+                    onArchive={onArchive}
+                  />
+                ) : (
+                  <TaskRow
+                    key={t.id}
+                    task={t}
+                    onUpdate={onUpdate}
+                    onToggleTimer={onToggleTimer}
+                    onEditTask={onEditTask}
+                    onArchive={onArchive}
+                    showUrgency
+                  />
+                )
+              )}
           </div>
         );
       })}

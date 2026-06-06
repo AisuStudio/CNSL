@@ -17,6 +17,7 @@ import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
 import MultiTabBanner from "@/components/MultiTabBanner";
 import { type SyncState } from "@/components/SyncIndicator";
+import { useIsMobile } from "@/lib/useIsMobile";
 import type { Note } from "@/lib/notes";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
@@ -51,6 +52,8 @@ export default function Home() {
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
+  const isMobile = useIsMobile();
   const [loadError, setLoadError] = useState(false);
   // Save-hardening: board version for optimistic concurrency + conflict state.
   const [rev, setRev] = useState<number | null>(null);
@@ -722,19 +725,44 @@ export default function Home() {
         onOpenSettings={() => setShowSettings(true)}
         syncState={syncState}
         onForceSave={pushState}
+        onToggleNav={tool === "tracker" ? () => setNavOpen((o) => !o) : undefined}
       />
 
       <div className="cnsl-body">
         {tool === "tracker" && (
-          <Sidebar view={view} onViewChange={setView} />
+          <>
+            <Sidebar
+              view={view}
+              onViewChange={(v) => {
+                setView(v);
+                setNavOpen(false); // close drawer after picking a view (mobile)
+              }}
+              mobileOpen={navOpen}
+            />
+            {navOpen && (
+              <div
+                className="cnsl-nav-backdrop"
+                onClick={() => setNavOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+          </>
         )}
 
         <div className="cnsl-content">
-          <TableHeader
-            view={tool === "tracker" ? view : tool}
-            sort={sort}
-            onSort={toggleSort}
-          />
+          {/* On mobile the card views (backlog/today/project) don't use the
+              column header — hide it there; keep it for titled views. */}
+          {!(
+            isMobile &&
+            tool === "tracker" &&
+            (view === "backlog" || view === "today" || view === "project")
+          ) && (
+            <TableHeader
+              view={tool === "tracker" ? view : tool}
+              sort={sort}
+              onSort={toggleSort}
+            />
+          )}
 
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main

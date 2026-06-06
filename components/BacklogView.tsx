@@ -1,7 +1,9 @@
 "use client";
 
 import { type Task } from "@/lib/mock-data";
+import { useIsMobile } from "@/lib/useIsMobile";
 import TaskRow from "./TaskRow";
+import TaskCard from "./TaskCard";
 
 export type BacklogFilter = "all" | "open";
 
@@ -71,21 +73,33 @@ export default function BacklogView({
   filter?: BacklogFilter;
   onFilterChange?: (f: BacklogFilter) => void;
 }) {
+  const isMobile = useIsMobile();
   return (
     <div className="cnsl-canvas">
       {filter && onFilterChange && (
         <FilterToggle filter={filter} onChange={onFilterChange} />
       )}
-      {tasks.map((t) => (
-        <TaskRow
-          key={t.id}
-          task={t}
-          onUpdate={onUpdate}
-          onToggleTimer={onToggleTimer}
-          onEditTask={onEditTask}
-          onArchive={onArchive}
-        />
-      ))}
+      {tasks.map((t) =>
+        isMobile ? (
+          <TaskCard
+            key={t.id}
+            task={t}
+            onUpdate={onUpdate}
+            onToggleTimer={onToggleTimer}
+            onEditTask={onEditTask}
+            onArchive={onArchive}
+          />
+        ) : (
+          <TaskRow
+            key={t.id}
+            task={t}
+            onUpdate={onUpdate}
+            onToggleTimer={onToggleTimer}
+            onEditTask={onEditTask}
+            onArchive={onArchive}
+          />
+        )
+      )}
     </div>
   );
 }

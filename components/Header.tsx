@@ -1,6 +1,6 @@
 "use client";
 
-import { InfoIcon, PlusIcon, SettingsIcon } from "./icons";
+import { InfoIcon, PlusIcon, SettingsIcon, SidebarIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import SyncIndicator, { type SyncState } from "./SyncIndicator";
 import { TOOL_DEFS } from "./viewDefs";
@@ -36,6 +36,7 @@ export default function Header({
   onOpenSettings,
   syncState,
   onForceSave,
+  onToggleNav,
 }: {
   tool: Tool;
   onToolChange: (t: Tool) => void;
@@ -45,10 +46,11 @@ export default function Header({
   onOpenSettings?: () => void;
   syncState?: SyncState;
   onForceSave?: () => void;
+  onToggleNav?: () => void; // mobile drawer toggle (hamburger)
 }) {
   return (
     <header
-      className="shrink-0"
+      className="cnsl-header shrink-0"
       style={{
         height: "var(--header-row1-height)",
         background: "var(--color-surface)",
@@ -58,9 +60,29 @@ export default function Header({
       }}
     >
       <div
-        className="flex h-full items-center"
+        className="cnsl-header-row flex h-full items-center"
         style={{ paddingLeft: "35px", paddingRight: "24px" }}
       >
+        {/* Mobile-only hamburger → opens the nav drawer */}
+        {onToggleNav && (
+          <button
+            type="button"
+            onClick={onToggleNav}
+            aria-label="Menu"
+            title="Menu"
+            className="cnsl-only-mobile cnsl-touch items-center justify-center"
+            style={{
+              marginRight: "10px",
+              borderRadius: "8px",
+              background: "var(--color-bg-deep)",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <SidebarIcon color="var(--color-text-muted)" />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onLogoClick}

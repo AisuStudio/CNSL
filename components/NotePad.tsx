@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Note } from "@/lib/notes";
+import { useIsMobile } from "@/lib/useIsMobile";
 import NoteEditor from "./NoteEditor";
 
 export default function NotePad({
@@ -22,6 +23,10 @@ export default function NotePad({
     sorted[0]?.id ?? null
   );
   const selected = notes.find((n) => n.id === selectedId) ?? null;
+  const isMobile = useIsMobile();
+  // Mobile = single pane: list OR editor (with a back button).
+  const showList = !isMobile || !selected;
+  const showEditor = !isMobile || !!selected;
 
   function newNote() {
     setSelectedId(onCreate());
@@ -30,12 +35,13 @@ export default function NotePad({
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
       {/* Note list */}
+      {showList && (
       <div
         className="cnsl-scroll"
         style={{
-          width: "240px",
+          width: isMobile ? "100%" : "240px",
           flexShrink: 0,
-          borderRight: "1px solid var(--color-border)",
+          borderRight: isMobile ? "none" : "1px solid var(--color-border)",
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
@@ -111,8 +117,10 @@ export default function NotePad({
           );
         })}
       </div>
+      )}
 
       {/* Editor */}
+      {showEditor && (
       <div
         className="cnsl-scroll"
         style={{
@@ -128,6 +136,24 @@ export default function NotePad({
         {selected ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  aria-label="Back to notes"
+                  className="cnsl-touch flex items-center justify-center"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "8px",
+                    color: "var(--color-text-primary)",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  ←
+                </button>
+              )}
               <input
                 value={selected.title}
                 onChange={(e) => onUpdate(selected.id, { title: e.target.value })}
@@ -176,6 +202,7 @@ export default function NotePad({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

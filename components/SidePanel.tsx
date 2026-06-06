@@ -73,11 +73,13 @@ export default function SidePanel({
             type="button"
             onClick={onClose}
             aria-label="Close"
+            className="cnsl-touch flex items-center justify-center"
             style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
               padding: "2px",
+              marginRight: "-8px",
             }}
           >
             <CloseIcon />

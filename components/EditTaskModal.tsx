@@ -14,6 +14,7 @@ import {
   formatDate,
 } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
+import { useIsMobile } from "@/lib/useIsMobile";
 import SidePanel from "./SidePanel";
 
 /* ── Light-card palette → design tokens (see tokens.css) ── */
@@ -61,6 +62,7 @@ function PillField({
   onChange: (v: string) => void;
   children: React.ReactNode;
 }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <div style={{ position: "relative", display: "inline-flex" }}>
@@ -69,8 +71,8 @@ function PillField({
           onChange={(e) => onChange(e.target.value)}
           className="cursor-pointer appearance-none"
           style={{
-            height: "26px",
-            borderRadius: "13px",
+            height: isMobile ? "40px" : "26px",
+            borderRadius: isMobile ? "20px" : "13px",
             background: C1,
             color: INK,
             border: "none",
@@ -137,6 +139,12 @@ export default function EditTaskModal({
   );
   const [timeText, setTimeText] = useState(formatHM(task.trackedMinutes));
   const [subtasks, setSubtasks] = useState<Subtask[]>(task.subtasks ?? []);
+  const isMobile = useIsMobile();
+  // On mobile bump fields to a comfortable touch height (desktop stays SVG-exact).
+  const fieldStyle: React.CSSProperties = {
+    ...inputStyle,
+    height: isMobile ? 44 : inputStyle.height,
+  };
 
   function addSubtask() {
     setSubtasks((prev) => [
@@ -182,24 +190,30 @@ export default function EditTaskModal({
         value={taskText}
         onChange={(e) => setTaskText(e.target.value)}
         placeholder="Task"
-        style={{ ...inputStyle, width: "100%" }}
+        style={{ ...fieldStyle, width: "100%" }}
       />
 
-        {/* Project / Epic */}
-        <div style={{ display: "flex", gap: "16px" }}>
+        {/* Project / Epic — stack on mobile */}
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            flexDirection: isMobile ? "column" : "row",
+          }}
+        >
           <input
             value={project}
             onChange={(e) => setProject(e.target.value)}
             placeholder="Project"
             list="modal-projects"
-            style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+            style={{ ...fieldStyle, flex: 1, minWidth: 0 }}
           />
           <input
             value={epic}
             onChange={(e) => setEpic(e.target.value)}
             placeholder="Epic"
             list="modal-epics"
-            style={{ ...inputStyle, flex: 1, minWidth: 0 }}
+            style={{ ...fieldStyle, flex: 1, minWidth: 0 }}
           />
         </div>
         <datalist id="modal-projects">
@@ -366,7 +380,7 @@ export default function EditTaskModal({
         </div>
 
         {/* Editable pills: Status · Urgency · Poker */}
-        <div style={{ display: "flex", gap: "20px" }}>
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
           <PillField
             label="Status"
             value={status}

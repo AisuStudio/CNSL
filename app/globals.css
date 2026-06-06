@@ -403,9 +403,28 @@ a:focus-visible {
   opacity: 1;
 }
 
+/* ─── Responsive utilities (mobile-readiness) ───────────── */
+/* Min touch target on small screens. */
+.cnsl-touch { min-width: var(--touch-min); min-height: var(--touch-min); }
+/* Show only on mobile / only on desktop (paired with the ≤768px block). */
+.cnsl-only-mobile  { display: none; }
+.cnsl-only-desktop { display: inline-flex; }
+
+/* Off-canvas nav drawer — desktop = normal inline rail; mobile rules below. */
+.cnsl-nav-backdrop { display: none; }
+
 /* ─── Mobile ≤768px ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .cnsl-canvas { min-width: 0; }
+
+  /* slightly tighter chrome on phones (desktop SVG sizes untouched) */
+  :root { --text-logo: 20px; }
+
+  .cnsl-only-mobile  { display: inline-flex; }
+  .cnsl-only-desktop { display: none; }
+
+  /* tighter header chrome on phones */
+  .cnsl-header-row { padding-left: 12px !important; padding-right: 12px !important; }
 
   /* Mobile has no hover → the project + / MD buttons stay visible (#47) */
   .cnsl-proj-add { opacity: 1; }
@@ -422,8 +441,37 @@ a:focus-visible {
     display: none;
   }
 
-  .grid-kanban { min-width: 720px; }
+  /* Kanban: let lanes scroll horizontally instead of a hard block. */
+  .grid-kanban { min-width: 560px; }
   .cnsl-footer-explainer { display: none; }
+
+  /* Sidebar becomes an off-canvas drawer (slides over content). */
+  .cnsl-sidebar {
+    position: fixed;
+    top: var(--header-row1-height);
+    left: 0;
+    bottom: 0;
+    z-index: 46;
+    width: 200px !important;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+    box-shadow: var(--shadow-panel);
+  }
+  .cnsl-sidebar[data-mobile-open="true"] { transform: translateX(0); }
+  .cnsl-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: var(--header-row1-height);
+    z-index: 45;
+    background: var(--overlay-bg);
+    backdrop-filter: blur(var(--overlay-blur));
+    -webkit-backdrop-filter: blur(var(--overlay-blur));
+  }
+
+  /* Safe-area: keep header/footer clear of notch + home indicator. */
+  .cnsl-header { padding-top: env(safe-area-inset-top); }
+  .cnsl-footer { margin-bottom: env(safe-area-inset-bottom); }
 }
 
 /* ─── Start page (/) decorative artwork ─────────────────── */

@@ -15,7 +15,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
 
   return (
     <footer
-      className="flex items-center"
+      className="cnsl-footer flex items-center"
       style={{
         // Floats over the table on the top layer (per SVG Backlog_03).
         position: "absolute",

@@ -8,14 +8,17 @@ export default function Sidebar({
   view,
   onViewChange,
   open = true,
+  mobileOpen = false,
 }: {
   view: View;
   onViewChange: (v: View) => void;
   open?: boolean;
+  mobileOpen?: boolean; // drawer state on mobile (CSS-driven via data attr)
 }) {
   return (
     <aside
       className="cnsl-sidebar shrink-0"
+      data-mobile-open={mobileOpen ? "true" : "false"}
       style={{
         width: open ? "var(--sidebar-width)" : "0px",
         minWidth: 0,

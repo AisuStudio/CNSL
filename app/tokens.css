@@ -58,6 +58,7 @@
   --canvas-width:        1366px;
   --sidebar-width:       60px;
   --panel-width:         500px;   /* right side-panel default */
+  --touch-min:           44px;    /* min touch target on mobile */
 
   /* ── Spacing scale ───────────────────────────────────── */
   --space-1:  4px;
