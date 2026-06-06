@@ -252,7 +252,7 @@ export default function Home() {
     setSyncState("unsynced"); // pending change, not yet written
     const id = setTimeout(() => {
       pushState();
-    }, 1500);
+    }, 800);
     return () => clearTimeout(id);
   }, [tasks, log, projectColors, notes, hydrated, conflict, pushState]);
 
