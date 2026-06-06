@@ -72,6 +72,22 @@ export async function POST(req: NextRequest) {
   const clientRev: number | undefined =
     typeof body.rev === "number" ? body.rev : undefined;
 
+  // #2 — input guards: cap counts + string sizes so a malformed/huge payload
+  // can't bloat or DoS the DB. Reject (413) rather than silently truncate.
+  const MAX_ITEMS = 10_000;
+  const MAX_STR = 100_000;
+  const big = (s: unknown) => typeof s === "string" && s.length > MAX_STR;
+  const oversized =
+    tasks.length > MAX_ITEMS ||
+    log.length > MAX_ITEMS ||
+    notes.length > MAX_ITEMS ||
+    tasks.some((t) => big(t.task) || big(t.description)) ||
+    notes.some((n) => big(n.title) || big(n.body)) ||
+    log.some((l) => big(l.text));
+  if (oversized) {
+    return NextResponse.json({ error: "payload too large" }, { status: 413 });
+  }
+
   let newRev = 0;
   try {
     await prisma.$transaction(
@@ -103,11 +119,21 @@ export async function POST(req: NextRequest) {
         }
         for (const t of tasks) {
         const data = taskToDb(t, trackerId, user.id);
-        await tx.task.upsert({
-          where: { id: t.id },
-          create: { id: t.id, ...data },
-          update: data,
+        // #1 — scope writes to THIS board. Update only a row already mine;
+        // create only if the id is unused anywhere; never touch another
+        // board's row (no cross-tenant overwrite / steal).
+        const upd = await tx.task.updateMany({
+          where: { id: t.id, boardId: trackerId },
+          data,
         });
+        if (upd.count === 0) {
+          const elsewhere = await tx.task.findUnique({
+            where: { id: t.id },
+            select: { id: true },
+          });
+          if (elsewhere) continue; // id belongs to another board → skip
+          await tx.task.create({ data: { id: t.id, ...data } });
+        }
         await tx.timeEntry.deleteMany({ where: { taskId: t.id } });
         const tes = dailyMinutesToTimeEntries(t, user.id);
         if (tes.length) await tx.timeEntry.createMany({ data: tes });
@@ -116,11 +142,17 @@ export async function POST(req: NextRequest) {
       // Log is append-only (never deleted client-side) → upsert only, no delete.
       for (const l of log) {
         const data = logToDb(l, user.id);
-        await tx.logEntry.upsert({
-          where: { id: l.id },
-          create: { id: l.id, ...data },
-          update: data,
+        const upd = await tx.logEntry.updateMany({
+          where: { id: l.id, userId: user.id },
+          data,
         });
+        if (upd.count === 0) {
+          const elsewhere = await tx.logEntry.findUnique({
+            where: { id: l.id },
+            select: { id: true },
+          });
+          if (!elsewhere) await tx.logEntry.create({ data: { id: l.id, ...data } });
+        }
       }
 
       // Notes: explicit deletes only (same rule as tasks).
@@ -131,11 +163,17 @@ export async function POST(req: NextRequest) {
       }
       for (const n of notes) {
         const data = noteToDb(n, notesId, user.id);
-        await tx.note.upsert({
-          where: { id: n.id },
-          create: { id: n.id, ...data },
-          update: data,
+        const upd = await tx.note.updateMany({
+          where: { id: n.id, boardId: notesId },
+          data,
         });
+        if (upd.count === 0) {
+          const elsewhere = await tx.note.findUnique({
+            where: { id: n.id },
+            select: { id: true },
+          });
+          if (!elsewhere) await tx.note.create({ data: { id: n.id, ...data } });
+        }
       }
 
       await tx.board.update({
