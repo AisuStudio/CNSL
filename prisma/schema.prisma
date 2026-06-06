@@ -103,6 +103,7 @@ model Task {
   epic           String      @default("")
   title          String      @default("") // the "task" text
   description    String      @default("")
+  subtasks       Json?       // checklist of { id, text, done } (#24)
   urgency        Urgency     @default(unsorted)
   status         Status      @default(open)
   complexity     Int? // poker
