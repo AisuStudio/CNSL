@@ -1,12 +1,13 @@
 // Field mapping between the app model (lib/mock-data Task/LogEntry) and the
 // Prisma DB rows. Reused by the /api/state route both directions.
-import type { Task, LogEntry, Complexity } from "./mock-data";
+import type { Task, LogEntry, Complexity, Subtask } from "./mock-data";
 import type { Note } from "./notes";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
   LogEntry as DbLogEntry,
   Note as DbNote,
+  Prisma,
 } from "@prisma/client";
 
 const VALID_POKER = [1, 2, 3, 5, 8, 13];
@@ -42,6 +43,9 @@ export function taskFromDb(row: DbTask & { timeEntries?: DbTimeEntry[] }): Task 
     trackingStartedAt: row.trackingStartedAt?.toISOString(),
     dailyMinutes: Object.keys(dailyMinutes).length ? dailyMinutes : undefined,
     description: row.description,
+    subtasks: Array.isArray(row.subtasks)
+      ? (row.subtasks as unknown as Subtask[])
+      : undefined,
     archived: row.archived,
     completedAt: row.completedAt?.toISOString() ?? undefined,
   };
@@ -56,6 +60,7 @@ export function taskToDb(t: Task, boardId: string, userId: string) {
     epic: t.epic ?? "",
     title: t.task ?? "",
     description: t.description ?? "",
+    subtasks: (t.subtasks ?? []) as unknown as Prisma.InputJsonValue,
     // enums: the app's string unions match the Prisma enum values
     urgency: t.urgency as DbTask["urgency"],
     status: t.status as DbTask["status"],
