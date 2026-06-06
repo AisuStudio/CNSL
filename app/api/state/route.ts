@@ -79,24 +79,20 @@ export async function POST(req: NextRequest) {
         // ── Version gate: a stale tab (old rev) is rejected atomically, so it
         // can never overwrite newer data. updateMany only matches when the rev
         // is still current; count 0 → someone else saved since → conflict.
-        if (clientRev !== undefined) {
-          const locked = await tx.board.updateMany({
-            where: { id: trackerId, rev: clientRev },
-            data: { rev: { increment: 1 } },
-          });
-          if (locked.count === 0) {
-            throw Object.assign(new Error("stale"), { code: "STALE" });
-          }
-          newRev = clientRev + 1;
-        } else {
-          // Backward-compat (old clients during rollout): bump without a gate.
-          const b = await tx.board.update({
-            where: { id: trackerId },
-            data: { rev: { increment: 1 } },
-            select: { rev: true },
-          });
-          newRev = b.rev;
+        // A save MUST carry the client's rev. No rev = an ancient pre-rev tab
+        // → reject (treat as stale) so it can't blind-overwrite. The atomic
+        // updateMany only matches when rev is still current.
+        if (clientRev === undefined) {
+          throw Object.assign(new Error("stale"), { code: "STALE" });
         }
+        const locked = await tx.board.updateMany({
+          where: { id: trackerId, rev: clientRev },
+          data: { rev: { increment: 1 } },
+        });
+        if (locked.count === 0) {
+          throw Object.assign(new Error("stale"), { code: "STALE" });
+        }
+        newRev = clientRev + 1;
 
         // ── Explicit deletes only — NEVER "delete everything not in payload".
         // A short/stale snapshot can no longer wipe tasks it simply doesn't know.
