@@ -374,6 +374,23 @@ export default function Home() {
     return () => clearInterval(id);
   }, [anyTracking]);
 
+  // PWA app-icon badge = number of running timers, so a forgotten running task
+  // shows on the home-screen/dock icon (like WhatsApp unread). Installed PWA
+  // only; no-ops elsewhere.
+  const runningCount = useMemo(
+    () => tasks.reduce((c, t) => c + (t.isTracking ? 1 : 0), 0),
+    [tasks]
+  );
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (!nav.setAppBadge) return;
+    if (runningCount > 0) nav.setAppBadge(runningCount).catch(() => {});
+    else nav.clearAppBadge?.().catch(() => {});
+  }, [runningCount]);
+
   // ─── Tracking log ───────────────────────────────────────
   function addLogEntry(text: string) {
     setLog((prev) => [
