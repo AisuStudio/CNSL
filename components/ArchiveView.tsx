@@ -10,6 +10,7 @@ export default function ArchiveView({
   onToggleTimer,
   onEditTask,
   onArchiveAllDone,
+  onDelete,
 }: {
   archived: Task[];
   doneCount: number;
@@ -17,6 +18,7 @@ export default function ArchiveView({
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
   onArchiveAllDone: () => void;
+  onDelete?: (id: string) => void;
 }) {
   return (
     <div className="cnsl-canvas">
@@ -78,6 +80,7 @@ export default function ArchiveView({
             onUpdate={onUpdate}
             onToggleTimer={onToggleTimer}
             onEditTask={onEditTask}
+            onDelete={onDelete}
           />
         ))
       )}

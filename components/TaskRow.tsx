@@ -7,9 +7,11 @@ import {
   STATUS_OPTIONS,
   COMPLEXITY_OPTIONS,
   STATUS_COLOR,
+  URGENCY_COLOR,
+  URGENCY_LABEL,
   formatHM,
 } from "@/lib/mock-data";
-import { PlayIcon, PauseIcon, ArchiveIcon } from "./icons";
+import { PlayIcon, PauseIcon, ArchiveIcon, TrashIcon } from "./icons";
 
 /* Archive button shown on done tasks (Backlog) to clear them one by one. */
 function ArchiveRowButton({ onClick }: { onClick: () => void }) {
@@ -23,6 +25,22 @@ function ArchiveRowButton({ onClick }: { onClick: () => void }) {
       style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
     >
       <ArchiveIcon color="var(--color-text-muted)" size={16} />
+    </button>
+  );
+}
+
+/* Delete button shown on archived tasks (Archive view) to remove them. */
+function DeleteRowButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Delete task"
+      title="Delete"
+      className="flex items-center justify-center shrink-0"
+      style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+    >
+      <TrashIcon color="var(--color-text-muted)" size={16} />
     </button>
   );
 }
@@ -118,18 +136,27 @@ export default function TaskRow({
   onToggleTimer,
   onEditTask,
   onArchive,
+  onDelete,
+  showUrgency = false,
 }: {
   task: Task;
   onUpdate: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
   onArchive?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  showUrgency?: boolean;
 }) {
   const showArchive = Boolean(onArchive && t.status === "done" && !t.archived);
+  const showDelete = Boolean(onDelete && t.archived);
+  const subDone = t.subtasks?.filter((s) => s.done).length ?? 0;
+  const subTotal = t.subtasks?.length ?? 0;
   const cells: React.ReactNode[] = [
     String(t.number).padStart(2, "0"),
-    // Done tasks show Archive (nothing left to track); else Play/Pause.
-    showArchive ? (
+    // Archived → Delete; done & active → Archive; else Play/Pause.
+    showDelete ? (
+      <DeleteRowButton key="delete" onClick={() => onDelete!(t.id)} />
+    ) : showArchive ? (
       <ArchiveRowButton key="archive" onClick={() => onArchive!(t.id)} />
     ) : (
       <TrackButton
@@ -144,10 +171,43 @@ export default function TaskRow({
       key="task"
       onClick={() => onEditTask(t.id)}
       title="Edit task"
-      className="hover:underline"
+      className="flex w-full items-center gap-2 hover:underline"
       style={{ cursor: "pointer" }}
     >
-      {t.task}
+      {showUrgency && (
+        <span
+          aria-hidden="true"
+          title={URGENCY_LABEL[t.urgency]}
+          className="inline-block shrink-0"
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "9999px",
+            background: URGENCY_COLOR[t.urgency],
+          }}
+        />
+      )}
+      <span
+        style={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {t.task}
+      </span>
+      {subTotal > 0 && (
+        <span
+          className="shrink-0"
+          title={`${subDone}/${subTotal} subtasks done`}
+          style={{
+            color: "var(--color-text-muted)",
+            fontSize: "var(--text-sm)",
+          }}
+        >
+          ☑ {subDone}/{subTotal}
+        </span>
+      )}
     </span>,
     <span key="status" className="flex w-full items-center gap-2">
       <StatusDot status={t.status} />

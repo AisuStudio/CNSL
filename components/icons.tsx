@@ -215,6 +215,26 @@ export function PlusIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function TrashIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // Simple rect-based trash glyph (lid + bin + bars) in the CNSL style.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect x="7" y="0" width="6" height="2.5" />
+        <rect x="0" y="3.5" width="20" height="2.5" />
+        <polygon points="2.5 7 3.6 20 16.4 20 17.5 7 15 7 14.1 17.5 5.9 17.5 5 7 2.5 7" />
+        <rect x="8.75" y="9" width="2.5" height="7" />
+      </g>
+    </svg>
+  );
+}
+
 export function DragDotsIcon({ color = "currentColor" }: { color?: string }) {
   // 3×3 dot grid — the draggable-field pull handle.
   const dots = [0, 1, 2];

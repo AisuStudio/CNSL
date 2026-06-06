@@ -6,12 +6,14 @@ import {
   type Status,
   type Urgency,
   type Complexity,
+  type Subtask,
   STATUS_OPTIONS,
   URGENCY_OPTIONS,
   COMPLEXITY_OPTIONS,
   formatHM,
   formatDate,
 } from "@/lib/mock-data";
+import { newId } from "@/lib/storage";
 import SidePanel from "./SidePanel";
 
 /* ── Light-card palette → design tokens (see tokens.css) ── */
@@ -134,6 +136,22 @@ export default function EditTaskModal({
     task.complexity
   );
   const [timeText, setTimeText] = useState(formatHM(task.trackedMinutes));
+  const [subtasks, setSubtasks] = useState<Subtask[]>(task.subtasks ?? []);
+
+  function addSubtask() {
+    setSubtasks((prev) => [
+      ...prev,
+      { id: newId("sub"), text: "", done: false },
+    ]);
+  }
+  function patchSubtask(id: string, patch: Partial<Subtask>) {
+    setSubtasks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...patch } : s))
+    );
+  }
+  function removeSubtask(id: string) {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
+  }
 
   function save() {
     onSubmit({
@@ -146,6 +164,10 @@ export default function EditTaskModal({
       urgency,
       complexity,
       trackedMinutes: parseHM(timeText, task.trackedMinutes),
+      // drop empty rows so blank subtasks don't persist
+      subtasks: subtasks
+        .map((s) => ({ ...s, text: s.text.trim() }))
+        .filter((s) => s.text.length > 0),
     });
   }
 
@@ -259,6 +281,88 @@ export default function EditTaskModal({
               lineHeight: 1.4,
             }}
           />
+        </div>
+
+        {/* Subtasks checklist (#24) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "10px",
+              color: META,
+            }}
+          >
+            <b>SUBTASKS</b>
+            {subtasks.length > 0 && (
+              <span>
+                {subtasks.filter((s) => s.done).length}/{subtasks.length}
+              </span>
+            )}
+          </div>
+          {subtasks.map((s) => (
+            <div
+              key={s.id}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <input
+                type="checkbox"
+                checked={s.done}
+                onChange={(e) => patchSubtask(s.id, { done: e.target.checked })}
+                aria-label="Done"
+                style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: ACCENT }}
+              />
+              <input
+                value={s.text}
+                onChange={(e) => patchSubtask(s.id, { text: e.target.value })}
+                placeholder="Subtask"
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                  minWidth: 0,
+                  height: "28px",
+                  textDecoration: s.done ? "line-through" : "none",
+                  opacity: s.done ? 0.6 : 1,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => removeSubtask(s.id)}
+                aria-label="Remove subtask"
+                title="Remove"
+                style={{
+                  height: "28px",
+                  width: "28px",
+                  background: "transparent",
+                  color: META,
+                  border: `1px solid ${C1}`,
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSubtask}
+            style={{
+              alignSelf: "flex-start",
+              height: "28px",
+              padding: "0 12px",
+              background: "transparent",
+              color: INK,
+              border: `1px solid ${C1}`,
+              borderRadius: "6px",
+              fontSize: "var(--text-sm)",
+              cursor: "pointer",
+            }}
+          >
+            + Subtask
+          </button>
         </div>
 
         {/* Editable pills: Status · Urgency · Poker */}

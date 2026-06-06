@@ -8,6 +8,7 @@ import {
   type ProjectColors,
 } from "@/lib/projectColors";
 import TaskRow from "./TaskRow";
+import { PlusIcon } from "./icons";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
 
@@ -18,6 +19,7 @@ export default function ProjectView({
   onEditTask,
   onArchive,
   onNewInProject,
+  onExportProject,
   projectColors,
 }: {
   tasks: Task[];
@@ -26,6 +28,7 @@ export default function ProjectView({
   onEditTask: (id: string) => void;
   onArchive: (id: string) => void;
   onNewInProject: (project: string) => void;
+  onExportProject: (project: string) => void;
   projectColors?: ProjectColors;
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
@@ -126,7 +129,8 @@ export default function ProjectView({
                 {items.length}
               </span>
 
-              {/* + new task in this project (visible on hover) */}
+              {/* + new task in this project (#47: bigger, lime; on mobile
+                  always visible + light-beige — styling in globals.css) */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -135,24 +139,50 @@ export default function ProjectView({
                 }}
                 aria-label={`New task in ${project}`}
                 title={`New task in ${project}`}
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="cnsl-proj-add"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "24px",
-                  height: "24px",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  background: "var(--color-bg-deep)",
+                  border: "none",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <PlusIcon color="var(--color-lime)" />
+              </button>
+
+              {/* MD export of just this project (#52) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExportProject(project);
+                }}
+                aria-label={`Export ${project} as Markdown`}
+                title={`Export ${project} as Markdown`}
+                className="cnsl-proj-add"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "28px",
+                  padding: "0 8px",
                   borderRadius: "6px",
                   background: "var(--color-bg-deep)",
                   border: "none",
                   cursor: "pointer",
                   color: "var(--color-text-primary)",
-                  fontSize: "16px",
-                  lineHeight: 1,
+                  fontSize: "var(--text-sm)",
+                  fontWeight: 700,
                   flexShrink: 0,
                 }}
               >
-                +
+                MD
               </button>
             </div>
 
@@ -166,6 +196,7 @@ export default function ProjectView({
                   onToggleTimer={onToggleTimer}
                   onEditTask={onEditTask}
                   onArchive={onArchive}
+                  showUrgency
                 />
               ))}
           </div>

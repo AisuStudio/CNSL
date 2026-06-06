@@ -5,7 +5,7 @@ import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
 import Footer from "@/components/Footer";
-import BacklogView from "@/components/BacklogView";
+import BacklogView, { type BacklogFilter } from "@/components/BacklogView";
 import KanbanView from "@/components/KanbanView";
 import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
@@ -41,6 +41,8 @@ export default function Home() {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [sort, setSort] = useState<Sort>(null);
+  // Backlog filter: All ↔ Untouched (open only) — #53.
+  const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
@@ -479,6 +481,14 @@ export default function Home() {
     () => activeTasks.filter((t) => t.status === "done").length,
     [activeTasks]
   );
+  // Backlog list: optionally narrowed to untouched (open) tasks (#53).
+  const backlogTasks = useMemo(
+    () =>
+      backlogFilter === "open"
+        ? sortedTasks.filter((t) => t.status === "open")
+        : sortedTasks,
+    [sortedTasks, backlogFilter]
+  );
 
   // Today view: urgency=today, column-sort applies (shared), but done/canceled
   // are stably pushed to the bottom (#118 follow-up).
@@ -594,11 +604,13 @@ export default function Home() {
               <>
             {view === "backlog" && (
           <BacklogView
-            tasks={sortedTasks}
+            tasks={backlogTasks}
             onUpdate={updateTask}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
+            filter={backlogFilter}
+            onFilterChange={setBacklogFilter}
           />
         )}
         {view === "today" && (
@@ -626,6 +638,7 @@ export default function Home() {
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
             onNewInProject={(project) => openCreate(project)}
+            onExportProject={(project) => exportDownloadMarkdown(project)}
             projectColors={projectColors}
           />
         )}
@@ -637,6 +650,17 @@ export default function Home() {
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
             onArchiveAllDone={archiveAllDone}
+            onDelete={
+              DEMO
+                ? undefined
+                : (id) => {
+                    if (
+                      typeof window === "undefined" ||
+                      window.confirm("Delete this archived task permanently?")
+                    )
+                      deleteTask(id);
+                  }
+            }
           />
         )}
               </>

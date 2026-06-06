@@ -387,9 +387,23 @@ a:focus-visible {
   border-radius:  4px;
 }
 
+/* Project-bar hover actions (+ / MD): hidden until hover on desktop (#47/#52) */
+.cnsl-proj-add {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.group:hover .cnsl-proj-add {
+  opacity: 1;
+}
+
 /* ─── Mobile ≤768px ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .cnsl-canvas { min-width: 0; }
+
+  /* Mobile has no hover → the project + / MD buttons stay visible (#47) */
+  .cnsl-proj-add { opacity: 1; }
+  /* the + plus turns light-beige on mobile (per #47) */
+  .cnsl-proj-add svg rect { fill: var(--color-text-secondary); }
 
   .grid-backlog {
     grid-template-columns: 34px 40px 1fr 104px;
