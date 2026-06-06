@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
@@ -16,6 +16,7 @@ import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
 import MultiTabBanner from "@/components/MultiTabBanner";
+import { type SyncState } from "@/components/SyncIndicator";
 import type { Note } from "@/lib/notes";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
@@ -54,6 +55,7 @@ export default function Home() {
   // Save-hardening: board version for optimistic concurrency + conflict state.
   const [rev, setRev] = useState<number | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [syncState, setSyncState] = useState<SyncState>("synced");
   // Ids the user explicitly deleted (only these are removed server-side).
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
@@ -194,17 +196,19 @@ export default function Home() {
 
   // Persist on change (post-hydration). Demo → localStorage; real → debounced
   // snapshot POST to the API.
-  useEffect(() => {
-    if (!hydrated) return;
+  // Write the current board to the store. Used by the debounced auto-save AND
+  // the manual "save now" click on the sync indicator.
+  const pushState = useCallback(async () => {
     if (DEMO) {
       saveState({ tasks, log, projectColors, notes });
+      setSyncState("synced");
       return;
     }
-    // After a conflict we stop saving entirely — a stale tab must not keep
-    // trying to write (the user is asked to reload).
+    // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
-    const id = setTimeout(() => {
-      fetch("/api/state", {
+    setSyncState("saving");
+    try {
+      const res = await fetch("/api/state", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -216,24 +220,41 @@ export default function Home() {
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
         }),
-      })
-        .then(async (res) => {
-          if (res.status === 409) {
-            // Board changed elsewhere — stop saving, prompt a reload.
-            setConflict(true);
-            return;
-          }
-          if (!res.ok) return;
-          const d = await res.json();
-          if (typeof d.rev === "number") setRev(d.rev);
-          // Deletions are now applied server-side; clear the pending sets.
-          deletedTaskIds.current.clear();
-          deletedNoteIds.current.clear();
-        })
-        .catch(() => {});
+      });
+      if (res.status === 409) {
+        setConflict(true);
+        setSyncState("unsynced");
+        return;
+      }
+      if (!res.ok) {
+        setSyncState("unsynced");
+        return;
+      }
+      const d = await res.json();
+      if (typeof d.rev === "number") setRev(d.rev);
+      deletedTaskIds.current.clear();
+      deletedNoteIds.current.clear();
+      setSyncState("synced");
+    } catch {
+      setSyncState("unsynced");
+    }
+  }, [tasks, log, projectColors, notes, rev, conflict]);
+
+  // Auto-save: debounce 1.5s after any change.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (DEMO) {
+      saveState({ tasks, log, projectColors, notes });
+      setSyncState("synced");
+      return;
+    }
+    if (conflict) return;
+    setSyncState("unsynced"); // pending change, not yet written
+    const id = setTimeout(() => {
+      pushState();
     }, 1500);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, notes, hydrated, rev, conflict]);
+  }, [tasks, log, projectColors, notes, hydrated, conflict, pushState]);
 
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123).
@@ -699,6 +720,8 @@ export default function Home() {
         onLogoClick={() => setShowInfo(true)}
         onOpenInfo={() => setShowInfo(true)}
         onOpenSettings={() => setShowSettings(true)}
+        syncState={syncState}
+        onForceSave={pushState}
       />
 
       <div className="cnsl-body">

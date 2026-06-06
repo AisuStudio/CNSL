@@ -387,6 +387,13 @@ a:focus-visible {
   border-radius:  4px;
 }
 
+/* Sync indicator: a lit pulse travels the 4×4 raster while saving (#sync) */
+@keyframes cnsl-sync-snake {
+  0%, 100% { fill: var(--color-text-muted); }
+  6%       { fill: var(--color-lime); }
+  18%      { fill: var(--color-text-muted); }
+}
+
 /* Project-bar hover actions (+ / MD): hidden until hover on desktop (#47/#52) */
 .cnsl-proj-add {
   opacity: 0;

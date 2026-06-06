@@ -2,6 +2,7 @@
 
 import { InfoIcon, PlusIcon, SettingsIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
+import SyncIndicator, { type SyncState } from "./SyncIndicator";
 import { TOOL_DEFS } from "./viewDefs";
 
 // Task Tracker sub-views (sidebar)
@@ -33,6 +34,8 @@ export default function Header({
   onLogoClick,
   onOpenInfo,
   onOpenSettings,
+  syncState,
+  onForceSave,
 }: {
   tool: Tool;
   onToolChange: (t: Tool) => void;
@@ -40,6 +43,8 @@ export default function Header({
   onLogoClick?: () => void;
   onOpenInfo?: () => void;
   onOpenSettings?: () => void;
+  syncState?: SyncState;
+  onForceSave?: () => void;
 }) {
   return (
     <header
@@ -120,6 +125,9 @@ export default function Header({
         </div>
 
         <div className="ml-auto flex items-center gap-3">
+          {syncState && (
+            <SyncIndicator state={syncState} onClick={onForceSave} />
+          )}
           <button
             type="button"
             onClick={onOpenInfo}
