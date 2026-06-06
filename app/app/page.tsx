@@ -15,6 +15,7 @@ import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
+import MultiTabBanner from "@/components/MultiTabBanner";
 import type { Note } from "@/lib/notes";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
@@ -50,6 +51,12 @@ export default function Home() {
   const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  // Save-hardening: board version for optimistic concurrency + conflict state.
+  const [rev, setRev] = useState<number | null>(null);
+  const [conflict, setConflict] = useState(false);
+  // Ids the user explicitly deleted (only these are removed server-side).
+  const deletedTaskIds = useRef<Set<string>>(new Set());
+  const deletedNoteIds = useRef<Set<string>>(new Set());
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -80,6 +87,7 @@ export default function Home() {
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
           setNotes(data.notes ?? []);
+          setRev(typeof data.rev === "number" ? data.rev : 0);
           setHydrated(true);
         })
         // On failure DO NOT hydrate — keeps the save effect off so an empty
@@ -192,15 +200,40 @@ export default function Home() {
       saveState({ tasks, log, projectColors, notes });
       return;
     }
+    // After a conflict we stop saving entirely — a stale tab must not keep
+    // trying to write (the user is asked to reload).
+    if (conflict) return;
     const id = setTimeout(() => {
       fetch("/api/state", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tasks, log, projectColors, notes }),
-      }).catch(() => {});
+        body: JSON.stringify({
+          tasks,
+          log,
+          projectColors,
+          notes,
+          rev,
+          deletedTaskIds: [...deletedTaskIds.current],
+          deletedNoteIds: [...deletedNoteIds.current],
+        }),
+      })
+        .then(async (res) => {
+          if (res.status === 409) {
+            // Board changed elsewhere — stop saving, prompt a reload.
+            setConflict(true);
+            return;
+          }
+          if (!res.ok) return;
+          const d = await res.json();
+          if (typeof d.rev === "number") setRev(d.rev);
+          // Deletions are now applied server-side; clear the pending sets.
+          deletedTaskIds.current.clear();
+          deletedNoteIds.current.clear();
+        })
+        .catch(() => {});
     }, 1500);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, notes, hydrated]);
+  }, [tasks, log, projectColors, notes, hydrated, rev, conflict]);
 
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123).
@@ -253,6 +286,7 @@ export default function Home() {
     setModalTask(null);
   }
   function deleteTask(id: string) {
+    deletedTaskIds.current.add(id); // explicit delete — server removes only these
     setTasks((prev) => prev.filter((t) => t.id !== id));
     setModalTask(null);
   }
@@ -407,6 +441,7 @@ export default function Home() {
     );
   }
   function deleteNote(id: string) {
+    deletedNoteIds.current.add(id); // explicit delete — server removes only these
     setNotes((prev) => prev.filter((n) => n.id !== id));
   }
 
@@ -621,6 +656,42 @@ export default function Home() {
 
   return (
     <div className="cnsl-app">
+      <MultiTabBanner />
+      {conflict && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "8px 16px",
+            background: "var(--color-accent)",
+            color: "var(--color-text-primary)",
+            fontSize: "var(--text-sm)",
+            fontWeight: 700,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            Dieses Board wurde woanders geändert (anderer Tab/Gerät). Zur
+            Sicherheit wird hier nicht mehr gespeichert. Bitte neu laden.
+          </span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              background: "var(--color-text-primary)",
+              color: "var(--color-accent)",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 12px",
+              fontSize: "var(--text-sm)",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Neu laden
+          </button>
+        </div>
+      )}
       <Header
         tool={tool}
         onToolChange={setTool}

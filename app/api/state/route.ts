@@ -46,6 +46,7 @@ export async function GET() {
     log: log.map(logFromDb),
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
     notes: notes.map(noteFromDb),
+    rev: board?.rev ?? 0,
   });
 }
 
@@ -61,18 +62,50 @@ export async function POST(req: NextRequest) {
   const log: LogEntry[] = Array.isArray(body.log) ? body.log : [];
   const notes: Note[] = Array.isArray(body.notes) ? body.notes : [];
   const projectColors = body.projectColors ?? {};
+  // Save-hardening: explicit deletions + optimistic-concurrency version (rev).
+  const deletedTaskIds: string[] = Array.isArray(body.deletedTaskIds)
+    ? body.deletedTaskIds
+    : [];
+  const deletedNoteIds: string[] = Array.isArray(body.deletedNoteIds)
+    ? body.deletedNoteIds
+    : [];
+  const clientRev: number | undefined =
+    typeof body.rev === "number" ? body.rev : undefined;
 
-  await prisma.$transaction(
-    async (tx) => {
-      // Safety: never wipe a board with an empty snapshot. A failed/empty load
-      // must not be able to delete everything (the empty-overwrite data loss).
-      const taskIds = tasks.map((t) => t.id);
-      if (taskIds.length > 0) {
-        await tx.task.deleteMany({
-          where: { boardId: trackerId, id: { notIn: taskIds } },
-        });
-      }
-      for (const t of tasks) {
+  let newRev = 0;
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        // ── Version gate: a stale tab (old rev) is rejected atomically, so it
+        // can never overwrite newer data. updateMany only matches when the rev
+        // is still current; count 0 → someone else saved since → conflict.
+        if (clientRev !== undefined) {
+          const locked = await tx.board.updateMany({
+            where: { id: trackerId, rev: clientRev },
+            data: { rev: { increment: 1 } },
+          });
+          if (locked.count === 0) {
+            throw Object.assign(new Error("stale"), { code: "STALE" });
+          }
+          newRev = clientRev + 1;
+        } else {
+          // Backward-compat (old clients during rollout): bump without a gate.
+          const b = await tx.board.update({
+            where: { id: trackerId },
+            data: { rev: { increment: 1 } },
+            select: { rev: true },
+          });
+          newRev = b.rev;
+        }
+
+        // ── Explicit deletes only — NEVER "delete everything not in payload".
+        // A short/stale snapshot can no longer wipe tasks it simply doesn't know.
+        if (deletedTaskIds.length > 0) {
+          await tx.task.deleteMany({
+            where: { boardId: trackerId, id: { in: deletedTaskIds } },
+          });
+        }
+        for (const t of tasks) {
         const data = taskToDb(t, trackerId, user.id);
         await tx.task.upsert({
           where: { id: t.id },
@@ -84,12 +117,7 @@ export async function POST(req: NextRequest) {
         if (tes.length) await tx.timeEntry.createMany({ data: tes });
       }
 
-      const logIds = log.map((l) => l.id);
-      if (logIds.length > 0) {
-        await tx.logEntry.deleteMany({
-          where: { userId: user.id, id: { notIn: logIds } },
-        });
-      }
+      // Log is append-only (never deleted client-side) → upsert only, no delete.
       for (const l of log) {
         const data = logToDb(l, user.id);
         await tx.logEntry.upsert({
@@ -99,11 +127,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Notes (snapshot upsert on the notes board; same empty-payload guard)
-      const noteIds = notes.map((n) => n.id);
-      if (noteIds.length > 0) {
+      // Notes: explicit deletes only (same rule as tasks).
+      if (deletedNoteIds.length > 0) {
         await tx.note.deleteMany({
-          where: { boardId: notesId, id: { notIn: noteIds } },
+          where: { boardId: notesId, id: { in: deletedNoteIds } },
         });
       }
       for (const n of notes) {
@@ -122,6 +149,20 @@ export async function POST(req: NextRequest) {
     },
     { timeout: 20_000 }
   );
+  } catch (e) {
+    if ((e as { code?: string }).code === "STALE") {
+      // Stale client — board changed elsewhere. Reject WITHOUT writing.
+      const b = await prisma.board.findUnique({
+        where: { id: trackerId },
+        select: { rev: true },
+      });
+      return NextResponse.json(
+        { error: "stale", rev: b?.rev ?? 0 },
+        { status: 409 }
+      );
+    }
+    throw e;
+  }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, rev: newRev });
 }

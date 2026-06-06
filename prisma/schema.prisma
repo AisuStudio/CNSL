@@ -72,6 +72,7 @@ model Board {
   name          String
   color         String?
   projectColors Json?      // per-project bar colour overrides (#18)
+  rev           Int        @default(0) // optimistic-concurrency version (save-hardening)
   createdAt     DateTime   @default(now())
   archivedAt    DateTime?
 
