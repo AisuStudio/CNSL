@@ -15,7 +15,6 @@ import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
-import MultiTabBanner from "@/components/MultiTabBanner";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Note } from "@/lib/notes";
@@ -37,6 +36,16 @@ export type Sort = { key: string; dir: "asc" | "desc" } | null;
 
 // Demo mode (GitHub Pages): visitors can add/edit but not delete (#127).
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+
+// Re-anchor running timers + accrue elapsed time after a load/resync gap.
+function catchUpTimers(arr: Task[]): Task[] {
+  const nowMs = Date.now();
+  return arr.map((t) =>
+    t.isTracking && !t.trackingStartedAt
+      ? { ...t, trackingStartedAt: new Date(nowMs).toISOString() }
+      : accrueTracking(t, nowMs)
+  );
+}
 
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
@@ -320,6 +329,47 @@ export default function Home() {
       document.removeEventListener("visibilitychange", flush);
       window.removeEventListener("pagehide", flush);
     };
+  }, [hydrated, conflict]);
+
+  // Re-sync from the server when the app becomes visible again. The on-hide
+  // flush bumps the server rev but the client can't read that response, so its
+  // rev goes stale → the next save would 409 ("changed elsewhere") falsely.
+  // Adopting server truth on return fixes that AND keeps two tabs/devices
+  // consistent. Local unsaved edits are kept on top (last-write-wins per task).
+  useEffect(() => {
+    if (DEMO) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!hydrated || conflict) return;
+      fetch("/api/state")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return;
+          const server = catchUpTimers(data.tasks ?? []);
+          // tasks the user changed locally but haven't been confirmed saved
+          const pending = new Map(
+            latest.current.tasks
+              .filter((t) => savedRef.current.get(t.id) !== JSON.stringify(t))
+              .map((t) => [t.id, t] as const)
+          );
+          const serverIds = new Set(server.map((t) => t.id));
+          const merged = server.map((t) => pending.get(t.id) ?? t);
+          // keep local-only tasks the server doesn't have yet
+          for (const [id, t] of pending) if (!serverIds.has(id)) merged.push(t);
+          setTasks(merged);
+          // baseline = server truth, so pending tasks remain "changed" and get
+          // re-saved with the fresh rev on the next save.
+          savedRef.current = new Map(server.map((t) => [t.id, JSON.stringify(t)]));
+          setLog(data.log ?? []);
+          setNotes(data.notes ?? []);
+          if (data.projectColors) setProjectColors(data.projectColors);
+          setRev(typeof data.rev === "number" ? data.rev : 0);
+          setSyncState("synced");
+        })
+        .catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [hydrated, conflict]);
 
   // Quick-adjust: patch a single field of one task.
@@ -768,7 +818,6 @@ export default function Home() {
 
   return (
     <div className="cnsl-app">
-      <MultiTabBanner />
       {conflict && (
         <div
           style={{
