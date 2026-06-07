@@ -63,26 +63,7 @@ export default function Header({
         className="cnsl-header-row flex h-full items-center"
         style={{ paddingLeft: "35px", paddingRight: "24px" }}
       >
-        {/* Mobile-only hamburger → opens the nav drawer */}
-        {onToggleNav && (
-          <button
-            type="button"
-            onClick={onToggleNav}
-            aria-label="Menu"
-            title="Menu"
-            className="cnsl-only-mobile cnsl-touch items-center justify-center"
-            style={{
-              marginRight: "10px",
-              borderRadius: "8px",
-              background: "var(--color-bg-deep)",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            <SidebarIcon color="var(--color-text-muted)" />
-          </button>
-        )}
-
+        {/* Logo stays in the left corner */}
         <button
           type="button"
           onClick={onLogoClick}
@@ -93,6 +74,26 @@ export default function Header({
         >
           <CnslLogo size={34} />
         </button>
+
+        {/* Mobile-only hamburger → sits to the RIGHT of the logo */}
+        {onToggleNav && (
+          <button
+            type="button"
+            onClick={onToggleNav}
+            aria-label="Menu"
+            title="Menu"
+            className="cnsl-only-mobile cnsl-touch items-center justify-center"
+            style={{
+              marginLeft: "10px",
+              borderRadius: "8px",
+              background: "var(--color-bg-deep)",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <SidebarIcon color="var(--color-text-muted)" />
+          </button>
+        )}
 
         <div className="ml-8 flex items-center gap-3">
           {onNewTask && (
