@@ -62,6 +62,9 @@ export default function Home() {
   // Ids the user explicitly deleted (only these are removed server-side).
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
+  // taskId → last-saved JSON, so we only POST tasks that actually changed
+  // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
+  const savedRef = useRef<Map<string, string>>(new Map());
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -88,7 +91,10 @@ export default function Home() {
       fetch("/api/state")
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
         .then((data) => {
-          setTasks(catchUp(data.tasks ?? []));
+          const loaded = catchUp(data.tasks ?? []);
+          setTasks(loaded);
+          // seed the diff baseline so the first save sends only real changes
+          savedRef.current = new Map(loaded.map((t) => [t.id, JSON.stringify(t)]));
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
           setNotes(data.notes ?? []);
@@ -209,13 +215,17 @@ export default function Home() {
     }
     // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
+    // Diff-save: only send tasks whose JSON changed since the last save.
+    const changed = tasks.filter(
+      (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
+    );
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          tasks,
+          tasks: changed,
           log,
           projectColors,
           notes,
@@ -235,6 +245,9 @@ export default function Home() {
       }
       const d = await res.json();
       if (typeof d.rev === "number") setRev(d.rev);
+      // baseline now matches what we just persisted
+      changed.forEach((t) => savedRef.current.set(t.id, JSON.stringify(t)));
+      deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
       setSyncState("synced");
@@ -273,13 +286,26 @@ export default function Home() {
       if (document.visibilityState !== "hidden") return;
       if (!hydrated || conflict) return;
       const l = latest.current;
+      const changed = l.tasks.filter(
+        (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
+      );
+      if (
+        changed.length === 0 &&
+        deletedTaskIds.current.size === 0 &&
+        deletedNoteIds.current.size === 0
+      )
+        return; // nothing pending → don't fire on every tab switch
       try {
         fetch("/api/state", {
           method: "POST",
           headers: { "content-type": "application/json" },
           keepalive: true,
           body: JSON.stringify({
-            ...l,
+            tasks: changed,
+            log: l.log,
+            projectColors: l.projectColors,
+            notes: l.notes,
+            rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
           }),
@@ -379,6 +405,14 @@ export default function Home() {
   // anchor, stop does a final catch-up and clears it.
   function toggleTimer(id: string) {
     const nowMs = Date.now();
+    // iOS PWA renders the app-icon badge only once notifications are allowed.
+    // Ask on the first Play tap (a valid user gesture); harmless elsewhere.
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "default"
+    ) {
+      Notification.requestPermission?.().catch(() => {});
+    }
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
