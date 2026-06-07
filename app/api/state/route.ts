@@ -62,15 +62,14 @@ export async function POST(req: NextRequest) {
   const log: LogEntry[] = Array.isArray(body.log) ? body.log : [];
   const notes: Note[] = Array.isArray(body.notes) ? body.notes : [];
   const projectColors = body.projectColors ?? {};
-  // Save-hardening: explicit deletions + optimistic-concurrency version (rev).
+  // Explicit deletions: a save only removes ids it names (never "everything
+  // not in the payload"), so a diff-save can't wipe tasks it didn't send.
   const deletedTaskIds: string[] = Array.isArray(body.deletedTaskIds)
     ? body.deletedTaskIds
     : [];
   const deletedNoteIds: string[] = Array.isArray(body.deletedNoteIds)
     ? body.deletedNoteIds
     : [];
-  const clientRev: number | undefined =
-    typeof body.rev === "number" ? body.rev : undefined;
 
   // #2 — input guards: cap counts + string sizes so a malformed/huge payload
   // can't bloat or DoS the DB. Reject (413) rather than silently truncate.
@@ -88,28 +87,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "payload too large" }, { status: 413 });
   }
 
-  let newRev = 0;
-  try {
-    await prisma.$transaction(
+  // No version gate: data safety now comes from diff-save (client sends only
+  // CHANGED tasks) + explicit deletes (a save can only remove ids it names).
+  // A stale device can therefore never overwrite/delete tasks it didn't touch,
+  // so the rev lock is unnecessary and only caused false "changed elsewhere"
+  // (409) save errors across a single user's devices. Last-write-wins per task.
+  await prisma.$transaction(
       async (tx) => {
-        // ── Version gate: a stale tab (old rev) is rejected atomically, so it
-        // can never overwrite newer data. updateMany only matches when the rev
-        // is still current; count 0 → someone else saved since → conflict.
-        // A save MUST carry the client's rev. No rev = an ancient pre-rev tab
-        // → reject (treat as stale) so it can't blind-overwrite. The atomic
-        // updateMany only matches when rev is still current.
-        if (clientRev === undefined) {
-          throw Object.assign(new Error("stale"), { code: "STALE" });
-        }
-        const locked = await tx.board.updateMany({
-          where: { id: trackerId, rev: clientRev },
-          data: { rev: { increment: 1 } },
-        });
-        if (locked.count === 0) {
-          throw Object.assign(new Error("stale"), { code: "STALE" });
-        }
-        newRev = clientRev + 1;
-
         // ── Explicit deletes only — NEVER "delete everything not in payload".
         // A short/stale snapshot can no longer wipe tasks it simply doesn't know.
         if (deletedTaskIds.length > 0) {
@@ -183,20 +167,6 @@ export async function POST(req: NextRequest) {
     },
     { timeout: 20_000 }
   );
-  } catch (e) {
-    if ((e as { code?: string }).code === "STALE") {
-      // Stale client — board changed elsewhere. Reject WITHOUT writing.
-      const b = await prisma.board.findUnique({
-        where: { id: trackerId },
-        select: { rev: true },
-      });
-      return NextResponse.json(
-        { error: "stale", rev: b?.rev ?? 0 },
-        { status: 409 }
-      );
-    }
-    throw e;
-  }
 
-  return NextResponse.json({ ok: true, rev: newRev });
+  return NextResponse.json({ ok: true });
 }
