@@ -259,6 +259,43 @@ export default function Home() {
     return () => clearTimeout(id);
   }, [tasks, log, projectColors, notes, hydrated, conflict, pushState]);
 
+  // Always-current snapshot for the flush-on-hide handler below.
+  const latest = useRef({ tasks, log, projectColors, notes, rev });
+  latest.current = { tasks, log, projectColors, notes, rev };
+
+  // Flush immediately when the app is hidden/closed (PWA close, tab switch,
+  // backgrounding). The debounced auto-save is cancelled on unmount, so a
+  // just-started timer (or any quick edit) would otherwise be lost. `keepalive`
+  // lets the request finish while the page is going away.
+  useEffect(() => {
+    if (DEMO) return;
+    const flush = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (!hydrated || conflict) return;
+      const l = latest.current;
+      try {
+        fetch("/api/state", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            ...l,
+            deletedTaskIds: [...deletedTaskIds.current],
+            deletedNoteIds: [...deletedNoteIds.current],
+          }),
+        }).catch(() => {});
+      } catch {
+        /* ignore */
+      }
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [hydrated, conflict]);
+
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123).
   function updateTask<K extends keyof Task>(id: string, key: K, value: Task[K]) {
