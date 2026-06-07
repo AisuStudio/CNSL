@@ -56,14 +56,10 @@ export function minutesOnDay(t: Task, key: string): number {
   return t.dailyMinutes?.[key] ?? 0;
 }
 
-// Cap a single accrual so a sleep / tab-suspension gap can't dump hours in.
-// Normal use ticks every ~30s, well under this; only sleep/suspension hits it.
-export const TRACK_GAP_CAP_MS = 3 * 60_000;
-
 // Commit elapsed real time for a running task. Timestamp-based: it credits the
-// wall-clock minutes since `trackingStartedAt`, so it survives reloads, sleep
-// and background throttling instead of losing un-ticked time. Caps any single
-// gap (sleep) and carries the sub-minute remainder in the anchor.
+// FULL wall-clock minutes since `trackingStartedAt` (no cap — real background
+// time counts, Tyme-style; the app-icon badge warns about a forgotten timer),
+// carrying the sub-minute remainder in the anchor so it survives reloads/sleep.
 export function accrueTracking(t: Task, nowMs: number): Task {
   if (!t.isTracking || !t.trackingStartedAt) return t;
   const started = Date.parse(t.trackingStartedAt);
@@ -71,12 +67,9 @@ export function accrueTracking(t: Task, nowMs: number): Task {
     // bad anchor → re-anchor, credit nothing
     return { ...t, trackingStartedAt: new Date(nowMs).toISOString() };
   }
-  const gap = nowMs - started;
-  const counted = Math.min(gap, TRACK_GAP_CAP_MS);
-  const whole = Math.floor(counted / 60_000);
+  const whole = Math.floor((nowMs - started) / 60_000);
   if (whole < 1) return t; // sub-minute remainder accrues on the next tick
-  // gap within cap → carry remainder; big idle gap → drop the un-counted excess
-  const nextAnchor = gap <= TRACK_GAP_CAP_MS ? started + whole * 60_000 : nowMs;
+  const nextAnchor = started + whole * 60_000; // carry the remainder
   const key = dayKey(new Date(nowMs));
   return {
     ...t,
