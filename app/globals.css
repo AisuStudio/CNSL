@@ -402,6 +402,8 @@ a:focus-visible {
 .group:hover .cnsl-proj-add {
   opacity: 1;
 }
+/* #156 — project name turns lime on hover (state colours otherwise) */
+.cnsl-proj-bar:hover .cnsl-proj-name { color: var(--color-lime) !important; }
 
 /* ─── Responsive utilities (mobile-readiness) ───────────── */
 /* Min touch target on small screens. */

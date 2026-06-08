@@ -960,9 +960,9 @@ export default function Home() {
           {/* On mobile the card views (backlog/today/project) don't use the
               column header — hide it there; keep it for titled views. */}
           {!(
-            isMobile &&
             tool === "tracker" &&
-            (view === "backlog" || view === "today" || view === "project")
+            (view === "project" ||
+              (isMobile && (view === "backlog" || view === "today")))
           ) && (
             <TableHeader
               view={tool === "tracker" ? view : tool}
@@ -1015,7 +1015,6 @@ export default function Home() {
             onArchive={(id) => setArchived(id, true)}
             onNewInProject={(project) => openCreate(project)}
             onExportProject={(project) => exportCopyMarkdown(project)}
-            projectColors={projectColors}
           />
         )}
         {view === "archive" && (

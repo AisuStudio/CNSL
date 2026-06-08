@@ -6,6 +6,7 @@ import "./globals.css";
 // basePath (and get hashed/optimized). Exposed as CSS variables.
 const publicSans = localFont({
   src: [
+    { path: "../public/fonts/public-sans/PublicSans-Light.woff2", weight: "300", style: "normal" },
     { path: "../public/fonts/public-sans/PublicSans-Regular.woff2", weight: "400", style: "normal" },
     { path: "../public/fonts/public-sans/PublicSans-Medium.woff2", weight: "500", style: "normal" },
     { path: "../public/fonts/public-sans/PublicSans-Bold.woff2", weight: "700", style: "normal" },
