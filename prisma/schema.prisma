@@ -78,6 +78,7 @@ model Board {
 
   members    BoardMember[]
   tasks      Task[]
+  events     Event[]
 }
 
 /// Who may access a board (= sharing). Role gates read/write.
@@ -105,6 +106,8 @@ model Task {
   title          String      @default("") // the "task" text
   description    String      @default("")
   subtasks       Json?       // checklist of { id, text, done } (#24)
+  deadline       DateTime?   // task due date/time (#142 deadlines)
+  reminders      Json?       // [{ id, at?, offsetMinutes?, notifiedAt? }] (#142)
   urgency        Urgency     @default(unsorted)
   status         Status      @default(open)
   complexity     Int? // poker
@@ -177,6 +180,25 @@ model Note {
   @@index([boardId])
 }
 
+// ─── Content: Calendar (board kind='calendar', #142) ────
+
+model Event {
+  id          String    @id @default(uuid())
+  boardId     String
+  board       Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  title       String    @default("")
+  startsAt    DateTime
+  endsAt      DateTime?
+  allDay      Boolean   @default(false)
+  note        String    @default("")
+  taskId      String? // optional loose link to a task (+ Task-Verknüpfung)
+  recurrence  String? // RRULE-style; expanded client-side later (+ Wiederholung)
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  @@index([boardId])
+}
+
 // ─── Later (uncomment when building each tool) ──────────
 //
 // model Invite {
@@ -196,16 +218,6 @@ model Note {
 //   text      String
 //   checked   Boolean  @default(false)
 //   position  Float?
-//   createdAt DateTime @default(now())
-// }
-//
-// model Event {         // kind='calendar' (#142)
-//   id        String   @id @default(uuid())
-//   boardId   String
-//   title     String
-//   startsAt  DateTime
-//   endsAt    DateTime?
-//   allDay    Boolean  @default(false)
 //   createdAt DateTime @default(now())
 // }
 //

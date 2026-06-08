@@ -513,6 +513,13 @@ a:focus-visible {
   z-index: 3;
   pointer-events: none;
 }
+/* Legal links — bottom-left, mirroring the Aisu logo (kept reachable: § 5 DDG) */
+.start-legal {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 44px);
+  left: clamp(60px, 4.7vw, 200px);
+  z-index: 3;
+}
 @media (max-width: 768px) {
   /* Badge flows above the hero instead of overlapping the headline */
   .start-topbar {
@@ -530,6 +537,11 @@ a:focus-visible {
     padding: 24px 20px 64px;
   }
   .start-aisu { display: none; }
+  /* Legal links flow to the very bottom, centered (aisu logo is hidden here) */
+  .start-legal {
+    position: static;
+    padding: 4px 20px 28px;
+  }
   .start-squiggle {
     top: auto;
     left: auto;
