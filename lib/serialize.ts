@@ -1,14 +1,12 @@
 // Field mapping between the app model (lib/mock-data Task/LogEntry) and the
 // Prisma DB rows. Reused by the /api/state route both directions.
-import type { Task, LogEntry, Complexity, Subtask, Reminder } from "./mock-data";
+import type { Task, LogEntry, Complexity, Subtask } from "./mock-data";
 import type { Note } from "./notes";
-import type { CalendarEvent } from "./calendar";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
   LogEntry as DbLogEntry,
   Note as DbNote,
-  Event as DbEvent,
   Prisma,
 } from "@prisma/client";
 
@@ -50,10 +48,6 @@ export function taskFromDb(row: DbTask & { timeEntries?: DbTimeEntry[] }): Task 
       : undefined,
     archived: row.archived,
     completedAt: row.completedAt?.toISOString() ?? undefined,
-    deadline: row.deadline?.toISOString() ?? undefined,
-    reminders: Array.isArray(row.reminders)
-      ? (row.reminders as unknown as Reminder[])
-      : undefined,
     updatedAt: row.updatedAt?.toISOString(),
   };
 }
@@ -78,8 +72,6 @@ export function taskToDb(t: Task, boardId: string, userId: string) {
     createdById: userId,
     createdAt: t.createdAt ? new Date(t.createdAt) : undefined,
     completedAt: t.completedAt ? new Date(t.completedAt) : null,
-    deadline: t.deadline ? new Date(t.deadline) : null,
-    reminders: (t.reminders ?? []) as unknown as Prisma.InputJsonValue,
   };
 }
 
@@ -138,36 +130,5 @@ export function noteToDb(n: Note, boardId: string, userId: string) {
     createdById: userId,
     createdAt: n.createdAt ? new Date(n.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
-  };
-}
-
-// DB row → app CalendarEvent. DB uses startsAt/endsAt; app uses start/end.
-export function eventFromDb(row: DbEvent): CalendarEvent {
-  return {
-    id: row.id,
-    title: row.title,
-    start: row.startsAt.toISOString(),
-    end: row.endsAt?.toISOString() ?? undefined,
-    allDay: row.allDay,
-    note: row.note || undefined,
-    taskId: row.taskId ?? undefined,
-    recurrence: row.recurrence ?? undefined,
-    createdAt: row.createdAt?.toISOString(),
-  };
-}
-
-// app CalendarEvent → DB columns (id handled by the caller's upsert).
-export function eventToDb(e: CalendarEvent, boardId: string, userId: string) {
-  return {
-    boardId,
-    title: e.title ?? "",
-    startsAt: new Date(e.start),
-    endsAt: e.end ? new Date(e.end) : null,
-    allDay: e.allDay ?? false,
-    note: e.note ?? "",
-    taskId: e.taskId ?? null,
-    recurrence: e.recurrence ?? null,
-    createdById: userId,
-    createdAt: e.createdAt ? new Date(e.createdAt) : undefined,
   };
 }
