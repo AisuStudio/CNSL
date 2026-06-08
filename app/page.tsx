@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
+import LegalFooter from "@/components/LegalFooter";
 import { LogIcon, TaskTrackerIcon, NotePadIcon, TodayIcon, StatsIcon, DragDotsIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BETA_CODE } from "@/lib/auth-config";
@@ -127,6 +128,12 @@ export default function StartPage() {
       {/* Aisu Studio logo — bottom-right, right-aligned like the BETA badge */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/homepage/aisu-studio.svg" alt="Aisu Studio" className="start-aisu" />
+
+      {/* Legal links — bottom-left, so Impressum & Datenschutz stay reachable
+          from the public start page (§ 5 DDG: ständig verfügbar). */}
+      <div className="start-legal">
+        <LegalFooter showSignIn={false} />
+      </div>
     </div>
   );
 }

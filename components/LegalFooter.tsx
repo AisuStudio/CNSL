@@ -6,11 +6,33 @@ const linkStyle: React.CSSProperties = {
   textDecoration: "none",
 };
 
-// Legal navigation shown on the login page and at the foot of each legal page,
-// so the Impressum and privacy policy stay reachable from within CNSL itself
-// (§ 5 DDG: ständig verfügbar / two-click rule).
-export default function LegalFooter({ showSignIn = true }: { showSignIn?: boolean }) {
-  const sep = <span style={{ color: "var(--color-border)" }}>·</span>;
+// Legal navigation shown on the login page, on the public start page, and in
+// the in-app Info modal, so the Impressum and privacy policy stay reachable
+// from within CNSL itself (§ 5 DDG: ständig verfügbar / two-click rule).
+// `newTab` opens the legal pages in a new browser tab — used in-app so users
+// don't navigate away from their work.
+export default function LegalFooter({
+  showSignIn = true,
+  newTab = false,
+  color,
+}: {
+  showSignIn?: boolean;
+  newTab?: boolean;
+  // Override link colour for light backgrounds (e.g. the in-app Info modal).
+  color?: string;
+}) {
+  const sep = <span style={{ color: color ?? "var(--color-border)" }}>·</span>;
+  const style = color ? { ...linkStyle, color } : linkStyle;
+  const legal = (href: string, label: string) =>
+    newTab ? (
+      <a href={href} target="_blank" rel="noopener noreferrer" style={style}>
+        {label}
+      </a>
+    ) : (
+      <Link href={href} style={style}>
+        {label}
+      </Link>
+    );
   return (
     <nav
       style={{
@@ -21,11 +43,11 @@ export default function LegalFooter({ showSignIn = true }: { showSignIn?: boolea
         justifyContent: "center",
       }}
     >
-      <Link href="/impressum" style={linkStyle}>Impressum</Link>
+      {legal("/impressum", "Impressum")}
       {sep}
-      <Link href="/datenschutz" style={linkStyle}>Datenschutz</Link>
+      {legal("/datenschutz", "Datenschutz")}
       {sep}
-      <Link href="/terms" style={linkStyle}>Terms</Link>
+      {legal("/terms", "Terms")}
       {showSignIn && (
         <>
           {sep}

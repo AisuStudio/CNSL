@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import CnslLogo from "./CnslLogo";
+import LegalFooter from "./LegalFooter";
 
 const INK = "var(--color-card-ink)";
 
@@ -98,6 +99,11 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
             </p>
           ))}
         </div>
+
+        {/* Legal links — kept reachable from inside the app (§ 5 DDG).
+            Open in a new tab so the user doesn't lose their work. */}
+        <div className="cnsl-divider" />
+        <LegalFooter showSignIn={false} newTab color="var(--color-card-muted)" />
       </div>
     </div>
   );
