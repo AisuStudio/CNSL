@@ -47,6 +47,9 @@ export async function GET() {
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
     notes: notes.map(noteFromDb),
     rev: board?.rev ?? 0,
+    // Board ids so the client can open a scoped Realtime subscription.
+    boardId: trackerId,
+    notesId,
   });
 }
 
