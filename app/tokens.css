@@ -53,6 +53,7 @@
 
   /* ── Layout (SVG ref @ 1366×768) ─────────────────────── */
   --row-height:          37.1px;
+  --row-h:               40px;    /* new-design row height (#156) */
   --header-height:       113.9px;
   --header-row1-height:  76.8px;
   --footer-height:       83px;

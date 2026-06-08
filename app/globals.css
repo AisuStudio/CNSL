@@ -404,6 +404,17 @@ a:focus-visible {
 }
 /* #156 — project name turns lime on hover (state colours otherwise) */
 .cnsl-proj-bar:hover .cnsl-proj-name { color: var(--color-lime) !important; }
+/* #156 — inset row divider: 12px gap left/right (fluid), not full-bleed */
+.cnsl-row-line { position: relative; }
+.cnsl-row-line::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 1px;
+  background: var(--color-border);
+}
 
 /* ─── Responsive utilities (mobile-readiness) ───────────── */
 /* Min touch target on small screens. */
