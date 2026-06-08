@@ -36,7 +36,11 @@ export async function middleware(request: NextRequest) {
     path === "/" || // public start/landing page (has its own login form)
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
-    path.startsWith("/api"); // API routes self-guard (return 401)
+    path.startsWith("/api") || // API routes self-guard (return 401)
+    // Legal pages must be reachable without a login (§ 5 DDG: ständig verfügbar)
+    path === "/impressum" ||
+    path === "/datenschutz" ||
+    path === "/terms";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
