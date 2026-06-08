@@ -43,6 +43,7 @@ enum Urgency {
 enum Status {
   open
   in_progress
+  paused
   review_input
   done
   canceled

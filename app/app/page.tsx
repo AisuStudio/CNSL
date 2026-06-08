@@ -1014,7 +1014,7 @@ export default function Home() {
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
             onNewInProject={(project) => openCreate(project)}
-            onExportProject={(project) => exportDownloadMarkdown(project)}
+            onExportProject={(project) => exportCopyMarkdown(project)}
             projectColors={projectColors}
           />
         )}

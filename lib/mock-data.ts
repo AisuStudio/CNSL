@@ -6,6 +6,7 @@ export type Urgency = "today" | "this_week" | "later" | "unsorted";
 export type Status =
   | "open"
   | "in_progress"
+  | "paused"
   | "review_input"
   | "done"
   | "canceled";
@@ -136,6 +137,7 @@ export const URGENCY_OPTIONS: { value: Urgency; label: string }[] = [
 export const STATUS_OPTIONS: { value: Status; label: string }[] = [
   { value: "open", label: "Open" },
   { value: "in_progress", label: "In Progress" },
+  { value: "paused", label: "Paused" },
   { value: "review_input", label: "Review / Input" },
   { value: "done", label: "Done" },
   { value: "canceled", label: "Canceled" },
@@ -161,6 +163,7 @@ export const URGENCY_COLOR: Record<Urgency, string> = {
 export const STATUS_COLOR: Record<Status, string> = {
   open: "var(--color-text-muted)",
   in_progress: "#5100ff",
+  paused: "#6c7a89", // slate — "on hold"
   review_input: "#c9a227",
   done: "#3fae6b",
   canceled: "#7a3b3b",

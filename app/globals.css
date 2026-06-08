@@ -482,6 +482,16 @@ a:focus-visible {
   width: auto;
   z-index: 0; /* both squiggles sit behind the content */
 }
+/* #50 — let the dashes flow along each path (dash 40 + gap 60 = period 100) */
+@keyframes cnsl-squiggle-flow {
+  to { stroke-dashoffset: -100; }
+}
+.start-squiggle path  { animation: cnsl-squiggle-flow 3s linear infinite; }
+.start-squiggle-2 path { animation: cnsl-squiggle-flow 4.5s linear infinite reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .start-squiggle path,
+  .start-squiggle-2 path { animation: none; }
+}
 /* Squiggle 1 — diagonal sweep, top → bottom-left */
 .start-squiggle {
   top: -8%;

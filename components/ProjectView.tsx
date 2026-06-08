@@ -34,6 +34,7 @@ export default function ProjectView({
   projectColors?: ProjectColors;
 }) {
   const isMobile = useIsMobile();
+  const [copied, setCopied] = useState<string | null>(null); // #157 MD-copy feedback
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -90,7 +91,16 @@ export default function ProjectView({
                 gap: "10px",
                 borderLeft: `4px solid ${color}`,
                 borderBottom: "1px solid var(--color-border)",
-                background: withAlpha(color, 0.1),
+                // #152 — stick the bar to the top while its tasks scroll past.
+                // Opaque background (tint layered over the app bg) so rows
+                // don't show through the sticky header.
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+                background: `linear-gradient(${withAlpha(color, 0.1)}, ${withAlpha(
+                  color,
+                  0.1
+                )}), var(--color-bg)`,
                 cursor: "pointer",
                 textAlign: "left",
               }}
@@ -159,15 +169,20 @@ export default function ProjectView({
                 <PlusIcon color="var(--color-lime)" />
               </button>
 
-              {/* MD export of just this project (#52) */}
+              {/* Copy this project as Markdown to the clipboard (#157) */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onExportProject(project);
+                  setCopied(project);
+                  setTimeout(
+                    () => setCopied((c) => (c === project ? null : c)),
+                    1200
+                  );
                 }}
-                aria-label={`Export ${project} as Markdown`}
-                title={`Export ${project} as Markdown`}
+                aria-label={`Copy ${project} as Markdown`}
+                title={`Copy ${project} as Markdown`}
                 className="cnsl-proj-add"
                 style={{
                   display: "flex",
@@ -179,13 +194,16 @@ export default function ProjectView({
                   background: "var(--color-bg-deep)",
                   border: "none",
                   cursor: "pointer",
-                  color: "var(--color-text-primary)",
+                  color:
+                    copied === project
+                      ? "var(--color-running)"
+                      : "var(--color-text-primary)",
                   fontSize: "var(--text-sm)",
                   fontWeight: 700,
                   flexShrink: 0,
                 }}
               >
-                MD
+                {copied === project ? "✓" : "MD"}
               </button>
             </div>
 
