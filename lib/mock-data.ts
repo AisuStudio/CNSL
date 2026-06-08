@@ -18,6 +18,16 @@ export interface Subtask {
   done: boolean;
 }
 
+// A reminder for a task deadline (#142). Surfaces in-app once its time passes.
+// Either `at` (absolute) or `offsetMinutes` (before the deadline) defines when
+// it fires — see lib/reminders.ts. Channel-neutral for now (in-app only).
+export interface Reminder {
+  id: string;
+  at?: string; // absolute ISO time
+  offsetMinutes?: number; // minutes before the task's deadline
+  notifiedAt?: string; // set once surfaced, so it isn't shown again
+}
+
 export interface Task {
   id: string;
   number: number;
@@ -41,6 +51,9 @@ export interface Task {
   archived?: boolean; // hidden from active views, shown in the Archive view
   completedAt?: string; // ISO timestamp set when status becomes "done" (#123)
   subtasks?: Subtask[]; // optional checklist of subtasks (#24)
+  // Deadline + reminders foundation (#142). Data only — UI/delivery come later.
+  deadline?: string; // ISO datetime the task is due
+  reminders?: Reminder[]; // in-app reminders; fire time absolute or deadline-relative
 }
 
 // Local calendar day key "YYYY-MM-DD" (not UTC — matches the user's day).

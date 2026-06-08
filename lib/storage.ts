@@ -4,6 +4,7 @@
 import type { Task, LogEntry } from "./mock-data";
 import type { Note } from "./notes";
 import type { ProjectColors } from "./projectColors";
+import type { CalendarEvent } from "./calendar";
 
 // Back to v1 so existing user data is read again. (v2 was a mistaken reseed
 // that hid the user's own tasks — those are still safe under v1.)
@@ -14,6 +15,7 @@ export interface PersistedState {
   log: LogEntry[];
   projectColors?: ProjectColors; // per-project colour overrides (future UI)
   notes?: Note[]; // Note Pad (demo / localStorage path)
+  events?: CalendarEvent[]; // Calendar tool (#142) — foundation, UI later
 }
 
 // Migrate legacy task shape: { description: <taskText>, comment: <notes> }
@@ -57,6 +59,9 @@ export function loadState(): PersistedState | null {
       log: parsed.log as LogEntry[],
       projectColors: parsed.projectColors as ProjectColors | undefined,
       notes: parsed.notes as Note[] | undefined,
+      events: Array.isArray(parsed.events)
+        ? (parsed.events as CalendarEvent[])
+        : undefined,
     };
   } catch {
     if (raw) backupCorrupt(raw);
