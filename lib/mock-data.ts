@@ -41,6 +41,9 @@ export interface Task {
   archived?: boolean; // hidden from active views, shown in the Archive view
   completedAt?: string; // ISO timestamp set when status becomes "done" (#123)
   subtasks?: Subtask[]; // optional checklist of subtasks (#24)
+  // DB-managed row version (server write time). Used for newer-wins sync so a
+  // stale device can't overwrite a newer change. Not bumped by local edits.
+  updatedAt?: string;
 }
 
 // Local calendar day key "YYYY-MM-DD" (not UTC — matches the user's day).
