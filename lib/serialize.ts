@@ -48,6 +48,7 @@ export function taskFromDb(row: DbTask & { timeEntries?: DbTimeEntry[] }): Task 
       : undefined,
     archived: row.archived,
     completedAt: row.completedAt?.toISOString() ?? undefined,
+    updatedAt: row.updatedAt?.toISOString(),
   };
 }
 

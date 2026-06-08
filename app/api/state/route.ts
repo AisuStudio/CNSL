@@ -95,6 +95,10 @@ export async function POST(req: NextRequest) {
   // A stale device can therefore never overwrite/delete tasks it didn't touch,
   // so the rev lock is unnecessary and only caused false "changed elsewhere"
   // (409) save errors across a single user's devices. Last-write-wins per task.
+  // Ids of every sent task that exists in this board after the save (applied or
+  // skipped-as-stale) → we return their authoritative rows so the client can
+  // adopt the fresh updatedAt (applied) or the server truth (stale).
+  const touchedTaskIds: string[] = [];
   await prisma.$transaction(
       async (tx) => {
         // ── Explicit deletes only — NEVER "delete everything not in payload".
@@ -106,24 +110,33 @@ export async function POST(req: NextRequest) {
         }
         for (const t of tasks) {
         const data = taskToDb(t, trackerId, user.id);
-        // #1 — scope writes to THIS board. Update only a row already mine;
-        // create only if the id is unused anywhere; never touch another
-        // board's row (no cross-tenant overwrite / steal).
-        const upd = await tx.task.updateMany({
-          where: { id: t.id, boardId: trackerId },
-          data,
+        const existing = await tx.task.findUnique({
+          where: { id: t.id },
+          select: { boardId: true, updatedAt: true },
         });
-        if (upd.count === 0) {
-          const elsewhere = await tx.task.findUnique({
-            where: { id: t.id },
-            select: { id: true },
-          });
-          if (elsewhere) continue; // id belongs to another board → skip
+        // #1 — scope writes to THIS board: never touch another board's row.
+        if (existing && existing.boardId !== trackerId) continue;
+        if (!existing) {
           await tx.task.create({ data: { id: t.id, ...data } });
+        } else {
+          // Per-task optimistic concurrency ("newer wins", no global 409):
+          // if the DB row is newer than the version this client based its edit
+          // on, the write is STALE → skip it (don't let a stale device revert a
+          // newer change, e.g. un-archive a task), but return the fresh row so
+          // the client reconciles. getTime() compares at ms precision (Prisma
+          // Dates are ms), avoiding microsecond round-trip false-positives.
+          const baseMs = t.updatedAt ? new Date(t.updatedAt).getTime() : null;
+          if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
+            touchedTaskIds.push(t.id);
+            continue;
+          }
+          await tx.task.updateMany({ where: { id: t.id, boardId: trackerId }, data });
         }
+        // applied (created or updated): @updatedAt bumped the version; rewrite time
         await tx.timeEntry.deleteMany({ where: { taskId: t.id } });
         const tes = dailyMinutesToTimeEntries(t, user.id);
         if (tes.length) await tx.timeEntry.createMany({ data: tes });
+        touchedTaskIds.push(t.id);
       }
 
       // Log is append-only (never deleted client-side) → upsert only, no delete.
@@ -171,5 +184,10 @@ export async function POST(req: NextRequest) {
     { timeout: 20_000 }
   );
 
-  return NextResponse.json({ ok: true });
+  // Authoritative versions of the tasks we touched, for client reconciliation.
+  const fresh = await prisma.task.findMany({
+    where: { id: { in: touchedTaskIds } },
+    include: { timeEntries: true },
+  });
+  return NextResponse.json({ ok: true, tasks: fresh.map(taskFromDb) });
 }

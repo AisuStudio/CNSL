@@ -29,11 +29,7 @@ import {
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import {
-  diffChangedTasks,
-  mergeResync,
-  unarchivingInChanged,
-} from "@/lib/boardSync";
+import { diffChangedTasks, mergeResync, reconcileSave } from "@/lib/boardSync";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
 import { logText, type RestoreCandidate } from "@/lib/restore";
 import { coworkTasks } from "@/lib/coworkTasks";
@@ -233,13 +229,9 @@ export default function Home() {
     }
     // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
-    // Diff-save: only send tasks whose JSON changed since the last save.
+    // Diff-save: only send tasks whose JSON changed since the last save. Each
+    // carries its `updatedAt` base so the server can apply newer-wins per task.
     const changed = diffChangedTasks(tasks, savedRef.current);
-    // DIAGNOSTIC (archive-reappear bug): warn if a save un-archives a task vs the
-    // last-saved baseline — a stale copy can revert another device's archive.
-    const unarchiving = unarchivingInChanged(changed, savedRef.current);
-    if (unarchiving.length)
-      console.warn("[CNSL sync] save un-archives task(s):", unarchiving);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -266,8 +258,15 @@ export default function Home() {
       }
       const d = await res.json();
       if (typeof d.rev === "number") setRev(d.rev);
-      // baseline now matches what we just persisted
-      changed.forEach((t) => savedRef.current.set(t.id, JSON.stringify(t)));
+      // Reconcile: adopt the server's authoritative versions of the tasks we sent
+      // (fresh `updatedAt` when applied, or server truth when our write was
+      // skipped as stale), keeping any edit made during the in-flight save.
+      const returned: Task[] = Array.isArray(d.tasks) ? d.tasks : [];
+      setTasks((prev) => {
+        const { tasks: next, savedEntries } = reconcileSave(prev, changed, returned);
+        for (const [id, json] of savedEntries) savedRef.current.set(id, json);
+        return next;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
@@ -357,21 +356,16 @@ export default function Home() {
       .then((data) => {
         if (!data) return;
         const server = catchUpTimers(data.tasks ?? []);
-        const { tasks: merged, nextSaved, resurrectedArchivedIds } = mergeResync(
+        // Newer-wins merge: server truth is adopted unless a local edit was made
+        // against the current server version. A stale local copy can no longer
+        // resurrect an archived task. `supersededIds` are local unsaved edits the
+        // server outran (intentional, not a bug).
+        const { tasks: merged, nextSaved } = mergeResync(
           server,
           latest.current.tasks,
           savedRef.current
         );
-        // DIAGNOSTIC (archive-reappear bug): a stale local copy is overriding the
-        // server's archived:true → the task reappears in the backlog.
-        if (resurrectedArchivedIds.length)
-          console.warn(
-            "[CNSL sync] resync resurrects archived task(s):",
-            resurrectedArchivedIds
-          );
         setTasks(merged);
-        // baseline = server truth, so pending tasks remain "changed" and get
-        // re-saved with the fresh rev on the next save.
         savedRef.current = nextSaved;
         setLog(data.log ?? []);
         setNotes(data.notes ?? []);
