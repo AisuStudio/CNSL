@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BETA_CODE } from "@/lib/auth-config";
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   // Surface the callback's failure (e.g. an expired/cross-device confirm link
   // lands back here with ?error=auth) instead of silently showing the form.
@@ -26,6 +28,10 @@ export default function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!accepted) {
+      setError("Please accept the Beta Terms & Conditions to continue.");
+      return;
+    }
     if (mode === "signup") return register();
     setLoading(true);
     setError(null);
@@ -141,9 +147,40 @@ export default function LoginPage() {
             style={inputStyle}
           />
         )}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "8px",
+            fontSize: "var(--text-sm)",
+            color: "var(--color-text-muted)",
+            lineHeight: 1.4,
+            cursor: "pointer",
+            marginTop: "var(--space-1)",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            style={{ marginTop: "2px", width: "16px", height: "16px", flexShrink: 0, cursor: "pointer" }}
+          />
+          <span>
+            I have read and accept the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              style={{ color: "var(--color-accent)", textDecoration: "underline" }}
+            >
+              Beta Terms &amp; Conditions
+            </Link>
+            .
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !accepted}
           style={{
             height: "44px",
             borderRadius: "var(--radius-input)",
@@ -152,8 +189,8 @@ export default function LoginPage() {
             color: "var(--color-text-primary)",
             fontWeight: 700,
             fontSize: "var(--text-base)",
-            cursor: "pointer",
-            opacity: loading ? 0.6 : 1,
+            cursor: loading || !accepted ? "not-allowed" : "pointer",
+            opacity: loading || !accepted ? 0.6 : 1,
           }}
         >
           {loading ? "…" : mode === "signup" ? "Create account" : "Sign in"}
