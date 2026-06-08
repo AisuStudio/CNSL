@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
+import LegalFooter from "@/components/LegalFooter";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BETA_CODE } from "@/lib/auth-config";
 
@@ -94,8 +95,10 @@ export default function LoginPage() {
       style={{
         minHeight: "100dvh",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        gap: "20px",
         padding: "20px",
       }}
     >
@@ -230,6 +233,8 @@ export default function LoginPage() {
           </p>
         )}
       </form>
+
+      <LegalFooter showSignIn={false} />
     </div>
   );
 }

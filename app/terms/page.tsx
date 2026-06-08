@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import CnslLogo from "@/components/CnslLogo";
+import LegalArticle, { LegalSection } from "@/components/LegalArticle";
 
 export const metadata: Metadata = {
   title: "Beta Terms & Conditions — CNSL",
@@ -10,7 +10,7 @@ const LAST_UPDATED = "8 June 2026";
 
 // Single source of truth for the beta EULA. Rendered here and linked from the
 // login page's acceptance checkbox. Keep wording in sync with any printed copy.
-const SECTIONS: { title: string; paras: string[] }[] = [
+const SECTIONS: { title: string; paras: React.ReactNode[] }[] = [
   {
     title: "1. Provider",
     paras: [
@@ -56,7 +56,17 @@ const SECTIONS: { title: string; paras: string[] }[] = [
   {
     title: "8. Privacy",
     paras: [
-      "We process personal data in accordance with applicable data protection law (GDPR). A separate privacy policy will be made available before the Service leaves the beta phase.",
+      <>
+        We process personal data in accordance with applicable data protection
+        law (GDPR). Please review our{" "}
+        <Link
+          href="/datenschutz"
+          style={{ color: "var(--color-accent)", textDecoration: "underline" }}
+        >
+          Privacy Policy
+        </Link>{" "}
+        before using the Service.
+      </>,
     ],
   },
   {
@@ -109,77 +119,19 @@ const SECTIONS: { title: string; paras: string[] }[] = [
 
 export default function TermsPage() {
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        display: "flex",
-        justifyContent: "center",
-        padding: "40px 20px",
-      }}
+    <LegalArticle
+      title="Beta Terms & Conditions / End User License Agreement (EULA)"
+      subtitle={`Last updated: ${LAST_UPDATED} · Beta version`}
     >
-      <article
-        style={{
-          width: "720px",
-          maxWidth: "100%",
-          color: "var(--color-text-primary)",
-          fontFamily: "var(--font-family)",
-          fontSize: "var(--text-base)",
-          lineHeight: 1.6,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "var(--space-4)",
-          }}
-        >
-          <CnslLogo size={32} />
-          <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
-        </div>
+      <p style={{ margin: "0 0 24px" }}>
+        These Terms govern your access to and use of CNSL (the &quot;Service&quot;)
+        during its beta phase. By accessing or using the Service, you agree to
+        these Terms. If you do not agree, do not use the Service.
+      </p>
 
-        <h1 style={{ fontSize: "var(--text-logo)", fontWeight: 700, margin: "0 0 4px" }}>
-          Beta Terms &amp; Conditions / End User License Agreement (EULA)
-        </h1>
-        <p style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", margin: "0 0 24px" }}>
-          Last updated: {LAST_UPDATED} · Beta version
-        </p>
-
-        <p style={{ margin: "0 0 24px" }}>
-          These Terms govern your access to and use of CNSL (the &quot;Service&quot;)
-          during its beta phase. By accessing or using the Service, you agree to
-          these Terms. If you do not agree, do not use the Service.
-        </p>
-
-        {SECTIONS.map((s) => (
-          <section key={s.title} style={{ marginBottom: "20px" }}>
-            <h2 style={{ fontSize: "var(--text-base)", fontWeight: 700, margin: "0 0 6px" }}>
-              {s.title}
-            </h2>
-            {s.paras.map((p, i) => (
-              <p key={i} style={{ margin: "0 0 8px" }}>
-                {p}
-              </p>
-            ))}
-          </section>
-        ))}
-
-        <div
-          style={{
-            marginTop: "32px",
-            paddingTop: "16px",
-            borderTop: "1px solid var(--color-border)",
-          }}
-        >
-          <Link
-            href="/login"
-            style={{ color: "var(--color-accent)", fontSize: "var(--text-sm)" }}
-          >
-            ← Back to sign in
-          </Link>
-        </div>
-      </article>
-    </div>
+      {SECTIONS.map((s) => (
+        <LegalSection key={s.title} title={s.title} paras={s.paras} />
+      ))}
+    </LegalArticle>
   );
 }
