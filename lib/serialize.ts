@@ -54,6 +54,7 @@ export function taskFromDb(row: DbTask & { timeEntries?: DbTimeEntry[] }): Task 
     reminders: Array.isArray(row.reminders)
       ? (row.reminders as unknown as Reminder[])
       : undefined,
+    updatedAt: row.updatedAt?.toISOString(),
   };
 }
 

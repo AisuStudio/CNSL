@@ -28,6 +28,8 @@ import {
   type LogEntry,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { diffChangedTasks, mergeResync, reconcileSave } from "@/lib/boardSync";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
 import { logText, type RestoreCandidate } from "@/lib/restore";
 import { coworkTasks } from "@/lib/coworkTasks";
@@ -49,7 +51,7 @@ function catchUpTimers(arr: Task[]): Task[] {
 
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
-  const [view, setView] = useState<View>("backlog");
+  const [view, setView] = useState<View>("project");
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -74,6 +76,8 @@ export default function Home() {
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
   const savedRef = useRef<Map<string, string>>(new Map());
+  // Board ids (from GET) so the live-sync effect can scope its subscription.
+  const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
   // hydrated: STATE gate for the save effect — must NOT be a ref, or the save
   // effect's first run would fire with stale `tasks` and overwrite storage.
@@ -108,6 +112,7 @@ export default function Home() {
           if (data.projectColors) setProjectColors(data.projectColors);
           setNotes(data.notes ?? []);
           setRev(typeof data.rev === "number" ? data.rev : 0);
+          boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
           setHydrated(true);
         })
         // On failure DO NOT hydrate — keeps the save effect off so an empty
@@ -224,10 +229,9 @@ export default function Home() {
     }
     // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
-    // Diff-save: only send tasks whose JSON changed since the last save.
-    const changed = tasks.filter(
-      (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
-    );
+    // Diff-save: only send tasks whose JSON changed since the last save. Each
+    // carries its `updatedAt` base so the server can apply newer-wins per task.
+    const changed = diffChangedTasks(tasks, savedRef.current);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -254,8 +258,15 @@ export default function Home() {
       }
       const d = await res.json();
       if (typeof d.rev === "number") setRev(d.rev);
-      // baseline now matches what we just persisted
-      changed.forEach((t) => savedRef.current.set(t.id, JSON.stringify(t)));
+      // Reconcile: adopt the server's authoritative versions of the tasks we sent
+      // (fresh `updatedAt` when applied, or server truth when our write was
+      // skipped as stale), keeping any edit made during the in-flight save.
+      const returned: Task[] = Array.isArray(d.tasks) ? d.tasks : [];
+      setTasks((prev) => {
+        const { tasks: next, savedEntries } = reconcileSave(prev, changed, returned);
+        for (const [id, json] of savedEntries) savedRef.current.set(id, json);
+        return next;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
@@ -295,9 +306,7 @@ export default function Home() {
       if (document.visibilityState !== "hidden") return;
       if (!hydrated || conflict) return;
       const l = latest.current;
-      const changed = l.tasks.filter(
-        (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
-      );
+      const changed = diffChangedTasks(l.tasks, savedRef.current);
       if (
         changed.length === 0 &&
         deletedTaskIds.current.size === 0 &&
@@ -336,41 +345,91 @@ export default function Home() {
   // rev goes stale → the next save would 409 ("changed elsewhere") falsely.
   // Adopting server truth on return fixes that AND keeps two tabs/devices
   // consistent. Local unsaved edits are kept on top (last-write-wins per task).
+  // Re-sync from the server, adopting server truth while keeping local unsaved
+  // edits on top (last-write-wins per task). Shared by the on-focus handler and
+  // the Realtime live-sync effect below.
+  const resyncFromServer = useCallback(() => {
+    if (DEMO) return;
+    if (!hydrated || conflict) return;
+    fetch("/api/state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const server = catchUpTimers(data.tasks ?? []);
+        // Newer-wins merge: server truth is adopted unless a local edit was made
+        // against the current server version. A stale local copy can no longer
+        // resurrect an archived task. `supersededIds` are local unsaved edits the
+        // server outran (intentional, not a bug).
+        const { tasks: merged, nextSaved } = mergeResync(
+          server,
+          latest.current.tasks,
+          savedRef.current
+        );
+        setTasks(merged);
+        savedRef.current = nextSaved;
+        setLog(data.log ?? []);
+        setNotes(data.notes ?? []);
+        if (data.projectColors) setProjectColors(data.projectColors);
+        setRev(typeof data.rev === "number" ? data.rev : 0);
+        setSyncState("synced");
+      })
+      .catch(() => {});
+  }, [hydrated, conflict]);
+
   useEffect(() => {
     if (DEMO) return;
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
-      if (!hydrated || conflict) return;
-      fetch("/api/state")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (!data) return;
-          const server = catchUpTimers(data.tasks ?? []);
-          // tasks the user changed locally but haven't been confirmed saved
-          const pending = new Map(
-            latest.current.tasks
-              .filter((t) => savedRef.current.get(t.id) !== JSON.stringify(t))
-              .map((t) => [t.id, t] as const)
-          );
-          const serverIds = new Set(server.map((t) => t.id));
-          const merged = server.map((t) => pending.get(t.id) ?? t);
-          // keep local-only tasks the server doesn't have yet
-          for (const [id, t] of pending) if (!serverIds.has(id)) merged.push(t);
-          setTasks(merged);
-          // baseline = server truth, so pending tasks remain "changed" and get
-          // re-saved with the fresh rev on the next save.
-          savedRef.current = new Map(server.map((t) => [t.id, JSON.stringify(t)]));
-          setLog(data.log ?? []);
-          setNotes(data.notes ?? []);
-          if (data.projectColors) setProjectColors(data.projectColors);
-          setRev(typeof data.rev === "number" ? data.rev : 0);
-          setSyncState("synced");
-        })
-        .catch(() => {});
+      resyncFromServer();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [hydrated, conflict]);
+  }, [resyncFromServer]);
+
+  // Live sync: subscribe to Supabase Realtime so a change on another device/tab
+  // shows up here within ~1s instead of only on the next focus. Events are just
+  // a "changed elsewhere" signal that debounces the same safe resync above (so
+  // local unsaved edits are never clobbered). We also resync once on
+  // (re)subscribe, since Postgres Changes can drop events during a disconnect.
+  // Requires the RLS + Realtime setup in data/rls-realtime.sql.
+  useEffect(() => {
+    if (DEMO || !hydrated) return;
+    const trackerId = boardIds.current.trackerId;
+    const notesBoardId = boardIds.current.notesId;
+    if (!trackerId) return;
+
+    const supabase = createSupabaseBrowserClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const ping = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => resyncFromServer(), 500);
+    };
+
+    let channel = supabase
+      .channel(`board:${trackerId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Task", filter: `boardId=eq.${trackerId}` },
+        ping
+      )
+      // RLS scopes LogEntry to the current user, so no client-side filter needed.
+      .on("postgres_changes", { event: "*", schema: "public", table: "LogEntry" }, ping);
+    if (notesBoardId) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Note", filter: `boardId=eq.${notesBoardId}` },
+        ping
+      );
+    }
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") ping(); // catch up on (re)connect
+    });
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [hydrated, resyncFromServer]);
 
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123).
@@ -686,6 +745,17 @@ export default function Home() {
     () => Array.from(new Set(tasks.map((t) => t.epic))).filter(Boolean),
     [tasks]
   );
+  // Epics grouped by project (#35) — so the task modal only suggests epics that
+  // belong to the selected project, not every epic across all projects.
+  const epicsByProject = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    for (const t of tasks) {
+      if (!t.project || !t.epic) continue;
+      (m[t.project] ??= []).push(t.epic);
+    }
+    for (const k of Object.keys(m)) m[k] = Array.from(new Set(m[k]));
+    return m;
+  }, [tasks]);
 
   // Click a header: asc → desc → off.
   function toggleSort(key: string) {
@@ -1003,6 +1073,7 @@ export default function Home() {
           demo={DEMO}
           projects={projects}
           epics={epics}
+          epicsByProject={epicsByProject}
           onClose={() => setModalTask(null)}
           onSubmit={submitTask}
           onDelete={deleteTask}

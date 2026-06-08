@@ -118,6 +118,7 @@ model Task {
   createdById    String?     @db.Uuid
   createdBy      Profile?    @relation("TaskCreatedBy", fields: [createdById], references: [id])
   createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @default(now()) @updatedAt // per-task row version (newer-wins sync)
   completedAt    DateTime?
 
   timeEntries    TimeEntry[]

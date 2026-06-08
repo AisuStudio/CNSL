@@ -113,6 +113,7 @@ export default function EditTaskModal({
   demo = false,
   projects = [],
   epics = [],
+  epicsByProject = {},
   onClose,
   onSubmit,
   onDelete,
@@ -123,6 +124,7 @@ export default function EditTaskModal({
   demo?: boolean; // demo mode: deleting is disabled
   projects?: string[];
   epics?: string[];
+  epicsByProject?: Record<string, string[]>; // #35 — epics scoped per project
   onClose: () => void;
   onSubmit: (task: Task) => void;
   onDelete: (id: string) => void;
@@ -140,6 +142,35 @@ export default function EditTaskModal({
   const [timeText, setTimeText] = useState(formatHM(task.trackedMinutes));
   const [subtasks, setSubtasks] = useState<Subtask[]>(task.subtasks ?? []);
   const isMobile = useIsMobile();
+
+  // #35 — only suggest epics that belong to the selected project (fall back to
+  // all epics while the project field is empty or has no epics yet).
+  const epicOptions =
+    (project.trim() && epicsByProject[project.trim()]?.length
+      ? epicsByProject[project.trim()]
+      : epics) ?? [];
+
+  // #142 — guard against losing edits on an accidental close (Escape / backdrop /
+  // Close button all route through onClose). Ask before discarding real changes.
+  const dirty =
+    taskText !== task.task ||
+    project !== task.project ||
+    epic !== task.epic ||
+    description !== task.description ||
+    status !== task.status ||
+    urgency !== task.urgency ||
+    complexity !== task.complexity ||
+    timeText !== formatHM(task.trackedMinutes) ||
+    JSON.stringify(subtasks) !== JSON.stringify(task.subtasks ?? []);
+  function guardedClose() {
+    if (
+      dirty &&
+      typeof window !== "undefined" &&
+      !window.confirm("Discard unsaved changes to this task?")
+    )
+      return;
+    onClose();
+  }
   // On mobile bump fields to a comfortable touch height (desktop stays SVG-exact).
   const fieldStyle: React.CSSProperties = {
     ...inputStyle,
@@ -183,7 +214,7 @@ export default function EditTaskModal({
     <SidePanel
       title={isNew ? "New task" : "Edit task"}
       width={500}
-      onClose={onClose}
+      onClose={guardedClose}
     >
       {/* Task title */}
       <input
@@ -222,7 +253,7 @@ export default function EditTaskModal({
           ))}
         </datalist>
         <datalist id="modal-epics">
-          {epics.map((e) => (
+          {epicOptions.map((e) => (
             <option key={e} value={e} />
           ))}
         </datalist>

@@ -54,6 +54,9 @@ export interface Task {
   // Deadline + reminders foundation (#142). Data only — UI/delivery come later.
   deadline?: string; // ISO datetime the task is due
   reminders?: Reminder[]; // in-app reminders; fire time absolute or deadline-relative
+  // DB-managed row version (server write time). Used for newer-wins sync so a
+  // stale device can't overwrite a newer change. Not bumped by local edits.
+  updatedAt?: string;
 }
 
 // Local calendar day key "YYYY-MM-DD" (not UTC — matches the user's day).
