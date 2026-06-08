@@ -29,9 +29,9 @@ export const VIEW_DEFS: {
   label: string;
   Icon: (props: { color?: string }) => React.ReactElement;
 }[] = [
+  { key: "project", label: "Projects", Icon: ProjectIcon },
   { key: "today", label: "Today", Icon: TodayIcon },
   { key: "backlog", label: "Backlog", Icon: ListIcon },
-  { key: "project", label: "Projects", Icon: ProjectIcon },
   { key: "archive", label: "Archive", Icon: ArchiveIcon },
   { key: "stats", label: "Stats", Icon: StatsIcon },
 ];

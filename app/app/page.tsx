@@ -29,6 +29,11 @@ import {
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  diffChangedTasks,
+  mergeResync,
+  unarchivingInChanged,
+} from "@/lib/boardSync";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
 import { logText, type RestoreCandidate } from "@/lib/restore";
 import { coworkTasks } from "@/lib/coworkTasks";
@@ -50,7 +55,7 @@ function catchUpTimers(arr: Task[]): Task[] {
 
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
-  const [view, setView] = useState<View>("backlog");
+  const [view, setView] = useState<View>("project");
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -229,9 +234,12 @@ export default function Home() {
     // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
     // Diff-save: only send tasks whose JSON changed since the last save.
-    const changed = tasks.filter(
-      (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
-    );
+    const changed = diffChangedTasks(tasks, savedRef.current);
+    // DIAGNOSTIC (archive-reappear bug): warn if a save un-archives a task vs the
+    // last-saved baseline — a stale copy can revert another device's archive.
+    const unarchiving = unarchivingInChanged(changed, savedRef.current);
+    if (unarchiving.length)
+      console.warn("[CNSL sync] save un-archives task(s):", unarchiving);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -299,9 +307,7 @@ export default function Home() {
       if (document.visibilityState !== "hidden") return;
       if (!hydrated || conflict) return;
       const l = latest.current;
-      const changed = l.tasks.filter(
-        (t) => savedRef.current.get(t.id) !== JSON.stringify(t)
-      );
+      const changed = diffChangedTasks(l.tasks, savedRef.current);
       if (
         changed.length === 0 &&
         deletedTaskIds.current.size === 0 &&
@@ -351,20 +357,22 @@ export default function Home() {
       .then((data) => {
         if (!data) return;
         const server = catchUpTimers(data.tasks ?? []);
-        // tasks the user changed locally but haven't been confirmed saved
-        const pending = new Map(
-          latest.current.tasks
-            .filter((t) => savedRef.current.get(t.id) !== JSON.stringify(t))
-            .map((t) => [t.id, t] as const)
+        const { tasks: merged, nextSaved, resurrectedArchivedIds } = mergeResync(
+          server,
+          latest.current.tasks,
+          savedRef.current
         );
-        const serverIds = new Set(server.map((t) => t.id));
-        const merged = server.map((t) => pending.get(t.id) ?? t);
-        // keep local-only tasks the server doesn't have yet
-        for (const [id, t] of pending) if (!serverIds.has(id)) merged.push(t);
+        // DIAGNOSTIC (archive-reappear bug): a stale local copy is overriding the
+        // server's archived:true → the task reappears in the backlog.
+        if (resurrectedArchivedIds.length)
+          console.warn(
+            "[CNSL sync] resync resurrects archived task(s):",
+            resurrectedArchivedIds
+          );
         setTasks(merged);
         // baseline = server truth, so pending tasks remain "changed" and get
         // re-saved with the fresh rev on the next save.
-        savedRef.current = new Map(server.map((t) => [t.id, JSON.stringify(t)]));
+        savedRef.current = nextSaved;
         setLog(data.log ?? []);
         setNotes(data.notes ?? []);
         if (data.projectColors) setProjectColors(data.projectColors);
@@ -743,6 +751,17 @@ export default function Home() {
     () => Array.from(new Set(tasks.map((t) => t.epic))).filter(Boolean),
     [tasks]
   );
+  // Epics grouped by project (#35) — so the task modal only suggests epics that
+  // belong to the selected project, not every epic across all projects.
+  const epicsByProject = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    for (const t of tasks) {
+      if (!t.project || !t.epic) continue;
+      (m[t.project] ??= []).push(t.epic);
+    }
+    for (const k of Object.keys(m)) m[k] = Array.from(new Set(m[k]));
+    return m;
+  }, [tasks]);
 
   // Click a header: asc → desc → off.
   function toggleSort(key: string) {
@@ -1060,6 +1079,7 @@ export default function Home() {
           demo={DEMO}
           projects={projects}
           epics={epics}
+          epicsByProject={epicsByProject}
           onClose={() => setModalTask(null)}
           onSubmit={submitTask}
           onDelete={deleteTask}
