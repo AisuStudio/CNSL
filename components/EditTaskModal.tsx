@@ -211,7 +211,7 @@ export default function EditTaskModal({
           <input
             value={epic}
             onChange={(e) => setEpic(e.target.value)}
-            placeholder="Epic"
+            placeholder="Topic"
             list="modal-epics"
             style={{ ...fieldStyle, flex: 1, minWidth: 0 }}
           />
