@@ -106,7 +106,7 @@ function EntryRow({
           />
           <input
             list="cnsl-epics"
-            placeholder="Epic"
+            placeholder="Topic"
             value={epic}
             onChange={(e) => setEpic(e.target.value)}
             className="outline-none"

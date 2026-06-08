@@ -371,7 +371,7 @@ export default function SettingsModal({
         }}
       />
       <div className="cnsl-divider" />
-      <Section title="Epics" items={epics} onRename={onRenameEpic} />
+      <Section title="Topics" items={epics} onRename={onRenameEpic} />
       <div className="cnsl-divider" />
       <BackupRestoreSection
         tasks={tasks}

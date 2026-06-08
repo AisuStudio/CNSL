@@ -6,7 +6,7 @@ const BACKLOG_COLUMNS: Column[] = [
   { label: "NR.", key: "number" },
   { label: "ACT", key: "tracked" }, // Play/Pause control, sorts by tracked time
   { label: "PROJECT", key: "project" },
-  { label: "EPIC", key: "epic" },
+  { label: "TOPIC", key: "epic" },
   { label: "TASK", key: "task" },
   { label: "STATUS", key: "status" },
   { label: "POKER", key: "complexity" },

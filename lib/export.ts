@@ -81,7 +81,7 @@ export function toMarkdown(
   lines.push("");
   lines.push("## Tasks");
   lines.push(
-    "| NR | Project | Epic | Task | Urgency | Status | Poker | Time | Description |"
+    "| NR | Project | Topic | Task | Urgency | Status | Poker | Time | Description |"
   );
   lines.push("|---|---|---|---|---|---|---|---|---|");
   for (const t of ts) {
@@ -151,7 +151,7 @@ export function toWeeklyReview(tasks: Task[]): string {
   if (done.length === 0) {
     lines.push("_(none)_");
   } else {
-    lines.push("| Project | Epic | Task | Poker | Time | Completed |");
+    lines.push("| Project | Topic | Task | Poker | Time | Completed |");
     lines.push("|---|---|---|---|---|---|");
     for (const t of done) {
       lines.push(
