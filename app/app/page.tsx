@@ -957,12 +957,14 @@ export default function Home() {
         )}
 
         <div className="cnsl-content">
-          {/* On mobile the card views (backlog/today/project) don't use the
-              column header — hide it there; keep it for titled views. */}
+          {/* The TaskLine-based views (project/backlog/today/archive) have no
+              column grid, so they don't use the column header. */}
           {!(
             tool === "tracker" &&
             (view === "project" ||
-              (isMobile && (view === "backlog" || view === "today")))
+              view === "backlog" ||
+              view === "today" ||
+              view === "archive")
           ) && (
             <TableHeader
               view={tool === "tracker" ? view : tool}
@@ -981,10 +983,8 @@ export default function Home() {
             {view === "backlog" && (
           <BacklogView
             tasks={backlogTasks}
-            onUpdate={updateTask}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
             filter={backlogFilter}
             onFilterChange={setBacklogFilter}
           />
@@ -992,10 +992,9 @@ export default function Home() {
         {view === "today" && (
           <BacklogView
             tasks={todayTasks}
-            onUpdate={updateTask}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
+            showUrgency={false}
           />
         )}
         {view === "stats" && <StatsView tasks={tasks} />}
@@ -1021,21 +1020,9 @@ export default function Home() {
           <ArchiveView
             archived={sortedArchived}
             doneCount={doneCount}
-            onUpdate={updateTask}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
             onArchiveAllDone={archiveAllDone}
-            onDelete={
-              DEMO
-                ? undefined
-                : (id) => {
-                    if (
-                      typeof window === "undefined" ||
-                      window.confirm("Delete this archived task permanently?")
-                    )
-                      deleteTask(id);
-                  }
-            }
           />
         )}
               </>

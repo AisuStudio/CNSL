@@ -1,9 +1,7 @@
 "use client";
 
 import { type Task } from "@/lib/mock-data";
-import { useIsMobile } from "@/lib/useIsMobile";
-import TaskRow from "./TaskRow";
-import TaskCard from "./TaskCard";
+import TaskLine from "./TaskLine";
 
 export type BacklogFilter = "all" | "open";
 
@@ -58,48 +56,34 @@ function FilterToggle({
 
 export default function BacklogView({
   tasks,
-  onUpdate,
   onToggleTimer,
   onEditTask,
-  onArchive,
   filter,
   onFilterChange,
+  showUrgency = true,
 }: {
   tasks: Task[];
-  onUpdate: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
-  onArchive: (id: string) => void;
   filter?: BacklogFilter;
   onFilterChange?: (f: BacklogFilter) => void;
+  showUrgency?: boolean;
 }) {
-  const isMobile = useIsMobile();
   return (
-    <div className="cnsl-canvas">
+    <div>
       {filter && onFilterChange && (
         <FilterToggle filter={filter} onChange={onFilterChange} />
       )}
-      {tasks.map((t) =>
-        isMobile ? (
-          <TaskCard
-            key={t.id}
-            task={t}
-            onUpdate={onUpdate}
-            onToggleTimer={onToggleTimer}
-            onEditTask={onEditTask}
-            onArchive={onArchive}
-          />
-        ) : (
-          <TaskRow
-            key={t.id}
-            task={t}
-            onUpdate={onUpdate}
-            onToggleTimer={onToggleTimer}
-            onEditTask={onEditTask}
-            onArchive={onArchive}
-          />
-        )
-      )}
+      {tasks.map((t) => (
+        <TaskLine
+          key={t.id}
+          task={t}
+          onToggleTimer={onToggleTimer}
+          onEditTask={onEditTask}
+          padLeft="16px"
+          showUrgency={showUrgency}
+        />
+      ))}
     </div>
   );
 }

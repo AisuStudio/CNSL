@@ -1,27 +1,23 @@
 "use client";
 
 import { type Task } from "@/lib/mock-data";
-import TaskRow from "./TaskRow";
+import TaskLine from "./TaskLine";
 
 export default function ArchiveView({
   archived,
   doneCount,
-  onUpdate,
   onToggleTimer,
   onEditTask,
   onArchiveAllDone,
-  onDelete,
 }: {
   archived: Task[];
   doneCount: number;
-  onUpdate: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
   onArchiveAllDone: () => void;
-  onDelete?: (id: string) => void;
 }) {
   return (
-    <div className="cnsl-canvas">
+    <div>
       {/* toolbar */}
       <div
         className="flex items-center"
@@ -74,13 +70,12 @@ export default function ArchiveView({
         </div>
       ) : (
         archived.map((t) => (
-          <TaskRow
+          <TaskLine
             key={t.id}
             task={t}
-            onUpdate={onUpdate}
             onToggleTimer={onToggleTimer}
             onEditTask={onEditTask}
-            onDelete={onDelete}
+            padLeft="16px"
           />
         ))
       )}
