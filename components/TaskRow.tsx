@@ -7,8 +7,6 @@ import {
   STATUS_OPTIONS,
   COMPLEXITY_OPTIONS,
   STATUS_COLOR,
-  URGENCY_COLOR,
-  URGENCY_LABEL,
   formatHM,
 } from "@/lib/mock-data";
 import { PlayIcon, PauseIcon, ArchiveIcon, TrashIcon } from "./icons";
@@ -137,7 +135,6 @@ export default function TaskRow({
   onEditTask,
   onArchive,
   onDelete,
-  showUrgency = false,
 }: {
   task: Task;
   onUpdate: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
@@ -145,7 +142,6 @@ export default function TaskRow({
   onEditTask: (id: string) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
-  showUrgency?: boolean;
 }) {
   const showArchive = Boolean(onArchive && t.status === "done" && !t.archived);
   const showDelete = Boolean(onDelete && t.archived);
@@ -174,19 +170,6 @@ export default function TaskRow({
       className="flex w-full items-center gap-2 hover:underline"
       style={{ cursor: "pointer" }}
     >
-      {showUrgency && (
-        <span
-          aria-hidden="true"
-          title={URGENCY_LABEL[t.urgency]}
-          className="inline-block shrink-0"
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "9999px",
-            background: URGENCY_COLOR[t.urgency],
-          }}
-        />
-      )}
       <span
         style={{
           overflow: "hidden",

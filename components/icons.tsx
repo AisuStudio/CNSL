@@ -127,6 +127,41 @@ export function PauseIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+/* Timer toggle for the #156 task line — exact geometry from
+   `CNSL Design/SVG/_New Design/CNSL Mobile Measurements.svg` legend
+   (20×20, 3.5px frame, two 3.5×9 bars with a 2px gap).
+   running = filled green square + light pause bars; idle = empty dark frame. */
+export function TrackToggleIcon({
+  running,
+  size = 20,
+}: {
+  running: boolean;
+  size?: number;
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      {running ? (
+        <>
+          <rect width="20" height="20" rx="4" fill="var(--color-running)" />
+          <rect x="5.5" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
+          <rect x="11" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
+        </>
+      ) : (
+        <rect
+          x="1.75"
+          y="1.75"
+          width="16.5"
+          height="16.5"
+          rx="4"
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth="3.5"
+        />
+      )}
+    </svg>
+  );
+}
+
 export function ProjectIcon({ color = "currentColor" }: { color?: string }) {
   // CNSL custom: long bar + small square per row (CNSL_Icon_Projects.svg).
   const rows = [0, 5.5, 11, 16.5];

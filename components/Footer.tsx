@@ -17,22 +17,17 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
     <footer
       className="cnsl-footer flex items-center"
       style={{
-        // Floats over the table on the top layer (per SVG Backlog_03).
+        // Floats over the table; new design (CNSL_Desktop Design.svg) = bare
+        // cream input + purple Log button, no grey bar, 12px from the edges.
         position: "absolute",
-        left: "10px",
-        right: "10px",
-        bottom: "10px",
+        left: "12px",
+        right: "12px",
+        bottom: "12px",
         zIndex: 40,
-        height: "83px",
-        background: "var(--color-border-subtle)", // #93928e
-        borderRadius: "8px",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
-        paddingLeft: "19px",
-        paddingRight: "19px",
-        gap: "24px",
+        gap: "8px",
       }}
     >
-      {/* Entry input — longer */}
+      {/* Entry input — full width, cream fill + purple border */}
       <input
         type="text"
         value={text}
@@ -44,19 +39,19 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         className="outline-none"
         style={{
           flex: 1,
-          maxWidth: "586px",
+          minWidth: 0,
           height: "45.5px",
           background: "var(--color-text-primary)", // #e9e7df
           color: "var(--color-text-on-light)",
-          border: "1.8px solid var(--color-card-border)",
-          borderRadius: "var(--radius-container)",
+          border: "2px solid var(--color-accent)", // #5100ff
+          borderRadius: "8px",
           paddingLeft: "18px",
           paddingRight: "16px",
           fontSize: "var(--text-base)",
         }}
       />
 
-      {/* Log button — icon only */}
+      {/* Log button — purple, "Log" label + icon */}
       <button
         type="button"
         onClick={submit}
@@ -64,30 +59,21 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         title="Log"
         className="flex items-center justify-center"
         style={{
-          width: "45.5px",
           height: "45.5px",
+          padding: "0 18px",
+          gap: "10px",
           background: "var(--color-accent)",
           color: "var(--color-text-primary)",
+          fontWeight: 700,
+          fontSize: "var(--text-base)",
           borderRadius: "8px",
           cursor: "pointer",
           flexShrink: 0,
         }}
       >
+        Log
         <LogIcon color="var(--color-text-primary)" />
       </button>
-
-      {/* Explainer */}
-      <span
-        className="cnsl-footer-explainer"
-        style={{
-          maxWidth: "150px",
-          fontSize: "10px",
-          lineHeight: 1.3,
-          color: "var(--color-text-on-light)", // #1f1934, readable on the grey bar
-        }}
-      >
-        Log your thoughts and reminders quickly and sort them out later.
-      </span>
     </footer>
   );
 }

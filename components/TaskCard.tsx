@@ -7,8 +7,6 @@ import {
   STATUS_OPTIONS,
   COMPLEXITY_OPTIONS,
   STATUS_COLOR,
-  URGENCY_COLOR,
-  URGENCY_LABEL,
   formatHM,
 } from "@/lib/mock-data";
 import { PlayIcon, PauseIcon, ArchiveIcon, TrashIcon } from "./icons";
@@ -62,17 +60,6 @@ export default function TaskCard({
         className="flex items-center"
         style={{ gap: "8px", fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}
       >
-        <span
-          aria-hidden="true"
-          title={URGENCY_LABEL[t.urgency]}
-          style={{
-            width: "8px",
-            height: "8px",
-            borderRadius: "9999px",
-            background: URGENCY_COLOR[t.urgency],
-            flexShrink: 0,
-          }}
-        />
         <span>{String(t.number).padStart(2, "0")}</span>
         <span
           style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}

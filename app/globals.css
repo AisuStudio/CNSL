@@ -456,7 +456,6 @@ a:focus-visible {
 
   /* Kanban: let lanes scroll horizontally instead of a hard block. */
   .grid-kanban { min-width: 560px; }
-  .cnsl-footer-explainer { display: none; }
 
   /* Sidebar becomes an off-canvas drawer (slides over content). */
   .cnsl-sidebar {
