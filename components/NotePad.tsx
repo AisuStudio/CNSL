@@ -92,7 +92,7 @@ export default function NotePad({
             >
               <span
                 style={{
-                  color: "var(--color-text-primary)",
+                  color: active ? "var(--color-text-primary)" : "var(--color-surface)",
                   fontSize: "var(--text-base)",
                   fontWeight: 500,
                   whiteSpace: "nowrap",
