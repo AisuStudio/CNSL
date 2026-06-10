@@ -356,19 +356,13 @@ export default function SettingsModal({
 
       <p style={{ margin: 0, fontSize: "12px", color: MUTED, lineHeight: 1.5 }}>
         Rename to tidy up, or pick &quot;Merge into…&quot; to fold one name into
-        another. Renaming to an existing name merges them. Tap a project&apos;s
-        colour dot to recolour its bar in the Project view.
+        another. Renaming to an existing name merges them.
       </p>
 
       <Section
         title="Projects"
         items={projects}
         onRename={onRenameProject}
-        colors={{
-          get: (name) => getProjectColor(name, projectColors),
-          onSet: onSetProjectColor,
-          onReset: onResetProjectColor,
-        }}
       />
       <div className="cnsl-divider" />
       <Section title="Topics" items={epics} onRename={onRenameEpic} />
