@@ -128,14 +128,17 @@ export default function NotePad({
           minWidth: 0,
           overflowY: "auto",
           padding: "20px 24px 104px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
+          // Block scroll container so the editor's sticky toolbar actually
+          // sticks — position: sticky is unreliable inside a flex scroll box.
+          // The empty-state placeholder still centres via flex.
+          ...(selected
+            ? { display: "block" }
+            : { display: "flex", flexDirection: "column" }),
         }}
       >
         {selected ? (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
               {isMobile && (
                 <button
                   type="button"
