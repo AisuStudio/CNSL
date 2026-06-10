@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
   // skipped-as-stale) → we return their authoritative rows so the client can
   // adopt the fresh updatedAt (applied) or the server truth (stale).
   const touchedTaskIds: string[] = [];
+  // Same for notes: ids of every sent note that exists after the save (applied or
+  // skipped-as-stale) → returned so the client adopts the fresh/authoritative row.
+  const touchedNoteIds: string[] = [];
   await prisma.$transaction(
       async (tx) => {
         // ── Explicit deletes only — NEVER "delete everything not in payload".
@@ -171,17 +174,26 @@ export async function POST(req: NextRequest) {
       }
       for (const n of notes) {
         const data = noteToDb(n, notesId, user.id);
-        const upd = await tx.note.updateMany({
-          where: { id: n.id, boardId: notesId },
-          data,
+        const existing = await tx.note.findUnique({
+          where: { id: n.id },
+          select: { boardId: true, updatedAt: true },
         });
-        if (upd.count === 0) {
-          const elsewhere = await tx.note.findUnique({
-            where: { id: n.id },
-            select: { id: true },
-          });
-          if (!elsewhere) await tx.note.create({ data: { id: n.id, ...data } });
+        // scope writes to THIS board: never touch another board's row.
+        if (existing && existing.boardId !== notesId) continue;
+        if (!existing) {
+          await tx.note.create({ data: { id: n.id, ...data } });
+        } else {
+          // Per-note newer-wins (same rule as tasks): if the DB row is newer than
+          // the version this client based its edit on, skip the stale write but
+          // still return the fresh row so the client reconciles.
+          const baseMs = n.updatedAt ? new Date(n.updatedAt).getTime() : null;
+          if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
+            touchedNoteIds.push(n.id);
+            continue;
+          }
+          await tx.note.updateMany({ where: { id: n.id, boardId: notesId }, data });
         }
+        touchedNoteIds.push(n.id);
       }
 
       await tx.board.update({
@@ -192,10 +204,17 @@ export async function POST(req: NextRequest) {
     { timeout: 20_000 }
   );
 
-  // Authoritative versions of the tasks we touched, for client reconciliation.
-  const fresh = await prisma.task.findMany({
-    where: { id: { in: touchedTaskIds } },
-    include: { timeEntries: true },
+  // Authoritative versions of the tasks/notes we touched, for client reconciliation.
+  const [fresh, freshNotes] = await Promise.all([
+    prisma.task.findMany({
+      where: { id: { in: touchedTaskIds } },
+      include: { timeEntries: true },
+    }),
+    prisma.note.findMany({ where: { id: { in: touchedNoteIds } } }),
+  ]);
+  return NextResponse.json({
+    ok: true,
+    tasks: fresh.map(taskFromDb),
+    notes: freshNotes.map(noteFromDb),
   });
-  return NextResponse.json({ ok: true, tasks: fresh.map(taskFromDb) });
 }
