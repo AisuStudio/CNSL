@@ -354,6 +354,14 @@ export default function SettingsModal({
         </>
       )}
 
+      <BackupRestoreSection
+        tasks={tasks}
+        onBackup={onBackup}
+        onRestoreToLog={onRestoreToLog}
+        onRestoreToBacklog={onRestoreToBacklog}
+      />
+      <div className="cnsl-divider" />
+
       <p style={{ margin: 0, fontSize: "12px", color: MUTED, lineHeight: 1.5 }}>
         Rename to tidy up, or pick &quot;Merge into…&quot; to fold one name into
         another. Renaming to an existing name merges them.
@@ -366,13 +374,6 @@ export default function SettingsModal({
       />
       <div className="cnsl-divider" />
       <Section title="Topics" items={epics} onRename={onRenameEpic} />
-      <div className="cnsl-divider" />
-      <BackupRestoreSection
-        tasks={tasks}
-        onBackup={onBackup}
-        onRestoreToLog={onRestoreToLog}
-        onRestoreToBacklog={onRestoreToBacklog}
-      />
     </SidePanel>
   );
 }
