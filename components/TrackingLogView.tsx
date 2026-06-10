@@ -58,7 +58,7 @@ function EntryRow({
       <span
         className="flex-1"
         style={{
-          color: "var(--color-text-primary)",
+          color: "var(--color-surface)",
           fontSize: "var(--text-base)",
           textDecoration: entry.processed ? "line-through" : "none",
         }}
@@ -172,7 +172,7 @@ function ToolbarButton({
         borderRadius: "6px",
         border: "1px solid var(--color-border-subtle)",
         background: "transparent",
-        color: "var(--color-text-primary)",
+        color: "var(--color-surface)",
         fontSize: "var(--text-sm)",
         cursor: "pointer",
         whiteSpace: "nowrap",

@@ -115,7 +115,7 @@ export default function StatsView({ tasks }: { tasks: Task[] }) {
             borderRadius: "8px",
             border: "1px solid var(--color-border)",
             background: "transparent",
-            color: "var(--color-text-primary)",
+            color: "var(--color-surface)",
             fontSize: "var(--text-base)",
             cursor: "pointer",
           }}

@@ -146,7 +146,7 @@ export default function NotePad({
                     background: "transparent",
                     border: "1px solid var(--color-border)",
                     borderRadius: "8px",
-                    color: "var(--color-text-primary)",
+                    color: "var(--color-surface)",
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
