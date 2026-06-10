@@ -7,7 +7,7 @@ function CloseIcon() {
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
       <path
         d="M21 2 L13 11 L21 20 L20 21 L11 12.5 L2 21 L1 20 L9.5 11 L1 2 L2 1 L11 9.5 L20 1 Z"
-        fill="#18171e"
+        fill="var(--color-card-ink)"
       />
     </svg>
   );

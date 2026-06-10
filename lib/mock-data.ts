@@ -162,7 +162,7 @@ export const URGENCY_COLOR: Record<Urgency, string> = {
 
 export const STATUS_COLOR: Record<Status, string> = {
   open: "var(--color-text-muted)",
-  in_progress: "#5100ff",
+  in_progress: "var(--color-accent)",
   paused: "#6c7a89", // slate — "on hold"
   review_input: "#c9a227",
   done: "#3fae6b",

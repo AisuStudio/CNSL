@@ -23,6 +23,12 @@
   --color-lime:         #d9ff01;  /* marketing/start-page heading & accent */
   --color-running:      #3fae6b;  /* active timer — green */
 
+  /* ── Monochrome theme base hue ───────────────────────────
+     The single colour the mono theme derives everything from.
+     Only consumed inside :root[data-theme="mono"] (bottom of file);
+     overridable at runtime via document.documentElement --mono. */
+  --mono:               #d9c9f7;  /* default lavender (old mockup) */
+
   /* ── Light-card palette (SidePanel, modals, Edit card) ── */
   /* These appear whenever we render the light-bg panel/card */
   --color-card-bg:      #e9e7df;  /* panel / modal background */
@@ -84,4 +90,41 @@
   --shadow-panel:  -20px 0 60px rgba(0, 0, 0, 0.45);  /* right side-panel */
   --shadow-modal:   0 20px 60px rgba(0, 0, 0, 0.45);  /* centered modals */
   --shadow-footer:  0 12px 32px rgba(0, 0, 0, 0.45);  /* floating footer */
+}
+
+/* ───────────────────────────────────────────────────────────
+   MONOCHROME THEME  —  one colour + black + transparency
+   Activated by data-theme="mono" on <html> (set in app/app/page.tsx).
+   Every neutral surface/text/border is redefined as a color-mix()
+   of var(--mono) and black, so swapping --mono regenerates the whole
+   ramp automatically. Functional accents (--color-running green,
+   --color-lime, urgency colours in lib/mock-data.ts) are intentionally
+   NOT overridden — they stay as signal colours.
+   ─────────────────────────────────────────────────────────── */
+:root[data-theme="mono"] {
+  /* App surfaces — black side of the ramp */
+  --color-bg:            color-mix(in srgb, var(--mono)  5%, #000);
+  --color-bg-deep:       #000;
+  --color-surface:       color-mix(in srgb, var(--mono) 10%, #000);
+  --color-border:        color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border-subtle: color-mix(in srgb, var(--mono) 45%, #000);
+
+  /* App text */
+  --color-text-primary:   var(--mono);
+  --color-text-muted:     color-mix(in srgb, var(--mono) 55%, #000);
+  --color-text-secondary: color-mix(in srgb, var(--mono) 75%, #000);
+  --color-text-on-light:  color-mix(in srgb, var(--mono) 14%, #000);
+
+  /* Accent becomes the one hue */
+  --color-accent:        var(--mono);
+
+  /* Light-card palette — the lavender card with near-black ink */
+  --color-card-bg:       var(--mono);
+  --color-card-ink:      color-mix(in srgb, var(--mono) 14%, #000);
+  --color-card-meta:     color-mix(in srgb, var(--mono) 28%, #000);
+  --color-card-border:   color-mix(in srgb, var(--mono) 55%, #000);
+  --color-card-muted:    color-mix(in srgb, var(--mono) 45%, #000);
+
+  /* Overlay → near-opaque black */
+  --overlay-bg:          color-mix(in srgb, #000 88%, transparent);
 }

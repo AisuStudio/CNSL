@@ -277,6 +277,26 @@ export default function Home() {
   }, [tasks, log, projectColors, notes, rev, conflict]);
 
   // Auto-save: debounce 1.5s after any change.
+  // ── Monochrome theme preview (Phase A) ────────────────────
+  // Opt-in via URL: /app?theme=mono  (and optional ?hue=%23xxxxxx
+  // to trial a different base colour). Applied on <html> so it also
+  // recolours `body`. Defaults to the classic theme, and is removed
+  // on unmount so the public start page / other routes are never
+  // themed. Phase B replaces this with a persisted Settings toggle.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const root = document.documentElement;
+    if (params.get("theme") === "mono") {
+      root.setAttribute("data-theme", "mono");
+      const hue = params.get("hue");
+      if (hue) root.style.setProperty("--mono", hue);
+    }
+    return () => {
+      root.removeAttribute("data-theme");
+      root.style.removeProperty("--mono");
+    };
+  }, []);
+
   useEffect(() => {
     if (!hydrated) return;
     if (DEMO) {

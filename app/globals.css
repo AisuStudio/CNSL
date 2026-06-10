@@ -297,7 +297,7 @@ body {
   transition: color 0.12s, background 0.12s;
 }
 .cnsl-tb-btn:hover { color: var(--color-lime); }
-.cnsl-tb-btn.is-active { color: var(--color-text-primary); background: rgba(233, 231, 223, 0.1); }
+.cnsl-tb-btn.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 10%, transparent); }
 .cnsl-tb-aa { font-weight: 700; }
 .cnsl-tb-sep {
   width: 1px;
@@ -339,7 +339,7 @@ body {
   transition: color 0.12s, background 0.12s;
 }
 .cnsl-tstyle:hover { color: var(--color-lime); }
-.cnsl-tstyle.is-active { color: var(--color-text-primary); background: rgba(233, 231, 223, 0.12); }
+.cnsl-tstyle.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 12%, transparent); }
 /* Per-row previews mirror the actual type scale */
 .cnsl-tstyle.ts-title { font-size: 24px; font-weight: 700; }
 .cnsl-tstyle.ts-heading { font-size: 18px; font-weight: 700; }
@@ -374,7 +374,7 @@ button:hover,      [role="button"]:hover  { filter: brightness(1.12); }
 button:active,     [role="button"]:active { filter: brightness(0.94); transform: translateY(0.5px); }
 
 main .grid-backlog:hover,
-main .grid-kanban:hover { background: rgba(233, 231, 223, 0.04); }
+main .grid-kanban:hover { background: color-mix(in srgb, var(--color-text-primary) 4%, transparent); }
 
 button:focus-visible,
 [role="button"]:focus-visible,
