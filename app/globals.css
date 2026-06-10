@@ -408,6 +408,60 @@ a:focus-visible {
   background: var(--color-border);
 }
 
+/* ─── Mono theme: lavender content surface (per the old mockup) ──
+   The area below the header becomes the lavender "card"; project bars
+   stay black with light text (they use --color-bg-deep + --color-text-
+   primary, which we DON'T touch here). Topics + task rows flip to dark
+   text so they stand out on the lavender — done by redefining the text
+   vars ONLY on .cnsl-row-line, so the inline `var(--color-…)` colours in
+   those rows resolve dark while the black project bars are unaffected.
+   Running-green still comes through (var(--color-running), untouched). */
+:root[data-theme="mono"] main {
+  background: var(--mono);
+}
+:root[data-theme="mono"] .cnsl-row-line {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000); /* topics — near-black */
+  --color-text-muted:   color-mix(in srgb, var(--mono) 16%, #000); /* task text + meta — crisp dark, not muddy */
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000); /* in-progress status */
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000); /* dividers + idle play frame */
+}
+/* Footer over the lavender: make it a black container with a lavender
+   border (matching the project bars) so it doesn't blend in. The footer's
+   inline styles reuse --color-text-primary as both a bg and a fg, so a
+   variable override can't satisfy both — target the elements directly.
+   !important is needed to beat the component's inline styles. */
+:root[data-theme="mono"] .cnsl-footer input,
+:root[data-theme="mono"] .cnsl-footer button {
+  background: #000 !important;
+  color: var(--mono) !important;
+  border-color: color-mix(in srgb, var(--mono) 45%, #000) !important;
+}
+/* Sidebar = a flat rail in the SAME colour as the header (no container shape:
+   no radius, no shadow), so header + rail form one uniform chrome "L" framing
+   the lavender content. Icons keep the light mono colours (global
+   --color-text-*) so they read on the dark surface. */
+:root[data-theme="mono"] .cnsl-sidebar {
+  background: var(--color-surface) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+/* No divider line under the header in mono. */
+:root[data-theme="mono"] .cnsl-header {
+  border-bottom: none !important;
+}
+/* Kill the 3rd dark tone: an ~11px strip between the header bottom and the
+   sidebar top (sidebar top = --header-row1-height 76.8px, but the mobile header
+   is shorter) showed the body bg (--color-bg, 0B0A0C). Fill .cnsl-body with the
+   surface colour so that gap matches header + sidebar — one uniform chrome tone. */
+:root[data-theme="mono"] .cnsl-body {
+  background: var(--color-surface) !important;
+}
+/* Move the topmost project down from the header for breathing room (the bar is
+   sticky, so this is an initial gap that collapses to flush when scrolled). */
+:root[data-theme="mono"] .cnsl-projectview > div:first-child .cnsl-proj-bar {
+  margin-top: 4px !important; /* beats the inline `margin` shorthand on the bar */
+}
+
 /* ─── Responsive utilities (mobile-readiness) ───────────── */
 /* Min touch target on small screens. */
 .cnsl-touch { min-width: var(--touch-min); min-height: var(--touch-min); }
@@ -453,19 +507,32 @@ a:focus-visible {
     z-index: 46;
     width: 60px !important;
     transform: translateX(-100%);
-    transition: transform 180ms ease;
+    /* !important beats the inline `transition: width 160ms` on the sidebar, so
+       the transform actually animates and slides IN SYNC with the content push
+       (otherwise the rail snaps in instantly while the content glides). */
+    transition: transform 180ms ease !important;
     box-shadow: var(--shadow-panel);
   }
   .cnsl-sidebar[data-mobile-open="true"] { transform: translateX(0); }
+  /* Push pattern (like the SLIDE design): when the drawer is open, slide only
+     the CONTENT right by the sidebar width — the header stays put, so the menu
+     button keeps its place and re-clicking it closes the drawer. The content
+     clips on the right (.cnsl-app has overflow:hidden). We move .cnsl-content
+     only — NOT .cnsl-body, whose transform would become the containing block
+     for the fixed sidebar and drag it along. */
+  .cnsl-content { transition: transform 180ms ease; }
+  .cnsl-app[data-nav-open="true"] .cnsl-content {
+    transform: translateX(var(--sidebar-width));
+  }
+  /* No dim/blur when the drawer slides in — the backdrop stays only as an
+     invisible tap-to-close layer behind the sidebar. */
   .cnsl-nav-backdrop {
     display: block;
     position: fixed;
     inset: 0;
     top: var(--header-row1-height);
     z-index: 45;
-    background: var(--overlay-bg);
-    backdrop-filter: blur(var(--overlay-blur));
-    -webkit-backdrop-filter: blur(var(--overlay-blur));
+    background: transparent;
   }
 
   /* Safe-area: keep header/footer clear of notch + home indicator.

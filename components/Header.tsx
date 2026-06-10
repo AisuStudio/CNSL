@@ -59,19 +59,20 @@ export default function Header({
         className="cnsl-header-row flex h-full items-center"
         style={{ paddingLeft: "35px", paddingRight: "24px" }}
       >
-        {/* Logo stays in the left corner */}
+        {/* Logo stays in the left corner — desktop only (hidden on mobile,
+            where the menu button takes the far-left slot). */}
         <button
           type="button"
           onClick={onLogoClick}
           aria-label="About CNSL"
           title="About CNSL"
-          className="flex items-center"
+          className="cnsl-only-desktop flex items-center"
           style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
         >
           <CnslLogo size={34} />
         </button>
 
-        {/* Mobile-only hamburger → sits to the RIGHT of the logo */}
+        {/* Mobile-only menu button → far-left slot (logo is hidden on mobile) */}
         {onToggleNav && (
           <button
             type="button"
@@ -79,7 +80,7 @@ export default function Header({
             aria-label="Menu"
             title="Menu"
             className="cnsl-only-mobile flex items-center justify-center"
-            style={{ ...ICON_BTN, marginLeft: "10px" }}
+            style={ICON_BTN}
           >
             <SidebarIcon color="var(--color-text-muted)" />
           </button>

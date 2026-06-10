@@ -111,7 +111,7 @@ export default function ProjectView({
   }, [tasks]);
 
   return (
-    <div style={{ minWidth: 0 }}>
+    <div className="cnsl-projectview" style={{ minWidth: 0 }}>
       {groups.map(({ project, items, topics }) => {
         const isCollapsed = collapsed.has(project);
         const running = items.some((t) => t.isTracking);

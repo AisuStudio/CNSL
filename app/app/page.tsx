@@ -915,7 +915,7 @@ export default function Home() {
   }
 
   return (
-    <div className="cnsl-app">
+    <div className="cnsl-app" data-nav-open={navOpen ? "true" : "false"}>
       {conflict && (
         <div
           style={{
