@@ -129,7 +129,7 @@ function EntryRow({
               padding: "0 12px",
               borderRadius: "6px",
               background: "var(--color-accent)",
-              color: "var(--color-text-primary)",
+              color: "var(--color-card-ink)",
               fontWeight: 700,
               fontSize: "var(--text-sm)",
               whiteSpace: "nowrap",

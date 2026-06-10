@@ -497,7 +497,7 @@ export default function EditTaskModal({
                 width: "86.9px",
                 height: "45.5px",
                 background: ACCENT,
-                color: "var(--color-text-primary)",
+                color: "var(--color-card-ink)",
                 border: "none",
                 borderRadius: "11.4px",
                 fontWeight: 700,

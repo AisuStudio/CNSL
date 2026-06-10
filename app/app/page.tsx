@@ -277,16 +277,15 @@ export default function Home() {
   }, [tasks, log, projectColors, notes, rev, conflict]);
 
   // Auto-save: debounce 1.5s after any change.
-  // ── Monochrome theme preview (Phase A) ────────────────────
-  // Opt-in via URL: /app?theme=mono  (and optional ?hue=%23xxxxxx
-  // to trial a different base colour). Applied on <html> so it also
-  // recolours `body`. Defaults to the classic theme, and is removed
-  // on unmount so the public start page / other routes are never
-  // themed. Phase B replaces this with a persisted Settings toggle.
+  // ── Monochrome theme — now the DEFAULT (the "radical cut") ──
+  // Mono is applied on <html> (so it also recolours `body`) for everyone.
+  // ?theme=classic falls back to the old palette for comparison, and
+  // ?hue=%23xxxxxx trials a different base colour. Removed on unmount so
+  // other routes aren't affected.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const root = document.documentElement;
-    if (params.get("theme") === "mono") {
+    if (params.get("theme") !== "classic") {
       root.setAttribute("data-theme", "mono");
       const hue = params.get("hue");
       if (hue) root.style.setProperty("--mono", hue);

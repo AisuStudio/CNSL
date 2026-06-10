@@ -176,7 +176,7 @@ function Section({
               }
               style={{
                 background: "var(--color-accent)",
-                color: "var(--color-text-primary)",
+                color: "var(--color-card-ink)",
                 border: "none",
                 borderRadius: "6px",
                 padding: "4px 10px",
