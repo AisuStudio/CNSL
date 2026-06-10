@@ -5,6 +5,7 @@ import {
   TodayIcon,
   ListIcon,
   ProjectIcon,
+  TaskTrackerIcon,
   ArchiveIcon,
   StatsIcon,
   NotePadIcon,
@@ -17,8 +18,7 @@ export const TOOL_DEFS: {
   label: string;
   Icon: (props: { color?: string }) => React.ReactElement;
 }[] = [
-  // #153 — use the existing Projects icon for the tracker tool (Projects-first).
-  { key: "tracker", label: "Task Tracker", Icon: ProjectIcon },
+  { key: "tracker", label: "Task Tracker", Icon: TaskTrackerIcon },
   { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
   { key: "log", label: "Log", Icon: LogIcon },
 ];

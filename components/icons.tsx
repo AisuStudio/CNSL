@@ -68,21 +68,6 @@ export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-export function TaskTrackerIcon({ color = "currentColor" }: { color?: string }) {
-  // CNSL_Icon_TaskTracker.svg
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <g fill={color}>
-        <rect x="5.5" width="9" height="3.5" />
-        <rect y="5.5" width="3.5" height="9" />
-        <rect x="11" y="5.5" width="3.5" height="3.5" />
-        <rect x="16.5" y="5.5" width="3.5" height="9" />
-        <rect x="5.5" y="16.5" width="9" height="3.5" />
-      </g>
-    </svg>
-  );
-}
-
 export function NotePadIcon({ color = "currentColor" }: { color?: string }) {
   // CNSL_Icon_NotePad.svg
   return (
@@ -158,6 +143,24 @@ export function TrackToggleIcon({
           strokeWidth="3.5"
         />
       )}
+    </svg>
+  );
+}
+
+export function TaskTrackerIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom (CNSL_Icon_TaskTracker.svg): two full bars + two indented
+  // square+bar rows. Distinct from ProjectIcon (which the tracker tool used by
+  // mistake).
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect x="0" y="0" width="20" height="3.5" />
+        <rect x="0" y="5.5" width="20" height="3.5" />
+        <rect x="0" y="11" width="3.5" height="3.5" />
+        <rect x="5.5" y="11" width="14.5" height="3.5" />
+        <rect x="5.5" y="16.5" width="3.5" height="3.5" />
+        <rect x="11" y="16.5" width="9" height="3.5" />
+      </g>
     </svg>
   );
 }
