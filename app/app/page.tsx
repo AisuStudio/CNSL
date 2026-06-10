@@ -73,6 +73,7 @@ export default function Home() {
   // Ids the user explicitly deleted (only these are removed server-side).
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
+  const deletedLogIds = useRef<Set<string>>(new Set());
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
   const savedRef = useRef<Map<string, string>>(new Map());
@@ -245,6 +246,7 @@ export default function Home() {
           rev,
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
+          deletedLogIds: [...deletedLogIds.current],
         }),
       });
       if (res.status === 409) {
@@ -270,6 +272,7 @@ export default function Home() {
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
+      deletedLogIds.current.clear();
       setSyncState("synced");
     } catch {
       setSyncState("unsynced");
@@ -329,7 +332,8 @@ export default function Home() {
       if (
         changed.length === 0 &&
         deletedTaskIds.current.size === 0 &&
-        deletedNoteIds.current.size === 0
+        deletedNoteIds.current.size === 0 &&
+        deletedLogIds.current.size === 0
       )
         return; // nothing pending → don't fire on every tab switch
       try {
@@ -345,6 +349,7 @@ export default function Home() {
             rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
+            deletedLogIds: [...deletedLogIds.current],
           }),
         }).catch(() => {});
       } catch {
@@ -639,6 +644,11 @@ export default function Home() {
           : e
       )
     );
+  }
+
+  function deleteLogEntry(id: string) {
+    setLog((prev) => prev.filter((e) => e.id !== id));
+    deletedLogIds.current.add(id); // explicit delete — server removes only these
   }
 
   // Settings → Manage Projects & Epics (#146). Rename also serves as merge:
@@ -1069,6 +1079,7 @@ export default function Home() {
             projects={projects}
             epics={epics}
             onCreateTask={createTaskFromEntry}
+            onDeleteEntry={deleteLogEntry}
             onCopyMarkdown={exportCopyMarkdown}
             onDownloadMarkdown={exportDownloadMarkdown}
             onDownloadJson={exportDownloadJson}

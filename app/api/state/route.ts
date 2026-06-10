@@ -73,6 +73,9 @@ export async function POST(req: NextRequest) {
   const deletedNoteIds: string[] = Array.isArray(body.deletedNoteIds)
     ? body.deletedNoteIds
     : [];
+  const deletedLogIds: string[] = Array.isArray(body.deletedLogIds)
+    ? body.deletedLogIds
+    : [];
 
   // #2 — input guards: cap counts + string sizes so a malformed/huge payload
   // can't bloat or DoS the DB. Reject (413) rather than silently truncate.
@@ -139,7 +142,12 @@ export async function POST(req: NextRequest) {
         touchedTaskIds.push(t.id);
       }
 
-      // Log is append-only (never deleted client-side) → upsert only, no delete.
+      // Log: explicit deletes only (same rule as tasks/notes), then upsert.
+      if (deletedLogIds.length > 0) {
+        await tx.logEntry.deleteMany({
+          where: { userId: user.id, id: { in: deletedLogIds } },
+        });
+      }
       for (const l of log) {
         const data = logToDb(l, user.id);
         const upd = await tx.logEntry.updateMany({

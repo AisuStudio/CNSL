@@ -19,11 +19,13 @@ function EntryRow({
   projects,
   epics,
   onCreateTask,
+  onDelete,
 }: {
   entry: LogEntry;
   projects: string[];
   epics: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
+  onDelete: (entryId: string) => void;
 }) {
   const [project, setProject] = useState("");
   const [epic, setEpic] = useState("");
@@ -87,6 +89,23 @@ function EntryRow({
             width: isMobile ? "100%" : undefined,
           }}
         >
+          <button
+            type="button"
+            onClick={() => onDelete(entry.id)}
+            style={{
+              height: isMobile ? "44px" : "30px",
+              padding: "0 12px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-border-subtle)",
+              background: "transparent",
+              color: "var(--color-surface)",
+              fontSize: "var(--text-sm)",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Delete
+          </button>
           <input
             list="cnsl-projects"
             placeholder="Project"
@@ -188,6 +207,7 @@ export default function TrackingLogView({
   projects,
   epics,
   onCreateTask,
+  onDeleteEntry,
   onCopyMarkdown,
   onDownloadMarkdown,
   onDownloadJson,
@@ -196,6 +216,7 @@ export default function TrackingLogView({
   projects: string[];
   epics: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
+  onDeleteEntry: (entryId: string) => void;
   onCopyMarkdown: (project?: string) => void;
   onDownloadMarkdown: (project?: string) => void;
   onDownloadJson: (project?: string) => void;
@@ -279,6 +300,7 @@ export default function TrackingLogView({
             projects={projects}
             epics={epics}
             onCreateTask={onCreateTask}
+            onDelete={onDeleteEntry}
           />
         ))
       )}
