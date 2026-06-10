@@ -479,9 +479,9 @@ export default function EditTaskModal({
                 style={{
                   width: "86.9px",
                   height: "45.5px",
-                  background: C1,
+                  background: "transparent",
                   color: INK,
-                  border: "none",
+                  border: `1px solid ${C1}`,
                   borderRadius: "11.4px",
                   fontSize: "var(--text-base)",
                   cursor: "pointer",
@@ -496,8 +496,8 @@ export default function EditTaskModal({
               style={{
                 width: "86.9px",
                 height: "45.5px",
-                background: ACCENT,
-                color: "var(--color-card-ink)",
+                background: "var(--color-surface)",
+                color: "var(--color-accent)",
                 border: "none",
                 borderRadius: "11.4px",
                 fontWeight: 700,
