@@ -432,16 +432,18 @@ export default function Home() {
   }, [hydrated, resyncFromServer]);
 
   // Quick-adjust: patch a single field of one task.
-  // When status flips to/from "done", maintain completedAt (#123).
+  // When status flips to/from "done", maintain completedAt (#123) and, on
+  // completion, mark it "today" so it surfaces in the Today view as done-today.
   function updateTask<K extends keyof Task>(id: string, key: K, value: Task[K]) {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
         const next = { ...t, [key]: value };
         if (key === "status") {
-          if (value === "done" && t.status !== "done")
+          if (value === "done" && t.status !== "done") {
             next.completedAt = new Date().toISOString();
-          else if (value !== "done") next.completedAt = undefined;
+            next.urgency = "today";
+          } else if (value !== "done") next.completedAt = undefined;
         }
         return next;
       })
@@ -453,11 +455,17 @@ export default function Home() {
     setTasks((prev) => {
       const prevTask = prev.find((t) => t.id === updated.id);
       // maintain completedAt on status transitions (#123)
+      const becameDone =
+        updated.status === "done" && prevTask?.status !== "done";
       let completedAt = updated.completedAt;
-      if (updated.status === "done" && prevTask?.status !== "done")
-        completedAt = new Date().toISOString();
+      if (becameDone) completedAt = new Date().toISOString();
       else if (updated.status !== "done") completedAt = undefined;
-      let final = { ...updated, completedAt };
+      // On completion, mark it "today" so it shows in the Today view (done-today).
+      let final = {
+        ...updated,
+        completedAt,
+        ...(becameDone ? { urgency: "today" as const } : {}),
+      };
 
       // Manually changing the time counts toward today's bucket, so
       // "Hours worked today" reflects manual entry too (#132/#134/#133).
