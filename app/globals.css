@@ -222,7 +222,7 @@ body {
 /* ─── Note editor (TipTap / ProseMirror) ─────────────────── */
 .cnsl-prose {
   outline: none;
-  color: var(--color-text-primary);
+  color: var(--color-surface);
   font-size: var(--text-base);
   line-height: 1.6;
   min-height: 320px;

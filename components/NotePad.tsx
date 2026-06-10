@@ -163,7 +163,7 @@ export default function NotePad({
                   background: "transparent",
                   border: "none",
                   outline: "none",
-                  color: "var(--color-text-primary)",
+                  color: "var(--color-surface)",
                   fontSize: "24px",
                   fontWeight: 700,
                   fontFamily: "var(--font-family)",
