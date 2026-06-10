@@ -2,7 +2,6 @@
 
 import {
   type Task,
-  STATUS_COLOR,
   STATUS_LABEL,
   URGENCY_LABEL,
   formatHM,
@@ -162,7 +161,7 @@ export default function TaskLine({
           {URGENCY_LABEL[t.urgency]}
         </span>
       )}
-      <span style={{ color: STATUS_COLOR[t.status], fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "92px" }}>
+      <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "92px" }}>
         {STATUS_LABEL[t.status]}
       </span>
       {time}
