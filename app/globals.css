@@ -582,21 +582,24 @@ a:focus-visible {
   transform: translate(-50%, -50%);
   z-index: 2;
 }
-/* Aisu Studio logo — bottom-right, right edge aligned with the BETA badge */
+/* Aisu Studio logo — bottom-LEFT (swapped with the legal links so the legal
+   links can sit bottom-right per the monochrome design; left also keeps them
+   clear of the right-side sign-in column). */
 .start-aisu {
   position: absolute;
   bottom: clamp(24px, 4vh, 44px);
-  right: clamp(60px, 4.7vw, 200px);
+  left: clamp(60px, 4.7vw, 200px);
   height: 34px;
   width: auto;
   z-index: 3;
   pointer-events: none;
 }
-/* Legal links — bottom-left, mirroring the Aisu logo (kept reachable: § 5 DDG) */
+/* Legal links — bottom-RIGHT per the monochrome design (was bottom-left, where
+   the squiggle runs into the corner). Kept reachable: § 5 DDG. */
 .start-legal {
   position: absolute;
   bottom: clamp(24px, 4vh, 44px);
-  left: clamp(60px, 4.7vw, 200px);
+  right: clamp(60px, 4.7vw, 200px);
   z-index: 3;
 }
 @media (max-width: 768px) {
