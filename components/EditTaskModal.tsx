@@ -73,7 +73,7 @@ function PillField({
           style={{
             height: isMobile ? "40px" : "26px",
             borderRadius: isMobile ? "20px" : "13px",
-            background: C1,
+            background: "rgba(0, 0, 0, 0.1)",
             color: INK,
             border: "none",
             outline: "none",
@@ -265,7 +265,7 @@ export default function EditTaskModal({
               display: "flex",
               flexWrap: "wrap",
               gap: "4px 20px",
-              background: C1,
+              background: "rgba(0, 0, 0, 0.1)",
               color: META,
               fontSize: "10px",
               padding: "7px 12px",
