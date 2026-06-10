@@ -184,9 +184,9 @@ export default function ProjectView({
                     }}
                     aria-label={`Copy ${project} as Markdown`}
                     title={`Copy ${project} as Markdown`}
-                    style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-running)" : "var(--color-text-muted)", fontSize: "var(--text-sm)", fontWeight: 700, flexShrink: 0 }}
+                    style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-accent)" : "var(--color-text-muted)", fontSize: copied === project ? "var(--text-xs)" : "var(--text-sm)", fontWeight: 700, flexShrink: 0 }}
                   >
-                    {copied === project ? "✓" : "MD"}
+                    {copied === project ? "copied" : "MD"}
                   </button>
                 </>
               )}
