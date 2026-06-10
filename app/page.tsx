@@ -110,8 +110,6 @@ export default function StartPage() {
             Your new (free) console for blurps, tasks, notes.
             <br />
             Desktop and mobile <span style={{ color: "var(--color-accent)" }}>*</span>
-            <br />
-            And you also can share boards with your friends &amp; family
           </p>
           <p
             style={{
