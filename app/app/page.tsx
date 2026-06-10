@@ -77,6 +77,9 @@ export default function Home() {
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
   const savedRef = useRef<Map<string, string>>(new Map());
+  // noteId → last-saved JSON: the diff-save + newer-wins baseline for notes,
+  // mirroring savedRef for tasks (so notes get the same conflict protection).
+  const notesSavedRef = useRef<Map<string, string>>(new Map());
   // Board ids (from GET) so the live-sync effect can scope its subscription.
   const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
@@ -111,7 +114,12 @@ export default function Home() {
           savedRef.current = new Map(loaded.map((t) => [t.id, JSON.stringify(t)]));
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
-          setNotes(data.notes ?? []);
+          const loadedNotes: Note[] = data.notes ?? [];
+          setNotes(loadedNotes);
+          // seed the notes diff baseline so the first save sends only real changes
+          notesSavedRef.current = new Map(
+            loadedNotes.map((n) => [n.id, JSON.stringify(n)])
+          );
           setRev(typeof data.rev === "number" ? data.rev : 0);
           boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
           setHydrated(true);
@@ -124,7 +132,12 @@ export default function Home() {
 
     // Demo (GitHub Pages): localStorage + roadmap seed merge.
     const saved = loadState();
-    if (saved?.notes) setNotes(saved.notes);
+    if (saved?.notes) {
+      setNotes(saved.notes);
+      notesSavedRef.current = new Map(
+        saved.notes.map((n) => [n.id, JSON.stringify(n)])
+      );
+    }
     // Data-safety guard: only seed when there is genuinely no prior board.
     // If a key existed but failed to load (corrupt — loadState has backed it up
     // to cnsl.v1.corrupt.*), start EMPTY rather than silently replacing real
@@ -233,6 +246,9 @@ export default function Home() {
     // Diff-save: only send tasks whose JSON changed since the last save. Each
     // carries its `updatedAt` base so the server can apply newer-wins per task.
     const changed = diffChangedTasks(tasks, savedRef.current);
+    // Same diff-save + newer-wins protocol for notes (each carries its `updatedAt`
+    // base for the server to apply newer-wins per note).
+    const changedNotes = diffChangedTasks(notes, notesSavedRef.current);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -242,7 +258,7 @@ export default function Home() {
           tasks: changed,
           log,
           projectColors,
-          notes,
+          notes: changedNotes,
           rev,
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
@@ -269,7 +285,20 @@ export default function Home() {
         for (const [id, json] of savedEntries) savedRef.current.set(id, json);
         return next;
       });
+      // Same reconcile for notes: adopt the server's authoritative versions
+      // (fresh `updatedAt`), keeping any edit made during the in-flight save.
+      const returnedNotes: Note[] = Array.isArray(d.notes) ? d.notes : [];
+      setNotes((prev) => {
+        const { tasks: nextNotes, savedEntries } = reconcileSave(
+          prev,
+          changedNotes,
+          returnedNotes
+        );
+        for (const [id, json] of savedEntries) notesSavedRef.current.set(id, json);
+        return nextNotes;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
+      deletedNoteIds.current.forEach((id) => notesSavedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
       deletedLogIds.current.clear();
@@ -329,8 +358,10 @@ export default function Home() {
       if (!hydrated || conflict) return;
       const l = latest.current;
       const changed = diffChangedTasks(l.tasks, savedRef.current);
+      const changedNotes = diffChangedTasks(l.notes, notesSavedRef.current);
       if (
         changed.length === 0 &&
+        changedNotes.length === 0 &&
         deletedTaskIds.current.size === 0 &&
         deletedNoteIds.current.size === 0 &&
         deletedLogIds.current.size === 0
@@ -345,7 +376,7 @@ export default function Home() {
             tasks: changed,
             log: l.log,
             projectColors: l.projectColors,
-            notes: l.notes,
+            notes: changedNotes,
             rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
@@ -392,7 +423,17 @@ export default function Home() {
         setTasks(merged);
         savedRef.current = nextSaved;
         setLog(data.log ?? []);
-        setNotes(data.notes ?? []);
+        // Same newer-wins merge for notes (keeps an unsaved local edit/new note,
+        // adopts server truth otherwise), then drop any note whose delete is still
+        // pending so a resync that races ahead of the delete-save can't resurrect it.
+        const serverNotes: Note[] = data.notes ?? [];
+        const { tasks: mergedNotes, nextSaved: nextNotesSaved } = mergeResync(
+          serverNotes,
+          latest.current.notes,
+          notesSavedRef.current
+        );
+        setNotes(mergedNotes.filter((n) => !deletedNoteIds.current.has(n.id)));
+        notesSavedRef.current = nextNotesSaved;
         if (data.projectColors) setProjectColors(data.projectColors);
         setRev(typeof data.rev === "number" ? data.rev : 0);
         setSyncState("synced");
@@ -692,10 +733,11 @@ export default function Home() {
     return note.id;
   }
   function updateNote(id: string, patch: Partial<Note>) {
+    // Do NOT bump `updatedAt` here: like tasks, it's the server-owned "base
+    // version" the edit was made against. The server's @updatedAt flows back via
+    // reconcile/resync, which is what newer-wins (mergeResync) compares on.
     setNotes((prev) =>
-      prev.map((n) =>
-        n.id === id ? { ...n, ...patch, updatedAt: new Date().toISOString() } : n
-      )
+      prev.map((n) => (n.id === id ? { ...n, ...patch } : n))
     );
   }
   function deleteNote(id: string) {

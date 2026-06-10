@@ -6,7 +6,15 @@
 // can no longer overwrite a newer change (e.g. revert archived:true→false), but
 // nothing is hard-rejected — only the specific stale task is skipped/superseded,
 // so unrelated edits still save (no global 409 / lost-tasks problem).
+//
+// These three helpers (diffChangedTasks, mergeResync, reconcileSave) are generic
+// over any item with an `id` and a server-managed `updatedAt` — both Task and Note
+// satisfy it — so notes get the exact same tested newer-wins protection without a
+// parallel implementation.
 import type { Task } from "./mock-data";
+
+// Minimal shape the sync helpers need. Both Task and Note satisfy it.
+type Syncable = { id: string; updatedAt?: string };
 
 // Same instant at millisecond precision (Prisma Dates are ms; avoids microsecond
 // round-trip mismatches).
@@ -14,16 +22,16 @@ function sameVersion(a?: string, b?: string): boolean {
   return !!a && !!b && new Date(a).getTime() === new Date(b).getTime();
 }
 
-// Diff-save selection: tasks whose JSON differs from the last-saved baseline.
-export function diffChangedTasks(
-  tasks: Task[],
+// Diff-save selection: items whose JSON differs from the last-saved baseline.
+export function diffChangedTasks<T extends Syncable>(
+  tasks: T[],
   saved: Map<string, string>
-): Task[] {
+): T[] {
   return tasks.filter((t) => saved.get(t.id) !== JSON.stringify(t));
 }
 
-export interface MergeResult {
-  tasks: Task[];
+export interface MergeResult<T extends Syncable> {
+  tasks: T[];
   nextSaved: Map<string, string>;
   // local unsaved edits dropped because the server had a newer version (for an
   // optional, low-noise diagnostic — these are intentional, not bugs).
@@ -33,16 +41,16 @@ export interface MergeResult {
 // Resync merge: adopt server truth, but keep a local unsaved edit ONLY if it was
 // made against the server's current version (same `updatedAt`). If the server is
 // newer, it wins — this is the fix for the archive-reappear bug.
-export function mergeResync(
-  serverTasks: Task[],
-  localTasks: Task[],
+export function mergeResync<T extends Syncable>(
+  serverTasks: T[],
+  localTasks: T[],
   saved: Map<string, string>
-): MergeResult {
+): MergeResult<T> {
   const localById = new Map(localTasks.map((t) => [t.id, t] as const));
   const serverIds = new Set(serverTasks.map((t) => t.id));
   const supersededIds: string[] = [];
 
-  const tasks: Task[] = serverTasks.map((s) => {
+  const tasks: T[] = serverTasks.map((s) => {
     const local = localById.get(s.id);
     if (!local) return s;
     const pending = saved.get(s.id) !== JSON.stringify(local);
@@ -68,8 +76,8 @@ export function mergeResync(
   return { tasks, nextSaved, supersededIds };
 }
 
-export interface ReconcileResult {
-  tasks: Task[];
+export interface ReconcileResult<T extends Syncable> {
+  tasks: T[];
   savedEntries: [string, string][]; // baseline updates to apply to savedRef
 }
 
@@ -77,11 +85,11 @@ export interface ReconcileResult {
 // version (bumped `updatedAt` when applied, or server truth when our write was
 // skipped as stale). If the user edited a task AFTER we sent it, keep that newer
 // edit but re-base it on the fresh `updatedAt` so it saves cleanly next tick.
-export function reconcileSave(
-  localTasks: Task[],
-  sent: Task[],
-  returned: Task[]
-): ReconcileResult {
+export function reconcileSave<T extends Syncable>(
+  localTasks: T[],
+  sent: T[],
+  returned: T[]
+): ReconcileResult<T> {
   const sentById = new Map(sent.map((t) => [t.id, t] as const));
   const returnedById = new Map(returned.map((t) => [t.id, t] as const));
   const savedEntries: [string, string][] = [];

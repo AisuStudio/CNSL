@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import type { Task } from "./mock-data";
+import type { Note } from "./notes";
 import { diffChangedTasks, mergeResync, reconcileSave } from "./boardSync";
+
+function mkNote(over: Partial<Note> & { id: string }): Note {
+  return { folderId: null, title: "t", body: "", ...over };
+}
 
 function mk(over: Partial<Task> & { id: string }): Task {
   return {
@@ -92,6 +97,67 @@ describe("reconcileSave", () => {
     const returned = [mk({ id: "T1", description: "sent", updatedAt: V2 })];
     const { tasks } = reconcileSave(local, sent, returned);
     expect(tasks[0].description).toBe("typed during save");
+    expect(tasks[0].updatedAt).toBe(V2);
+  });
+});
+
+// The same generic helpers now protect notes (the disappear/reappear fix).
+describe("mergeResync — notes", () => {
+  it("keeps a local unsaved note edit made against the current server version", () => {
+    const server = [mkNote({ id: "N1", body: "server", updatedAt: V1 })];
+    const base = mkNote({ id: "N1", body: "server", updatedAt: V1 });
+    const local = mkNote({ id: "N1", body: "my edit", updatedAt: V1 });
+    const saved = new Map([["N1", JSON.stringify(base)]]);
+
+    const res = mergeResync(server, [local], saved);
+    expect(res.tasks.find((n) => n.id === "N1")!.body).toBe("my edit");
+    expect(res.supersededIds).toHaveLength(0);
+  });
+
+  it("keeps a brand-new local-only note the server doesn't have yet", () => {
+    const res = mergeResync([], [mkNote({ id: "NEW", title: "draft" })], new Map());
+    expect(res.tasks.map((n) => n.id)).toContain("NEW");
+  });
+
+  it("server's newer note wins over a stale local edit", () => {
+    const server = [mkNote({ id: "N1", body: "server new", updatedAt: V2 })];
+    const base = mkNote({ id: "N1", body: "old", updatedAt: V1 });
+    const local = mkNote({ id: "N1", body: "stale edit", updatedAt: V1 });
+    const saved = new Map([["N1", JSON.stringify(base)]]);
+
+    const res = mergeResync(server, [local], saved);
+    expect(res.tasks.find((n) => n.id === "N1")!.body).toBe("server new");
+    expect(res.supersededIds).toContain("N1");
+    expect(diffChangedTasks(res.tasks, res.nextSaved).map((n) => n.id)).not.toContain(
+      "N1"
+    );
+  });
+
+  it("adopts server truth for a note that's not pending locally", () => {
+    const server = [mkNote({ id: "N1", body: "server", updatedAt: V2 })];
+    const clean = mkNote({ id: "N1", body: "old", updatedAt: V1 });
+    const saved = new Map([["N1", JSON.stringify(clean)]]); // baseline == local
+    const res = mergeResync(server, [clean], saved);
+    expect(res.tasks.find((n) => n.id === "N1")!.body).toBe("server");
+  });
+});
+
+describe("reconcileSave — notes", () => {
+  it("adopts the server's bumped updatedAt for a saved note", () => {
+    const local = [mkNote({ id: "N1", body: "x", updatedAt: V1 })];
+    const sent = [mkNote({ id: "N1", body: "x", updatedAt: V1 })];
+    const returned = [mkNote({ id: "N1", body: "x", updatedAt: V2 })];
+    const { tasks, savedEntries } = reconcileSave(local, sent, returned);
+    expect(tasks[0].updatedAt).toBe(V2);
+    expect(savedEntries[0]).toEqual(["N1", JSON.stringify(returned[0])]);
+  });
+
+  it("keeps a note edit made during the save, re-based on the fresh version", () => {
+    const sent = [mkNote({ id: "N1", body: "sent", updatedAt: V1 })];
+    const local = [mkNote({ id: "N1", body: "typed during save", updatedAt: V1 })];
+    const returned = [mkNote({ id: "N1", body: "sent", updatedAt: V2 })];
+    const { tasks } = reconcileSave(local, sent, returned);
+    expect(tasks[0].body).toBe("typed during save");
     expect(tasks[0].updatedAt).toBe(V2);
   });
 });
