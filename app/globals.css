@@ -394,14 +394,6 @@ a:focus-visible {
   18%      { fill: var(--color-text-muted); }
 }
 
-/* Project-bar hover actions (+ / MD): hidden until hover on desktop (#47/#52) */
-.cnsl-proj-add {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.group:hover .cnsl-proj-add {
-  opacity: 1;
-}
 /* #156 — hover highlight: keep the name beige, outline the whole card (lime, 1px) */
 .cnsl-proj-bar:hover { outline: 0.5px solid var(--color-lime); outline-offset: -0.5px; }
 /* #156 — inset row divider: 12px gap left/right (fluid), not full-bleed */
@@ -438,11 +430,6 @@ a:focus-visible {
 
   /* tighter header chrome on phones + 20px gap below the icon row */
   .cnsl-header-row { padding: 12px 12px 20px !important; }
-
-  /* Mobile has no hover → the project + / MD buttons stay visible (#47) */
-  .cnsl-proj-add { opacity: 1; }
-  /* the + plus turns light-beige on mobile (per #47) */
-  .cnsl-proj-add svg rect { fill: var(--color-text-secondary); }
 
   .grid-backlog {
     grid-template-columns: 34px 40px 1fr 104px;

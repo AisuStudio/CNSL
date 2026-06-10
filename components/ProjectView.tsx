@@ -17,6 +17,7 @@ export default function ProjectView({
   tasks,
   onToggleTimer,
   onEditTask,
+  onArchive,
   onNewInProject,
   onExportProject,
 }: {
@@ -154,37 +155,41 @@ export default function ProjectView({
                 {items.length}
               </span>
 
-              {/* + new task (hover/expanded) */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNewInProject(project);
-                }}
-                aria-label={`New task in ${project}`}
-                title={`New task in ${project}`}
-                className="cnsl-proj-add flex items-center justify-center"
-                style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
-              >
-                <PlusIcon color={nameColor} />
-              </button>
+              {/* + new task and MD export — only when the project is expanded
+                  (collapsed bars stay clean). */}
+              {!isCollapsed && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNewInProject(project);
+                    }}
+                    aria-label={`New task in ${project}`}
+                    title={`New task in ${project}`}
+                    className="flex items-center justify-center"
+                    style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+                  >
+                    <PlusIcon color={nameColor} />
+                  </button>
 
-              {/* Copy as Markdown (#157) */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExportProject(project);
-                  setCopied(project);
-                  setTimeout(() => setCopied((c) => (c === project ? null : c)), 1200);
-                }}
-                aria-label={`Copy ${project} as Markdown`}
-                title={`Copy ${project} as Markdown`}
-                className="cnsl-proj-add"
-                style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-running)" : "var(--color-text-muted)", fontSize: "var(--text-sm)", fontWeight: 700, flexShrink: 0 }}
-              >
-                {copied === project ? "✓" : "MD"}
-              </button>
+                  {/* Copy as Markdown (#157) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExportProject(project);
+                      setCopied(project);
+                      setTimeout(() => setCopied((c) => (c === project ? null : c)), 1200);
+                    }}
+                    aria-label={`Copy ${project} as Markdown`}
+                    title={`Copy ${project} as Markdown`}
+                    style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-running)" : "var(--color-text-muted)", fontSize: "var(--text-sm)", fontWeight: 700, flexShrink: 0 }}
+                  >
+                    {copied === project ? "✓" : "MD"}
+                  </button>
+                </>
+              )}
 
               {/* Time total (roll-up of active tasks) */}
               <span
@@ -250,6 +255,7 @@ export default function ProjectView({
                           task={t}
                           onToggleTimer={onToggleTimer}
                           onEditTask={onEditTask}
+                          onArchive={onArchive}
                         />
                       ))}
                   </div>

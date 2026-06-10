@@ -2,16 +2,19 @@
 
 import { type View } from "./Header";
 import { VIEW_DEFS } from "./viewDefs";
+import { SettingsIcon } from "./icons";
 
 /* Slim, icon-only sidebar (CNSL_Sidebar_Slim.svg). Labels show on hover. */
 export default function Sidebar({
   view,
   onViewChange,
+  onOpenSettings,
   open = true,
   mobileOpen = false,
 }: {
   view: View;
   onViewChange: (v: View) => void;
+  onOpenSettings?: () => void;
   open?: boolean;
   mobileOpen?: boolean; // drawer state on mobile (CSS-driven via data attr)
 }) {
@@ -48,8 +51,7 @@ export default function Sidebar({
               width: "100%",
               height: "44px",
               border: "none",
-              borderLeft: `3px solid ${active ? "var(--color-accent)" : "transparent"}`,
-              background: active ? "var(--color-bg)" : "transparent",
+              background: "transparent",
               cursor: "pointer",
             }}
           >
@@ -59,6 +61,29 @@ export default function Sidebar({
           </button>
         );
       })}
+
+      {/* Settings pinned to the bottom (no dark container) — pushes down to
+          fill the viewport height via margin-top:auto. */}
+      {onOpenSettings && (
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          aria-label="Settings"
+          title="Settings"
+          className="flex items-center justify-center"
+          style={{
+            width: "100%",
+            height: "44px",
+            marginTop: "auto",
+            marginBottom: "18px",
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+          }}
+        >
+          <SettingsIcon color="var(--color-text-muted)" />
+        </button>
+      )}
     </aside>
   );
 }

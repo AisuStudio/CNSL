@@ -58,6 +58,7 @@ export default function BacklogView({
   tasks,
   onToggleTimer,
   onEditTask,
+  onArchive,
   filter,
   onFilterChange,
   showUrgency = true,
@@ -65,6 +66,7 @@ export default function BacklogView({
   tasks: Task[];
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
+  onArchive?: (id: string) => void;
   filter?: BacklogFilter;
   onFilterChange?: (f: BacklogFilter) => void;
   showUrgency?: boolean;
@@ -80,6 +82,7 @@ export default function BacklogView({
           task={t}
           onToggleTimer={onToggleTimer}
           onEditTask={onEditTask}
+          onArchive={onArchive}
           padLeft="16px"
           showUrgency={showUrgency}
         />

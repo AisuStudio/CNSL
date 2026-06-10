@@ -8,7 +8,7 @@ import {
   formatHM,
 } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { TrackToggleIcon } from "./icons";
+import { TrackToggleIcon, ArchiveIcon } from "./icons";
 
 /* Flat task line (#156): [play] task · nr · urgency · status … time.
    Uniformly mid-grey so rows recede; "running" is signalled only by the green
@@ -21,12 +21,14 @@ export default function TaskLine({
   task: t,
   onToggleTimer,
   onEditTask,
+  onArchive,
   padLeft = "28px",
   showUrgency = true,
 }: {
   task: Task;
   onToggleTimer: (id: string) => void;
   onEditTask: (id: string) => void;
+  onArchive?: (id: string) => void;
   padLeft?: string;
   showUrgency?: boolean;
 }) {
@@ -34,7 +36,33 @@ export default function TaskLine({
   const textColor = "var(--color-text-muted)";
   const timeColor = "var(--color-text-muted)";
 
-  const playButton = (
+  // Per CNSL_Desktop Design.svg: a done (active) task shows the Archive icon in
+  // place of the play/pause toggle — click to archive it inline.
+  const showArchive = Boolean(onArchive && t.status === "done" && !t.archived);
+
+  const leftButton = showArchive ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onArchive!(t.id);
+      }}
+      aria-label="Archive"
+      title="Archive"
+      className="flex items-center justify-center"
+      style={{
+        width: "20px",
+        height: "26px",
+        flexShrink: 0,
+        border: "none",
+        cursor: "pointer",
+        background: "transparent",
+        padding: 0,
+      }}
+    >
+      <ArchiveIcon color="var(--color-text-muted)" size={20} />
+    </button>
+  ) : (
     <button
       type="button"
       onClick={() => onToggleTimer(t.id)}
@@ -94,7 +122,7 @@ export default function TaskLine({
         className="cnsl-row-line flex items-center"
         style={{ minHeight: "var(--row-h)", padding: `0 16px 0 ${padLeft}`, gap: "12px" }}
       >
-        {playButton}
+        {leftButton}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
           {taskText}
           {showUrgency && (
@@ -124,7 +152,7 @@ export default function TaskLine({
         gap: "10px",
       }}
     >
-      {playButton}
+      {leftButton}
       {taskText}
       <span style={{ color: "var(--color-text-muted)", fontWeight: 300, fontSize: "var(--text-sm)", flexShrink: 0 }}>
         {String(t.number).padStart(2, "0")}

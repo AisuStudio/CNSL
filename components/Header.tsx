@@ -1,6 +1,6 @@
 "use client";
 
-import { InfoIcon, PlusIcon, SettingsIcon, SidebarIcon } from "./icons";
+import { PlusIcon, SidebarIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import SyncIndicator, { type SyncState } from "./SyncIndicator";
 import { TOOL_DEFS } from "./viewDefs";
@@ -32,8 +32,6 @@ export default function Header({
   onToolChange,
   onNewTask,
   onLogoClick,
-  onOpenInfo,
-  onOpenSettings,
   syncState,
   onForceSave,
   onToggleNav,
@@ -42,8 +40,6 @@ export default function Header({
   onToolChange: (t: Tool) => void;
   onNewTask?: () => void;
   onLogoClick?: () => void;
-  onOpenInfo?: () => void;
-  onOpenSettings?: () => void;
   syncState?: SyncState;
   onForceSave?: () => void;
   onToggleNav?: () => void; // mobile drawer toggle (hamburger)
@@ -82,14 +78,8 @@ export default function Header({
             onClick={onToggleNav}
             aria-label="Menu"
             title="Menu"
-            className="cnsl-only-mobile cnsl-touch items-center justify-center"
-            style={{
-              marginLeft: "10px",
-              borderRadius: "8px",
-              background: "var(--color-bg-deep)",
-              border: "none",
-              cursor: "pointer",
-            }}
+            className="cnsl-only-mobile flex items-center justify-center"
+            style={{ ...ICON_BTN, marginLeft: "10px" }}
           >
             <SidebarIcon color="var(--color-text-muted)" />
           </button>
@@ -151,26 +141,6 @@ export default function Header({
           {syncState && (
             <SyncIndicator state={syncState} onClick={onForceSave} />
           )}
-          <button
-            type="button"
-            onClick={onOpenInfo}
-            aria-label="About CNSL"
-            title="About CNSL"
-            className="flex items-center justify-center"
-            style={ICON_BTN}
-          >
-            <InfoIcon color="var(--color-text-muted)" />
-          </button>
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            aria-label="Settings"
-            title="Settings"
-            className="flex items-center justify-center"
-            style={ICON_BTN}
-          >
-            <SettingsIcon color="var(--color-text-muted)" />
-          </button>
         </div>
       </div>
     </header>

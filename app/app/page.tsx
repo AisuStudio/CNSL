@@ -928,8 +928,6 @@ export default function Home() {
         onToolChange={setTool}
         onNewTask={() => openCreate()}
         onLogoClick={() => setShowInfo(true)}
-        onOpenInfo={() => setShowInfo(true)}
-        onOpenSettings={() => setShowSettings(true)}
         syncState={syncState}
         onForceSave={pushState}
         onToggleNav={tool === "tracker" ? () => setNavOpen((o) => !o) : undefined}
@@ -944,6 +942,7 @@ export default function Home() {
                 setView(v);
                 setNavOpen(false); // close drawer after picking a view (mobile)
               }}
+              onOpenSettings={() => setShowSettings(true)}
               mobileOpen={navOpen}
             />
             {navOpen && (
@@ -985,6 +984,7 @@ export default function Home() {
             tasks={backlogTasks}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
+            onArchive={(id) => setArchived(id, true)}
             filter={backlogFilter}
             onFilterChange={setBacklogFilter}
           />
@@ -994,6 +994,7 @@ export default function Home() {
             tasks={todayTasks}
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
+            onArchive={(id) => setArchived(id, true)}
             showUrgency={false}
           />
         )}
