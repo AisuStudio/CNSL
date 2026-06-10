@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
@@ -28,6 +28,15 @@ const SOON = [
 ];
 
 export default function StartPage() {
+  // The landing adopts the mono theme (one colour + black). Set it on the
+  // document root while this page is mounted; remove on unmount so other routes
+  // aren't affected. Mirrors the app's /app?theme=mono effect.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", "mono");
+    return () => root.removeAttribute("data-theme");
+  }, []);
+
   return (
     <div
       style={{
@@ -81,7 +90,7 @@ export default function StartPage() {
               fontWeight: 700,
               lineHeight: 0.86, // 55 / 64
               fontSize: "clamp(40px, 8vw, 64px)",
-              color: "var(--color-lime)",
+              color: "var(--color-accent)",
               letterSpacing: "-0.04em",
             }}
           >
@@ -100,7 +109,7 @@ export default function StartPage() {
           >
             Your new (free) console for blurps, tasks, notes.
             <br />
-            Desktop and mobile <span style={{ color: "var(--color-lime)" }}>*</span>
+            Desktop and mobile <span style={{ color: "var(--color-accent)" }}>*</span>
             <br />
             And you also can share boards with your friends &amp; family
           </p>
@@ -127,7 +136,7 @@ export default function StartPage() {
 
       {/* Aisu Studio logo — bottom-right, right-aligned like the BETA badge */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/homepage/aisu-studio.svg" alt="Aisu Studio" className="start-aisu" />
+      <img src="/homepage/aisu-studio-mono.svg" alt="Aisu Studio" className="start-aisu" />
 
       {/* Legal links — bottom-left, so Impressum & Datenschutz stay reachable
           from the public start page (§ 5 DDG: ständig verfügbar). */}
@@ -213,7 +222,7 @@ function BackdropArt() {
           d="M887.069 39.3696C571.389 96.0933 -452.104 759.514 324.765 1030.8"
           fill="none"
           stroke="var(--color-accent)"
-          strokeWidth="80"
+          strokeWidth="99"
           strokeDasharray="40 60"
           strokeLinecap="round"
         />
@@ -251,7 +260,7 @@ function ToolsPanel() {
         fontSize: "var(--text-sm)",
       }}
     >
-      <span style={{ display: "flex", width: 20, justifyContent: "center", color: muted ? "var(--color-text-muted)" : "var(--color-lime)" }}>
+      <span style={{ display: "flex", width: 20, justifyContent: "center", color: muted ? "var(--color-text-muted)" : "var(--color-accent)" }}>
         <Icon color="currentColor" />
       </span>
       <span>{label}</span>
@@ -294,7 +303,7 @@ function ToolsPanel() {
           marginTop: "16px",
           fontSize: "var(--text-xs)",
           fontFamily: "var(--font-family-mono)",
-          color: "var(--color-lime)",
+          color: "var(--color-accent)",
           textDecoration: "none",
         }}
       >
