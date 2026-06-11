@@ -274,7 +274,10 @@ body {
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 2px;
+  /* wrap so the export buttons drop to a 2nd row on narrow screens instead of
+     being clipped off the right edge (mobile). */
+  flex-wrap: wrap;
+  gap: 4px 2px;
   padding: 4px 8px;
   background: var(--color-bg-deep);
   border-radius: 4px;
@@ -310,6 +313,39 @@ body {
   padding-right: 4px;
   color: var(--color-text-muted);
   font-size: var(--text-modal);
+}
+/* Right-aligned group at the end of the format bar: current-style label +
+   the export buttons. 12px from the bar's right edge (toolbar pads 8px + 4px). */
+.cnsl-tb-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+}
+.cnsl-tb-right .cnsl-tb-current { margin-left: 0; padding-right: 0; }
+/* Export buttons: inverted = lavender (accent) outline + text, transparent fill.
+   Size class matches the Backlog "Untouched" filter pill (26px · 0 12px · r6 · text-sm). */
+.cnsl-tb-out {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cnsl-tb-out:hover {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 /* Type-style menu (the aA dropdown) */

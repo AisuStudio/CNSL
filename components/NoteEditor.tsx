@@ -31,9 +31,11 @@ const ClassParagraph = Paragraph.extend({
 export default function NoteEditor({
   value,
   onChange,
+  title,
 }: {
   value: string;
   onChange: (markdown: string) => void;
+  title?: string; // used for export filenames
 }) {
   const editor = useEditor({
     extensions: [
@@ -63,7 +65,7 @@ export default function NoteEditor({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
-      <NoteToolbar editor={editor} />
+      <NoteToolbar editor={editor} title={title} />
       <EditorContent editor={editor} />
     </div>
   );

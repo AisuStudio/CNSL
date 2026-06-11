@@ -196,6 +196,7 @@ export default function NotePad({
             <NoteEditor
               key={selected.id}
               value={selected.body}
+              title={selected.title}
               onChange={(md) => onUpdate(selected.id, { body: md })}
             />
           </>
