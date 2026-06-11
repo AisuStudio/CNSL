@@ -5,10 +5,12 @@ import { VIEW_DEFS, TOOL_DEFS } from "./viewDefs";
 import { SettingsIcon } from "./icons";
 
 /* Slim, icon-only sidebar (CNSL_MonoSideBar.svg).
-     Top group    = Task-Tracker sub-views (Projects · Today · Backlog · Archive · Stats)
-     ── divider ──
-     Bottom group = top-level tools (Task Tracker · Note Pad · Log) — moved here out
+     Top group    = top-level tools (Task Tracker · Note Pad · Log) — moved here out
                     of the header (#218).
+     ── divider ──
+     Below        = the active tool's sub-views (only the Task Tracker has them:
+                    Projects · Today · Backlog · Archive · Stats). Tools on top,
+                    sub-views below = pick a tool, then its views (#225).
      Settings is pinned to the very bottom.
    Active icon = full lavender; inactive = lavender 50% (per spec). Labels on hover. */
 
@@ -58,41 +60,6 @@ export default function Sidebar({
         gap: "4px",
       }}
     >
-      {/* ── Active tool's sub-views (#225). Only the Task Tracker has views for
-            now; Note Pad / Log show none, leaving just the tools + Settings. The
-            divider only appears when there are views above it. ── */}
-      {tool === "tracker" && (
-        <>
-          {VIEW_DEFS.map((v) => {
-            const active = view === v.key;
-            return (
-              <button
-                key={v.key}
-                type="button"
-                onClick={() => onViewChange(v.key)}
-                aria-label={v.label}
-                aria-pressed={active}
-                title={v.label}
-                className="flex items-center justify-center"
-                style={ITEM}
-              >
-                <v.Icon color={active ? ACTIVE : INACTIVE} />
-              </button>
-            );
-          })}
-
-          {/* Divider between views and tools (CNSL_MonoSideBar.svg) */}
-          <div
-            aria-hidden="true"
-            style={{
-              height: "0.5px",
-              background: "var(--color-text-muted)",
-              margin: "8px 18px",
-            }}
-          />
-        </>
-      )}
-
       {/* ── Top-level tools (moved out of the header, #218) ── */}
       {TOOL_DEFS.map((t) => {
         const active = tool === t.key;
@@ -111,6 +78,41 @@ export default function Sidebar({
           </button>
         );
       })}
+
+      {/* ── Active tool's sub-views, below the tools (#225). Only the Task
+            Tracker has views; Note Pad / Log show none, leaving just the tools +
+            Settings. The divider only appears when there are views below it. ── */}
+      {tool === "tracker" && (
+        <>
+          {/* Divider between tools and views (CNSL_MonoSideBar.svg) */}
+          <div
+            aria-hidden="true"
+            style={{
+              height: "0.5px",
+              background: "var(--color-text-muted)",
+              margin: "8px 18px",
+            }}
+          />
+
+          {VIEW_DEFS.map((v) => {
+            const active = view === v.key;
+            return (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => onViewChange(v.key)}
+                aria-label={v.label}
+                aria-pressed={active}
+                title={v.label}
+                className="flex items-center justify-center"
+                style={ITEM}
+              >
+                <v.Icon color={active ? ACTIVE : INACTIVE} />
+              </button>
+            );
+          })}
+        </>
+      )}
 
       {/* Settings pinned to the bottom (grey, no container) — pushes down to
           fill the viewport height via margin-top:auto. */}
