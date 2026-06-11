@@ -394,8 +394,6 @@ a:focus-visible {
   18%      { fill: var(--color-text-muted); }
 }
 
-/* #156 — hover highlight: keep the name beige, outline the whole card (lime, 1px) */
-.cnsl-proj-bar:hover { outline: 0.5px solid var(--color-lime); outline-offset: -0.5px; }
 /* #156 — inset row divider: 12px gap left/right (fluid), not full-bleed */
 .cnsl-row-line { position: relative; }
 .cnsl-row-line::after {
