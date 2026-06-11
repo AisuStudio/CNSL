@@ -132,15 +132,13 @@ export function TrackToggleIcon({
           <rect x="11" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
         </>
       ) : (
-        <rect
-          x="1.75"
-          y="1.75"
-          width="16.5"
-          height="16.5"
-          rx="4"
-          fill="none"
-          stroke="var(--color-border)"
-          strokeWidth="3.5"
+        // Play state (#206): boxed triangle from CNSL_Icon_Play.svg — replaces the
+        // old empty rounded square that read like a radio button.
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M5.5 14.5V5.5l9 4.5-9 4.5ZM20 0v20H0V0h20ZM16.5 3.5H3.5v13h13V3.5Z"
+          fill="var(--color-border-subtle)"
         />
       )}
     </svg>

@@ -49,6 +49,22 @@ function catchUpTimers(arr: Task[]): Task[] {
   );
 }
 
+// De-dup task NRs (fix A): keep the first occurrence of each `number`, bump later
+// duplicates above the current max. Idempotent / self-healing — applied on every
+// load and resync (real DB + demo), until numbers are server-assigned (task #75).
+function dedupeTaskNumbers(arr: Task[]): Task[] {
+  const seen = new Set<number>();
+  let maxN = arr.reduce((m, t) => Math.max(m, t.number), 0);
+  return arr.map((t) => {
+    if (seen.has(t.number)) {
+      maxN += 1;
+      return { ...t, number: maxN };
+    }
+    seen.add(t.number);
+    return t;
+  });
+}
+
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
   const [view, setView] = useState<View>("project");
@@ -100,15 +116,22 @@ export default function Home() {
       );
     };
 
+
     // Real app: load the board from the DB-backed API (auth via middleware).
     if (!DEMO) {
       fetch("/api/state")
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
         .then((data) => {
-          const loaded = catchUp(data.tasks ?? []);
+          const caught = catchUp(data.tasks ?? []);
+          const loaded = dedupeTaskNumbers(caught);
           setTasks(loaded);
-          // seed the diff baseline so the first save sends only real changes
-          savedRef.current = new Map(loaded.map((t) => [t.id, JSON.stringify(t)]));
+          // Seed the diff baseline so the first save sends only real changes.
+          // BUT if dedup renumbered anything, baseline = pre-dedup so the fix gets
+          // persisted to the DB (otherwise dedup would re-run every load forever).
+          const renumbered = loaded.some((t, i) => t.number !== caught[i].number);
+          savedRef.current = new Map(
+            (renumbered ? caught : loaded).map((t) => [t.id, JSON.stringify(t)])
+          );
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
           setNotes(data.notes ?? []);
@@ -213,6 +236,8 @@ export default function Home() {
       if (missing.length) nextTasks = [...nextTasks, ...missing];
       window.localStorage.setItem(REPAIR_KEY, "1");
     }
+
+    nextTasks = dedupeTaskNumbers(nextTasks);
 
     setTasks(catchUp(nextTasks));
     setHydrated(true);
@@ -389,7 +414,7 @@ export default function Home() {
           latest.current.tasks,
           savedRef.current
         );
-        setTasks(merged);
+        setTasks(dedupeTaskNumbers(merged));
         savedRef.current = nextSaved;
         setLog(data.log ?? []);
         setNotes(data.notes ?? []);
@@ -507,9 +532,13 @@ export default function Home() {
         };
       }
 
-      return prevTask
-        ? prev.map((t) => (t.id === updated.id ? final : t))
-        : [...prev, final];
+      if (prevTask) {
+        return prev.map((t) => (t.id === updated.id ? final : t));
+      }
+      // New task: assign the NR here, from the freshest list, so two drafts
+      // opened before either saves can't collide (#dup-numbers, fix B).
+      const number = prev.reduce((m, t) => Math.max(m, t.number), 0) + 1;
+      return [...prev, { ...final, number }];
     });
     setModalTask(null);
   }
@@ -522,14 +551,14 @@ export default function Home() {
     setModalTask(tasks.find((t) => t.id === id) ?? null);
     setIsNewTask(false);
   }
-  function openCreate(project = "") {
+  function openCreate(project = "", epic = "") {
     const number = tasks.reduce((m, t) => Math.max(m, t.number), 0) + 1;
     setModalTask({
       id: newId("task"),
       number,
       createdAt: new Date().toISOString(),
       project,
-      epic: "",
+      epic,
       task: "",
       urgency: "unsorted",
       status: "open",
@@ -620,27 +649,32 @@ export default function Home() {
   function createTaskFromEntry(entryId: string, project: string, epic: string) {
     const entry = log.find((e) => e.id === entryId);
     if (!entry || entry.processed) return;
-    const number =
-      tasks.reduce((max, t) => Math.max(max, t.number), 0) + 1;
-    const task: Task = {
-      id: newId("task"),
-      number,
-      createdAt: entry.ts,
-      project: project || "—",
-      epic: epic || "—",
-      task: entry.text,
-      urgency: "unsorted",
-      status: "open",
-      complexity: null,
-      isTracking: false,
-      trackedMinutes: 0,
-      description: "",
-    };
-    setTasks((prev) => [...prev, task]);
+    const taskId = newId("task");
+    // Assign the NR inside the updater from the freshest list (fix B). The
+    // setTasks updater flushes before setLog's, so `assignedNumber` is set.
+    let assignedNumber = 0;
+    setTasks((prev) => {
+      assignedNumber = prev.reduce((max, t) => Math.max(max, t.number), 0) + 1;
+      const task: Task = {
+        id: taskId,
+        number: assignedNumber,
+        createdAt: entry.ts,
+        project: project || "—",
+        epic: epic || "—",
+        task: entry.text,
+        urgency: "unsorted",
+        status: "open",
+        complexity: null,
+        isTracking: false,
+        trackedMinutes: 0,
+        description: "",
+      };
+      return [...prev, task];
+    });
     setLog((prev) =>
       prev.map((e) =>
         e.id === entryId
-          ? { ...e, processed: true, taskId: task.id, taskNumber: number }
+          ? { ...e, processed: true, taskId, taskNumber: assignedNumber }
           : e
       )
     );
@@ -1051,6 +1085,7 @@ export default function Home() {
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
             onNewInProject={(project) => openCreate(project)}
+            onNewInTopic={(project, topic) => openCreate(project, topic)}
             onExportProject={(project) => exportCopyMarkdown(project)}
           />
         )}
@@ -1077,7 +1112,6 @@ export default function Home() {
           <TrackingLogView
             log={log}
             projects={projects}
-            epics={epics}
             onCreateTask={createTaskFromEntry}
             onDeleteEntry={deleteLogEntry}
             onCopyMarkdown={exportCopyMarkdown}

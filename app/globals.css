@@ -503,7 +503,10 @@ a:focus-visible {
     position: fixed;
     top: var(--header-row1-height);
     left: 0;
-    bottom: 0;
+    /* dvh (not bottom:0) so the rail tracks the *dynamic* viewport on iOS Safari
+       when the URL bar shows/hides; safe-area keeps it off the home indicator. (#208) */
+    height: calc(100dvh - var(--header-row1-height));
+    padding-bottom: env(safe-area-inset-bottom);
     z-index: 46;
     width: 60px !important;
     transform: translateX(-100%);
