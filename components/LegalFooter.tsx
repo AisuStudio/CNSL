@@ -43,6 +43,8 @@ export default function LegalFooter({
         justifyContent: "center",
       }}
     >
+      {legal("/story", "The Story")}
+      {sep}
       {legal("/impressum", "Impressum")}
       {sep}
       {legal("/datenschutz", "Datenschutz")}

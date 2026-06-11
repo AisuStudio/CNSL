@@ -40,7 +40,8 @@ export async function middleware(request: NextRequest) {
     // Legal pages must be reachable without a login (§ 5 DDG: ständig verfügbar)
     path === "/impressum" ||
     path === "/datenschutz" ||
-    path === "/terms";
+    path === "/terms" ||
+    path === "/story";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
