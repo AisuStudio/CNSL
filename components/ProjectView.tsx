@@ -117,9 +117,10 @@ export default function ProjectView({
       {groups.map(({ project, items, topics }) => {
         const isCollapsed = collapsed.has(project);
         const running = items.some((t) => t.isTracking);
-        // #227 follow-up: running is shown via ITALIC only now — the green text
-        // colour was too much alongside it. Name/count/time stay primary.
-        const nameColor = "var(--color-text-primary)";
+        // #227: running is shown by the green colour (clearer than italic).
+        const nameColor = running
+          ? "var(--color-running)"
+          : "var(--color-text-primary)";
         return (
           <div key={project}>
             {/* Project header */}
@@ -143,13 +144,7 @@ export default function ProjectView({
             >
               <span
                 className="cnsl-proj-name"
-                style={{
-                  fontWeight: 700,
-                  fontSize: "var(--text-logo)",
-                  color: nameColor,
-                  // #227: italic when a task in the project is running.
-                  fontStyle: running ? "italic" : "normal",
-                }}
+                style={{ fontWeight: 700, fontSize: "var(--text-logo)", color: nameColor }}
               >
                 {project}
               </span>
@@ -219,8 +214,10 @@ export default function ProjectView({
                   ? !expandedTopics.has(topicKey(project, topic))
                   : false;
                 const tRunning = tItems.some((t) => t.isTracking);
-                // #227 follow-up: running shown via italic only (no green text).
-                const tColor = "var(--color-text-primary)";
+                // Topic colour: bright beige normally, green when a task runs.
+                const tColor = tRunning
+                  ? "var(--color-running)"
+                  : "var(--color-text-primary)";
                 return (
                   <div key={topic || "__none"}>
                     {topic && (
@@ -236,15 +233,7 @@ export default function ProjectView({
                           cursor: "pointer",
                         }}
                       >
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "var(--text-base)",
-                            color: tColor,
-                            // #227: italic when a task in the topic is running.
-                            fontStyle: tRunning ? "italic" : "normal",
-                          }}
-                        >
+                        <span style={{ fontWeight: 700, fontSize: "var(--text-base)", color: tColor }}>
                           {topic}
                         </span>
                         <span style={{ color: tColor, fontWeight: 300, fontSize: "var(--text-sm)" }}>
