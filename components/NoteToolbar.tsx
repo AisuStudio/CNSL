@@ -155,7 +155,8 @@ export default function NoteToolbar({
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };
-  const saveMD = () => downloadFile(`${baseName()}.md`, getMarkdown(), "text/markdown");
+  // "Save MD" hidden per user — restore this with its button to re-enable.
+  // const saveMD = () => downloadFile(`${baseName()}.md`, getMarkdown(), "text/markdown");
   const saveRTF = () =>
     downloadFile(`${baseName()}.rtf`, htmlToRtf(editor.getHTML()), "application/rtf");
 
@@ -270,9 +271,11 @@ export default function NoteToolbar({
         <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
           {copied ? "Copied" : "Copy MD"}
         </button>
+        {/* "Save MD" hidden per user — restore this button + the saveMD handler to bring it back.
         <button type="button" className="cnsl-tb-out" onClick={saveMD} title="Save as Markdown">
           Save MD
         </button>
+        */}
         <button type="button" className="cnsl-tb-out" onClick={saveRTF} title="Save as RTF">
           Save RTF
         </button>
