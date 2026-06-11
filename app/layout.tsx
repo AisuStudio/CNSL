@@ -53,11 +53,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${publicSans.variable} ${iaMono.variable}`}>
+    // suppressHydrationWarning on <html>: the inline script below sets
+    // data-theme before hydration, which the server HTML doesn't carry.
+    <html
+      lang="en"
+      className={`${publicSans.variable} ${iaMono.variable}`}
+      suppressHydrationWarning
+    >
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla adds
           cz-shortcut-listen) inject attributes onto <body> before React
           hydrates. This only ignores attribute mismatches on <body>. */}
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {/* Apply the mono theme BEFORE first paint to kill the FOUC (old purple
+            flash). Runs synchronously during parsing. Mirrors the useEffects:
+            mono on "/" and "/app" unless ?theme=classic; optional ?hue. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);if((p==="/"||p.indexOf("/app")===0)&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h)r.style.setProperty("--mono",h);}}catch(e){}})();`,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
