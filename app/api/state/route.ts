@@ -10,9 +10,12 @@ import {
   logToDb,
   noteFromDb,
   noteToDb,
+  eventFromDb,
+  eventToDb,
 } from "@/lib/serialize";
 import type { Task, LogEntry } from "@/lib/mock-data";
 import type { Note } from "@/lib/notes";
+import type { CalendarEvent } from "@/lib/calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +35,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { trackerId, notesId } = await ensureUserBoards(user.id, user.email);
-  const [tasks, log, board, notes] = await Promise.all([
+  const [tasks, log, board, notes, events] = await Promise.all([
     prisma.task.findMany({
       where: { boardId: trackerId },
       include: { timeEntries: true },
@@ -40,12 +43,15 @@ export async function GET() {
     prisma.logEntry.findMany({ where: { userId: user.id }, orderBy: { ts: "asc" } }),
     prisma.board.findUnique({ where: { id: trackerId } }),
     prisma.note.findMany({ where: { boardId: notesId }, orderBy: { updatedAt: "desc" } }),
+    // Calendar events hang off the tracker board (Phase B).
+    prisma.event.findMany({ where: { boardId: trackerId }, orderBy: { start: "asc" } }),
   ]);
   return NextResponse.json({
     tasks: tasks.map(taskFromDb),
     log: log.map(logFromDb),
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
     notes: notes.map(noteFromDb),
+    events: events.map(eventFromDb),
     rev: board?.rev ?? 0,
     // Board ids so the client can open a scoped Realtime subscription.
     boardId: trackerId,
@@ -64,6 +70,7 @@ export async function POST(req: NextRequest) {
   const tasks: Task[] = Array.isArray(body.tasks) ? body.tasks : [];
   const log: LogEntry[] = Array.isArray(body.log) ? body.log : [];
   const notes: Note[] = Array.isArray(body.notes) ? body.notes : [];
+  const events: CalendarEvent[] = Array.isArray(body.events) ? body.events : [];
   const projectColors = body.projectColors ?? {};
   // Explicit deletions: a save only removes ids it names (never "everything
   // not in the payload"), so a diff-save can't wipe tasks it didn't send.
@@ -72,6 +79,9 @@ export async function POST(req: NextRequest) {
     : [];
   const deletedNoteIds: string[] = Array.isArray(body.deletedNoteIds)
     ? body.deletedNoteIds
+    : [];
+  const deletedEventIds: string[] = Array.isArray(body.deletedEventIds)
+    ? body.deletedEventIds
     : [];
   const deletedLogIds: string[] = Array.isArray(body.deletedLogIds)
     ? body.deletedLogIds
@@ -86,8 +96,10 @@ export async function POST(req: NextRequest) {
     tasks.length > MAX_ITEMS ||
     log.length > MAX_ITEMS ||
     notes.length > MAX_ITEMS ||
+    events.length > MAX_ITEMS ||
     tasks.some((t) => big(t.task) || big(t.description)) ||
     notes.some((n) => big(n.title) || big(n.body)) ||
+    events.some((e) => big(e.title) || big(e.note)) ||
     log.some((l) => big(l.text));
   if (oversized) {
     return NextResponse.json({ error: "payload too large" }, { status: 413 });
@@ -105,6 +117,8 @@ export async function POST(req: NextRequest) {
   // Same for notes: ids of every sent note that exists after the save (applied or
   // skipped-as-stale) → returned so the client adopts the fresh/authoritative row.
   const touchedNoteIds: string[] = [];
+  // Same for events (Phase B).
+  const touchedEventIds: string[] = [];
   await prisma.$transaction(
       async (tx) => {
         // ── Explicit deletes only — NEVER "delete everything not in payload".
@@ -196,6 +210,34 @@ export async function POST(req: NextRequest) {
         touchedNoteIds.push(n.id);
       }
 
+      // Events: explicit deletes only (same rule as tasks/notes), then upsert
+      // with per-event newer-wins. Scoped to the tracker board (Phase B).
+      if (deletedEventIds.length > 0) {
+        await tx.event.deleteMany({
+          where: { boardId: trackerId, id: { in: deletedEventIds } },
+        });
+      }
+      for (const e of events) {
+        const data = eventToDb(e, trackerId);
+        const existing = await tx.event.findUnique({
+          where: { id: e.id },
+          select: { boardId: true, updatedAt: true },
+        });
+        // scope writes to THIS board: never touch another board's row.
+        if (existing && existing.boardId !== trackerId) continue;
+        if (!existing) {
+          await tx.event.create({ data: { id: e.id, ...data } });
+        } else {
+          const baseMs = e.updatedAt ? new Date(e.updatedAt).getTime() : null;
+          if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
+            touchedEventIds.push(e.id);
+            continue;
+          }
+          await tx.event.updateMany({ where: { id: e.id, boardId: trackerId }, data });
+        }
+        touchedEventIds.push(e.id);
+      }
+
       await tx.board.update({
         where: { id: trackerId },
         data: { projectColors },
@@ -204,17 +246,19 @@ export async function POST(req: NextRequest) {
     { timeout: 20_000 }
   );
 
-  // Authoritative versions of the tasks/notes we touched, for client reconciliation.
-  const [fresh, freshNotes] = await Promise.all([
+  // Authoritative versions of the tasks/notes/events we touched, for reconciliation.
+  const [fresh, freshNotes, freshEvents] = await Promise.all([
     prisma.task.findMany({
       where: { id: { in: touchedTaskIds } },
       include: { timeEntries: true },
     }),
     prisma.note.findMany({ where: { id: { in: touchedNoteIds } } }),
+    prisma.event.findMany({ where: { id: { in: touchedEventIds } } }),
   ]);
   return NextResponse.json({
     ok: true,
     tasks: fresh.map(taskFromDb),
     notes: freshNotes.map(noteFromDb),
+    events: freshEvents.map(eventFromDb),
   });
 }

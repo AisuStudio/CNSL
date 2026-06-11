@@ -104,6 +104,7 @@ export default function Home() {
   // Ids the user explicitly deleted (only these are removed server-side).
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
+  const deletedEventIds = useRef<Set<string>>(new Set());
   const deletedLogIds = useRef<Set<string>>(new Set());
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
@@ -111,6 +112,8 @@ export default function Home() {
   // noteId → last-saved JSON: the diff-save + newer-wins baseline for notes,
   // mirroring savedRef for tasks (so notes get the same conflict protection).
   const notesSavedRef = useRef<Map<string, string>>(new Map());
+  // eventId → last-saved JSON: diff-save + newer-wins baseline for events (Phase B).
+  const eventsSavedRef = useRef<Map<string, string>>(new Map());
   // Board ids (from GET) so the live-sync effect can scope its subscription.
   const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
@@ -157,6 +160,11 @@ export default function Home() {
           // seed the notes diff baseline so the first save sends only real changes
           notesSavedRef.current = new Map(
             loadedNotes.map((n) => [n.id, JSON.stringify(n)])
+          );
+          const loadedEvents: CalendarEvent[] = data.events ?? [];
+          setEvents(loadedEvents);
+          eventsSavedRef.current = new Map(
+            loadedEvents.map((e) => [e.id, JSON.stringify(e)])
           );
           setRev(typeof data.rev === "number" ? data.rev : 0);
           boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
@@ -291,6 +299,8 @@ export default function Home() {
     // Same diff-save + newer-wins protocol for notes (each carries its `updatedAt`
     // base for the server to apply newer-wins per note).
     const changedNotes = diffChangedTasks(notes, notesSavedRef.current);
+    // Same for events (Phase B).
+    const changedEvents = diffChangedTasks(events, eventsSavedRef.current);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -301,9 +311,11 @@ export default function Home() {
           log,
           projectColors,
           notes: changedNotes,
+          events: changedEvents,
           rev,
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
+          deletedEventIds: [...deletedEventIds.current],
           deletedLogIds: [...deletedLogIds.current],
         }),
       });
@@ -339,10 +351,23 @@ export default function Home() {
         for (const [id, json] of savedEntries) notesSavedRef.current.set(id, json);
         return nextNotes;
       });
+      // Same reconcile for events (Phase B).
+      const returnedEvents: CalendarEvent[] = Array.isArray(d.events) ? d.events : [];
+      setEvents((prev) => {
+        const { tasks: nextEvents, savedEntries } = reconcileSave(
+          prev,
+          changedEvents,
+          returnedEvents
+        );
+        for (const [id, json] of savedEntries) eventsSavedRef.current.set(id, json);
+        return nextEvents;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedNoteIds.current.forEach((id) => notesSavedRef.current.delete(id));
+      deletedEventIds.current.forEach((id) => eventsSavedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
+      deletedEventIds.current.clear();
       deletedLogIds.current.clear();
       setSyncState("synced");
     } catch {
@@ -400,8 +425,8 @@ export default function Home() {
   }, [tasks, notes, events, hydrated]);
 
   // Always-current snapshot for the flush-on-hide handler below.
-  const latest = useRef({ tasks, log, projectColors, notes, rev });
-  latest.current = { tasks, log, projectColors, notes, rev };
+  const latest = useRef({ tasks, log, projectColors, notes, events, rev });
+  latest.current = { tasks, log, projectColors, notes, events, rev };
 
   // Flush immediately when the app is hidden/closed (PWA close, tab switch,
   // backgrounding). The debounced auto-save is cancelled on unmount, so a
@@ -415,11 +440,14 @@ export default function Home() {
       const l = latest.current;
       const changed = diffChangedTasks(l.tasks, savedRef.current);
       const changedNotes = diffChangedTasks(l.notes, notesSavedRef.current);
+      const changedEvents = diffChangedTasks(l.events, eventsSavedRef.current);
       if (
         changed.length === 0 &&
         changedNotes.length === 0 &&
+        changedEvents.length === 0 &&
         deletedTaskIds.current.size === 0 &&
         deletedNoteIds.current.size === 0 &&
+        deletedEventIds.current.size === 0 &&
         deletedLogIds.current.size === 0
       )
         return; // nothing pending → don't fire on every tab switch
@@ -433,9 +461,11 @@ export default function Home() {
             log: l.log,
             projectColors: l.projectColors,
             notes: changedNotes,
+            events: changedEvents,
             rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
+            deletedEventIds: [...deletedEventIds.current],
             deletedLogIds: [...deletedLogIds.current],
           }),
         }).catch(() => {});
@@ -490,6 +520,15 @@ export default function Home() {
         );
         setNotes(mergedNotes.filter((n) => !deletedNoteIds.current.has(n.id)));
         notesSavedRef.current = nextNotesSaved;
+        // Same newer-wins merge for events (Phase B).
+        const serverEvents: CalendarEvent[] = data.events ?? [];
+        const { tasks: mergedEvents, nextSaved: nextEventsSaved } = mergeResync(
+          serverEvents,
+          latest.current.events,
+          eventsSavedRef.current
+        );
+        setEvents(mergedEvents.filter((e) => !deletedEventIds.current.has(e.id)));
+        eventsSavedRef.current = nextEventsSaved;
         if (data.projectColors) setProjectColors(data.projectColors);
         setRev(typeof data.rev === "number" ? data.rev : 0);
         setSyncState("synced");
@@ -534,7 +573,13 @@ export default function Home() {
         ping
       )
       // RLS scopes LogEntry to the current user, so no client-side filter needed.
-      .on("postgres_changes", { event: "*", schema: "public", table: "LogEntry" }, ping);
+      .on("postgres_changes", { event: "*", schema: "public", table: "LogEntry" }, ping)
+      // Calendar events live on the tracker board (Phase B).
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Event", filter: `boardId=eq.${trackerId}` },
+        ping
+      );
     if (notesBoardId) {
       channel = channel.on(
         "postgres_changes",
@@ -851,6 +896,7 @@ export default function Home() {
     setEventModal(null);
   }
   function deleteEvent(id: string) {
+    deletedEventIds.current.add(id); // explicit delete — server removes only these
     setEvents((prev) => prev.filter((e) => e.id !== id));
     setEventModal(null);
   }

@@ -21,6 +21,8 @@ export interface CalendarEvent {
   // expansion into concrete occurrences happens client-side later (+ Wiederholung).
   recurrence?: string;
   createdAt?: string;
+  // Phase B — server @updatedAt; the base version for per-event newer-wins sync.
+  updatedAt?: string;
 }
 
 // Does an event overlap the half-open range [startMs, endMs)? Uses `end` when

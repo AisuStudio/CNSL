@@ -171,9 +171,32 @@ model Note {
   folderId    String? // null = root
   title       String   @default("")
   body        String   @default("") // markdown
+  project     String? // A1 — note belongs to a project (string; projectId later)
+  taskId      String? // A1 — "Story text" link to a task (soft ref; UI handles dangling)
   createdById String?  @db.Uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([boardId])
+}
+
+// ─── Calendar (board kind='calendar') — Phase B ─────────
+/// A calendar event. Hangs off the tracker board today; may move to its own
+/// calendar board later. `taskId`/`project` are soft string refs (the UI
+/// handles a dangling link), mirroring the client CalendarEvent.
+model Event {
+  id         String    @id @default(uuid())
+  boardId    String
+  title      String    @default("")
+  start      DateTime
+  end        DateTime?
+  allDay     Boolean   @default(false)
+  note       String?
+  project    String?
+  taskId     String?
+  recurrence String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt // per-row version (newer-wins sync)
 
   @@index([boardId])
 }

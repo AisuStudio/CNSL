@@ -2,11 +2,13 @@
 // Prisma DB rows. Reused by the /api/state route both directions.
 import type { Task, LogEntry, Complexity, Subtask } from "./mock-data";
 import type { Note } from "./notes";
+import type { CalendarEvent } from "./calendar";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
   LogEntry as DbLogEntry,
   Note as DbNote,
+  Event as DbEvent,
   Prisma,
 } from "@prisma/client";
 
@@ -116,6 +118,8 @@ export function noteFromDb(row: DbNote): Note {
     folderId: row.folderId ?? null,
     title: row.title,
     body: row.body,
+    project: row.project ?? undefined,
+    taskId: row.taskId ?? undefined,
     createdAt: row.createdAt?.toISOString(),
     updatedAt: row.updatedAt?.toISOString(),
   };
@@ -127,8 +131,44 @@ export function noteToDb(n: Note, boardId: string, userId: string) {
     folderId: n.folderId ?? null,
     title: n.title ?? "",
     body: n.body ?? "",
+    project: n.project ?? null,
+    taskId: n.taskId ?? null,
     createdById: userId,
     createdAt: n.createdAt ? new Date(n.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
+  };
+}
+
+// DB row → app CalendarEvent
+export function eventFromDb(row: DbEvent): CalendarEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    start: row.start.toISOString(),
+    end: row.end?.toISOString(),
+    allDay: row.allDay,
+    note: row.note ?? undefined,
+    project: row.project ?? undefined,
+    taskId: row.taskId ?? undefined,
+    recurrence: row.recurrence ?? undefined,
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// app CalendarEvent → DB columns (id + boardId handled by the caller's upsert)
+export function eventToDb(e: CalendarEvent, boardId: string) {
+  return {
+    boardId,
+    title: e.title ?? "",
+    start: new Date(e.start),
+    end: e.end ? new Date(e.end) : null,
+    allDay: e.allDay ?? false,
+    note: e.note ?? null,
+    project: e.project ?? null,
+    taskId: e.taskId ?? null,
+    recurrence: e.recurrence ?? null,
+    createdAt: e.createdAt ? new Date(e.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }
