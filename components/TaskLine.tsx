@@ -91,6 +91,8 @@ export default function TaskLine({
         minWidth: 0,
         cursor: "pointer",
         color: textColor,
+        // #227: a running task is shown in italic (in addition to the green icon).
+        fontStyle: t.isTracking ? "italic" : "normal",
         lineHeight: 1,
         overflow: "hidden",
         textOverflow: "ellipsis",

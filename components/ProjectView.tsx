@@ -143,7 +143,13 @@ export default function ProjectView({
             >
               <span
                 className="cnsl-proj-name"
-                style={{ fontWeight: 700, fontSize: "var(--text-logo)", color: nameColor }}
+                style={{
+                  fontWeight: 700,
+                  fontSize: "var(--text-logo)",
+                  color: nameColor,
+                  // #227: italic when a task in the project is running.
+                  fontStyle: running ? "italic" : "normal",
+                }}
               >
                 {project}
               </span>
@@ -232,7 +238,15 @@ export default function ProjectView({
                           cursor: "pointer",
                         }}
                       >
-                        <span style={{ fontWeight: 700, fontSize: "var(--text-base)", color: tColor }}>
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: "var(--text-base)",
+                            color: tColor,
+                            // #227: italic when a task in the topic is running.
+                            fontStyle: tRunning ? "italic" : "normal",
+                          }}
+                        >
                           {topic}
                         </span>
                         <span style={{ color: tColor, fontWeight: 300, fontSize: "var(--text-sm)" }}>

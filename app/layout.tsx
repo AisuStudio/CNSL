@@ -11,6 +11,7 @@ const publicSans = localFont({
     { path: "../public/fonts/public-sans/PublicSans-Medium.woff2", weight: "500", style: "normal" },
     { path: "../public/fonts/public-sans/PublicSans-Bold.woff2", weight: "700", style: "normal" },
     { path: "../public/fonts/public-sans/PublicSans-Italic.woff2", weight: "400", style: "italic" },
+    { path: "../public/fonts/public-sans/PublicSans-BoldItalic.woff2", weight: "700", style: "italic" },
   ],
   variable: "--font-public-sans",
   display: "swap",
