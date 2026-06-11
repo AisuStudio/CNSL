@@ -1,19 +1,41 @@
 "use client";
 
-import { type View } from "./Header";
-import { VIEW_DEFS } from "./viewDefs";
+import { type View, type Tool } from "./Header";
+import { VIEW_DEFS, TOOL_DEFS } from "./viewDefs";
 import { SettingsIcon } from "./icons";
 
-/* Slim, icon-only sidebar (CNSL_Sidebar_Slim.svg). Labels show on hover. */
+/* Slim, icon-only sidebar (CNSL_MonoSideBar.svg).
+     Top group    = Task-Tracker sub-views (Projects · Today · Backlog · Archive · Stats)
+     ── divider ──
+     Bottom group = top-level tools (Task Tracker · Note Pad · Log) — moved here out
+                    of the header (#218).
+     Settings is pinned to the very bottom.
+   Active icon = full lavender; inactive = lavender 50% (per spec). Labels on hover. */
+
+const ACTIVE = "var(--color-text-primary)";
+const INACTIVE = "color-mix(in srgb, var(--color-text-primary) 50%, transparent)";
+
+const ITEM: React.CSSProperties = {
+  width: "100%",
+  height: "44px",
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+};
+
 export default function Sidebar({
   view,
+  tool,
   onViewChange,
+  onToolChange,
   onOpenSettings,
   open = true,
   mobileOpen = false,
 }: {
   view: View;
+  tool: Tool;
   onViewChange: (v: View) => void;
+  onToolChange: (t: Tool) => void;
   onOpenSettings?: () => void;
   open?: boolean;
   mobileOpen?: boolean; // drawer state on mobile (CSS-driven via data attr)
@@ -36,8 +58,9 @@ export default function Sidebar({
         gap: "4px",
       }}
     >
+      {/* ── Task-Tracker sub-views ── */}
       {VIEW_DEFS.map((v) => {
-        const active = view === v.key;
+        const active = tool === "tracker" && view === v.key;
         return (
           <button
             key={v.key}
@@ -47,22 +70,43 @@ export default function Sidebar({
             aria-pressed={active}
             title={v.label}
             className="flex items-center justify-center"
-            style={{
-              width: "100%",
-              height: "44px",
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-            }}
+            style={ITEM}
           >
-            <v.Icon
-              color={active ? "var(--color-text-primary)" : "var(--color-text-muted)"}
-            />
+            <v.Icon color={active ? ACTIVE : INACTIVE} />
           </button>
         );
       })}
 
-      {/* Settings pinned to the bottom (no dark container) — pushes down to
+      {/* ── Divider between views and tools (CNSL_MonoSideBar.svg) ── */}
+      <div
+        aria-hidden="true"
+        style={{
+          height: "0.5px",
+          background: "var(--color-text-muted)",
+          margin: "8px 18px",
+        }}
+      />
+
+      {/* ── Top-level tools (moved out of the header, #218) ── */}
+      {TOOL_DEFS.map((t) => {
+        const active = tool === t.key;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => onToolChange(t.key)}
+            aria-label={t.label}
+            aria-pressed={active}
+            title={t.label}
+            className="flex items-center justify-center"
+            style={ITEM}
+          >
+            <t.Icon color={active ? ACTIVE : INACTIVE} />
+          </button>
+        );
+      })}
+
+      {/* Settings pinned to the bottom (grey, no container) — pushes down to
           fill the viewport height via margin-top:auto. */}
       {onOpenSettings && (
         <button
@@ -71,15 +115,7 @@ export default function Sidebar({
           aria-label="Settings"
           title="Settings"
           className="flex items-center justify-center"
-          style={{
-            width: "100%",
-            height: "44px",
-            marginTop: "auto",
-            marginBottom: "18px",
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-          }}
+          style={{ ...ITEM, marginTop: "auto", marginBottom: "18px" }}
         >
           <SettingsIcon color="var(--color-text-muted)" />
         </button>

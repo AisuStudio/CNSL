@@ -3,7 +3,6 @@
 import { PlusIcon, SidebarIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import SyncIndicator, { type SyncState } from "./SyncIndicator";
-import { TOOL_DEFS } from "./viewDefs";
 
 // Task Tracker sub-views (sidebar)
 export type View =
@@ -28,16 +27,12 @@ const ICON_BTN: React.CSSProperties = {
 };
 
 export default function Header({
-  tool,
-  onToolChange,
   onNewTask,
   onLogoClick,
   syncState,
   onForceSave,
   onToggleNav,
 }: {
-  tool: Tool;
-  onToolChange: (t: Tool) => void;
   onNewTask?: () => void;
   onLogoClick?: () => void;
   syncState?: SyncState;
@@ -86,6 +81,26 @@ export default function Header({
           </button>
         )}
 
+        {/* Beta label (#219) — product is in public beta. */}
+        <span
+          style={{
+            marginLeft: "10px",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--color-accent)",
+            border:
+              "1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)",
+            borderRadius: "6px",
+            padding: "2px 7px",
+            lineHeight: 1.4,
+            userSelect: "none",
+          }}
+        >
+          Beta
+        </span>
+
         <div className="ml-8 flex items-center gap-3">
           {onNewTask && (
             <button
@@ -99,43 +114,6 @@ export default function Header({
               <PlusIcon color="var(--color-text-muted)" />
             </button>
           )}
-
-          {/* Tool switcher: Task Tracker · Note Pad · Log — connected segments */}
-          <div
-            className="flex items-center"
-            style={{
-              borderRadius: "8px",
-              overflow: "hidden",
-              gap: "2px",
-              marginLeft: "4px",
-              background: "var(--color-bg)",
-            }}
-          >
-            {TOOL_DEFS.map((t) => {
-              const active = tool === t.key;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => onToolChange(t.key)}
-                  aria-pressed={active}
-                  title={t.label}
-                  className="flex items-center justify-center"
-                  style={{
-                    width: "47px",
-                    height: "34.2px",
-                    background: "var(--color-bg-deep)",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  <t.Icon
-                    color={active ? "var(--color-card-bg)" : "var(--color-text-muted)"}
-                  />
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         <div className="ml-auto flex items-center gap-3">

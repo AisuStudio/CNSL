@@ -1037,35 +1037,37 @@ export default function Home() {
         </div>
       )}
       <Header
-        tool={tool}
-        onToolChange={setTool}
         onNewTask={() => openCreate()}
         onLogoClick={() => setShowInfo(true)}
         syncState={syncState}
         onForceSave={pushState}
-        onToggleNav={tool === "tracker" ? () => setNavOpen((o) => !o) : undefined}
+        onToggleNav={() => setNavOpen((o) => !o)}
       />
 
       <div className="cnsl-body">
-        {tool === "tracker" && (
-          <>
-            <Sidebar
-              view={view}
-              onViewChange={(v) => {
-                setView(v);
-                setNavOpen(false); // close drawer after picking a view (mobile)
-              }}
-              onOpenSettings={() => setShowSettings(true)}
-              mobileOpen={navOpen}
-            />
-            {navOpen && (
-              <div
-                className="cnsl-nav-backdrop"
-                onClick={() => setNavOpen(false)}
-                aria-hidden="true"
-              />
-            )}
-          </>
+        {/* Sidebar is always present now — it holds both the Task-Tracker views
+            AND the tool switcher (moved out of the header, #218). */}
+        <Sidebar
+          view={view}
+          tool={tool}
+          onViewChange={(v) => {
+            setTool("tracker"); // views are sub-views of the tracker
+            setView(v);
+            setNavOpen(false); // close drawer after picking (mobile)
+          }}
+          onToolChange={(t) => {
+            setTool(t);
+            setNavOpen(false);
+          }}
+          onOpenSettings={() => setShowSettings(true)}
+          mobileOpen={navOpen}
+        />
+        {navOpen && (
+          <div
+            className="cnsl-nav-backdrop"
+            onClick={() => setNavOpen(false)}
+            aria-hidden="true"
+          />
         )}
 
         <div className="cnsl-content">
