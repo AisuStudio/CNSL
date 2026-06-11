@@ -19,6 +19,7 @@ export default function ProjectView({
   onEditTask,
   onArchive,
   onNewInProject,
+  onNewInTopic,
   onExportProject,
 }: {
   tasks: Task[];
@@ -27,6 +28,7 @@ export default function ProjectView({
   onEditTask: (id: string) => void;
   onArchive?: (id: string) => void;
   onNewInProject: (project: string) => void;
+  onNewInTopic?: (project: string, topic: string) => void;
   onExportProject: (project: string) => void;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export default function ProjectView({
                 position: "sticky",
                 top: 0,
                 zIndex: 2,
-                background: "var(--color-bg-deep)",
+                background: "var(--color-surface)",
                 borderRadius: "8px",
                 margin: "0 12px 2px",
                 cursor: "pointer",
@@ -222,7 +224,7 @@ export default function ProjectView({
                         role="button"
                         tabIndex={0}
                         onClick={() => toggleTopic(project, topic)}
-                        className="cnsl-row-line flex items-center"
+                        className="cnsl-row-line group flex items-center"
                         style={{
                           minHeight: "var(--row-h)",
                           padding: "0 16px 0 28px",
@@ -236,6 +238,22 @@ export default function ProjectView({
                         <span style={{ color: tColor, fontWeight: 300, fontSize: "var(--text-sm)" }}>
                           {tItems.length}
                         </span>
+                        {/* + new task in this topic — shows on hover (#205) */}
+                        {onNewInTopic && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNewInTopic(project, topic);
+                            }}
+                            aria-label={`New task in ${topic}`}
+                            title={`New task in ${topic}`}
+                            className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ width: "24px", height: "24px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+                          >
+                            <PlusIcon color={tColor} />
+                          </button>
+                        )}
                         <span
                           style={{
                             marginLeft: "auto",

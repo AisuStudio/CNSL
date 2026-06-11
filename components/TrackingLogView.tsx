@@ -16,19 +16,13 @@ function fmtTs(iso: string): string {
 /* One log entry with inline triage controls. */
 function EntryRow({
   entry,
-  projects,
-  epics,
   onCreateTask,
   onDelete,
 }: {
   entry: LogEntry;
-  projects: string[];
-  epics: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
   onDelete: (entryId: string) => void;
 }) {
-  const [project, setProject] = useState("");
-  const [epic, setEpic] = useState("");
   const isMobile = useIsMobile();
 
   return (
@@ -68,81 +62,50 @@ function EntryRow({
         {entry.text}
       </span>
 
-      {entry.processed ? (
-        <span
-          style={{
-            color: "var(--color-text-muted)",
-            fontSize: "var(--text-sm)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          → Backlog #{String(entry.taskNumber ?? "").padStart(2, "0")}
-        </span>
-      ) : (
-        <div
-          className="flex"
-          style={{
-            gap: "8px",
-            flexShrink: 0,
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "stretch" : "center",
-            width: isMobile ? "100%" : undefined,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => onDelete(entry.id)}
+      {/* Controls — Delete is ALWAYS available (#215: processed legacy entries
+          used to be undeletable); unprocessed entries also get a Create Task. */}
+      <div
+        className="flex"
+        style={{
+          gap: "8px",
+          flexShrink: 0,
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          width: isMobile ? "100%" : undefined,
+        }}
+      >
+        {entry.processed && (
+          <span
             style={{
-              height: isMobile ? "44px" : "30px",
-              padding: "0 12px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-border-subtle)",
-              background: "transparent",
-              color: "var(--color-surface)",
+              color: "var(--color-text-muted)",
               fontSize: "var(--text-sm)",
-              cursor: "pointer",
               whiteSpace: "nowrap",
             }}
           >
-            Delete
-          </button>
-          <input
-            list="cnsl-projects"
-            placeholder="Project"
-            value={project}
-            onChange={(e) => setProject(e.target.value)}
-            className="outline-none"
-            style={{
-              width: isMobile ? "100%" : "120px",
-              height: isMobile ? "44px" : "30px",
-              padding: "0 10px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-bg)",
-              color: "var(--color-text-primary)",
-              fontSize: "var(--text-sm)",
-            }}
-          />
-          <input
-            list="cnsl-epics"
-            placeholder="Topic"
-            value={epic}
-            onChange={(e) => setEpic(e.target.value)}
-            className="outline-none"
-            style={{
-              width: isMobile ? "100%" : "120px",
-              height: isMobile ? "44px" : "30px",
-              padding: "0 10px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-bg)",
-              color: "var(--color-text-primary)",
-              fontSize: "var(--text-sm)",
-            }}
-          />
+            → Backlog #{String(entry.taskNumber ?? "").padStart(2, "0")}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => onDelete(entry.id)}
+          style={{
+            height: isMobile ? "44px" : "30px",
+            padding: "0 12px",
+            borderRadius: "6px",
+            border: "1px solid var(--color-border-subtle)",
+            background: "transparent",
+            color: "var(--color-surface)",
+            fontSize: "var(--text-sm)",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Delete
+        </button>
+        {!entry.processed && (
           <button
             type="button"
-            onClick={() => onCreateTask(entry.id, project.trim(), epic.trim())}
+            onClick={() => onCreateTask(entry.id, "", "")}
             style={{
               height: isMobile ? "44px" : "30px",
               padding: "0 12px",
@@ -155,21 +118,10 @@ function EntryRow({
               cursor: "pointer",
             }}
           >
-            → Backlog
+            Create Task
           </button>
-        </div>
-      )}
-
-      <datalist id="cnsl-projects">
-        {projects.map((p) => (
-          <option key={p} value={p} />
-        ))}
-      </datalist>
-      <datalist id="cnsl-epics">
-        {epics.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
+        )}
+      </div>
     </div>
   );
 }
@@ -205,7 +157,6 @@ function ToolbarButton({
 export default function TrackingLogView({
   log,
   projects,
-  epics,
   onCreateTask,
   onDeleteEntry,
   onCopyMarkdown,
@@ -214,7 +165,6 @@ export default function TrackingLogView({
 }: {
   log: LogEntry[];
   projects: string[];
-  epics: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
   onDeleteEntry: (entryId: string) => void;
   onCopyMarkdown: (project?: string) => void;
@@ -297,8 +247,6 @@ export default function TrackingLogView({
           <EntryRow
             key={entry.id}
             entry={entry}
-            projects={projects}
-            epics={epics}
             onCreateTask={onCreateTask}
             onDelete={onDeleteEntry}
           />
