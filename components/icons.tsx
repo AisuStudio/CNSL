@@ -271,6 +271,49 @@ export function TrashIcon({
   );
 }
 
+export function SubtaskRadioIcon({
+  checked,
+  color = "currentColor",
+  size = 18,
+}: {
+  checked: boolean;
+  color?: string;
+  size?: number;
+}) {
+  // CNSL square radio (CNSL_Icon_Radio_Off/On.svg): hollow frame = off,
+  // frame + filled centre = on. Replaces the native checkbox for subtasks (#213).
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fill={color}
+        d={
+          checked
+            ? "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13ZM5.5,5.5h9v9H5.5V5.5Z"
+            : "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13Z"
+        }
+      />
+    </svg>
+  );
+}
+
+export function SearchIcon({
+  color = "currentColor",
+  size = 18,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // Magnifier in the CNSL pixel style: square lens-frame + diagonal handle.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <path d="M0,0v13h13V0H0ZM10,10H3V3h7v7Z" />
+        <polygon points="11.2,13.7 13.7,11.2 20,17.5 17.5,20" />
+      </g>
+    </svg>
+  );
+}
+
 export function DragDotsIcon({ color = "currentColor" }: { color?: string }) {
   // 3×3 dot grid — the draggable-field pull handle.
   const dots = [0, 1, 2];

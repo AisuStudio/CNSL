@@ -16,12 +16,12 @@ import {
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import SidePanel from "./SidePanel";
+import { SubtaskRadioIcon } from "./icons";
 
 /* ── Light-card palette → design tokens (see tokens.css) ── */
 const INK = "var(--color-card-ink)";
 const META = "var(--color-card-meta)";
 const C1 = "var(--color-card-border)";
-const ACCENT = "var(--color-accent)";
 
 /* Parse "H:MM" / "HH:MM" (or a plain minute count) into minutes (#133). */
 function parseHM(s: string, fallback: number): number {
@@ -351,13 +351,25 @@ export default function EditTaskModal({
               key={s.id}
               style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-              <input
-                type="checkbox"
-                checked={s.done}
-                onChange={(e) => patchSubtask(s.id, { done: e.target.checked })}
-                aria-label="Done"
-                style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: ACCENT }}
-              />
+              <button
+                type="button"
+                onClick={() => patchSubtask(s.id, { done: !s.done })}
+                role="checkbox"
+                aria-checked={s.done}
+                aria-label={s.done ? "Mark not done" : "Mark done"}
+                className="flex items-center justify-center"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <SubtaskRadioIcon checked={s.done} color={INK} size={18} />
+              </button>
               <input
                 value={s.text}
                 onChange={(e) => patchSubtask(s.id, { text: e.target.value })}

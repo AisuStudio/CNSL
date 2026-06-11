@@ -425,6 +425,20 @@ a:focus-visible {
   --color-accent:       color-mix(in srgb, var(--mono) 22%, #000); /* in-progress status */
   --color-border:       color-mix(in srgb, var(--mono) 32%, #000); /* dividers + idle play frame */
 }
+/* Labels/buttons that sit directly on the content canvas (main). In classic the
+   canvas is dark → light text (default token); in mono the canvas is lavender →
+   default text-primary would be lavender-on-lavender (unreadable). #210: the
+   Backlog filter toggle + the search-results header were exactly this case.
+   `-active` = a pill on an accent fill (lavender in mono) → dark ink. */
+:root[data-theme="mono"] .cnsl-on-canvas,
+:root[data-theme="mono"] .cnsl-on-canvas-active {
+  /* Redefine the text vars (like .cnsl-row-line) so inline `color: var(--…)`
+     in the components resolves to dark on the lavender canvas. The -active pill
+     keeps the bright --color-accent fill (not overridden) → dark ink on it. */
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 16%, #000);
+}
+
 /* Footer over the lavender: make it a black container with a lavender
    border (matching the project bars) so it doesn't blend in. The footer's
    inline styles reuse --color-text-primary as both a bg and a fg, so a

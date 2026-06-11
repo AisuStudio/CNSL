@@ -58,34 +58,40 @@ export default function Sidebar({
         gap: "4px",
       }}
     >
-      {/* ── Task-Tracker sub-views ── */}
-      {VIEW_DEFS.map((v) => {
-        const active = tool === "tracker" && view === v.key;
-        return (
-          <button
-            key={v.key}
-            type="button"
-            onClick={() => onViewChange(v.key)}
-            aria-label={v.label}
-            aria-pressed={active}
-            title={v.label}
-            className="flex items-center justify-center"
-            style={ITEM}
-          >
-            <v.Icon color={active ? ACTIVE : INACTIVE} />
-          </button>
-        );
-      })}
+      {/* ── Active tool's sub-views (#225). Only the Task Tracker has views for
+            now; Note Pad / Log show none, leaving just the tools + Settings. The
+            divider only appears when there are views above it. ── */}
+      {tool === "tracker" && (
+        <>
+          {VIEW_DEFS.map((v) => {
+            const active = view === v.key;
+            return (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => onViewChange(v.key)}
+                aria-label={v.label}
+                aria-pressed={active}
+                title={v.label}
+                className="flex items-center justify-center"
+                style={ITEM}
+              >
+                <v.Icon color={active ? ACTIVE : INACTIVE} />
+              </button>
+            );
+          })}
 
-      {/* ── Divider between views and tools (CNSL_MonoSideBar.svg) ── */}
-      <div
-        aria-hidden="true"
-        style={{
-          height: "0.5px",
-          background: "var(--color-text-muted)",
-          margin: "8px 18px",
-        }}
-      />
+          {/* Divider between views and tools (CNSL_MonoSideBar.svg) */}
+          <div
+            aria-hidden="true"
+            style={{
+              height: "0.5px",
+              background: "var(--color-text-muted)",
+              margin: "8px 18px",
+            }}
+          />
+        </>
+      )}
 
       {/* ── Top-level tools (moved out of the header, #218) ── */}
       {TOOL_DEFS.map((t) => {

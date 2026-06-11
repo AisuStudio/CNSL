@@ -15,6 +15,7 @@ import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
+import SearchResultsView from "@/components/SearchResultsView";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Note } from "@/lib/notes";
@@ -68,6 +69,7 @@ function dedupeTaskNumbers(arr: Task[]): Task[] {
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
   const [view, setView] = useState<View>("project");
+  const [searchQuery, setSearchQuery] = useState(""); // #42 task search
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -930,6 +932,10 @@ export default function Home() {
     ];
   }, [sortedTasks]);
 
+  // #42: when there's a query, the content area becomes a global results page
+  // (overriding the current tool/view).
+  const searchActive = searchQuery.trim().length > 0;
+
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>
       prev.map((t) => {
@@ -1042,6 +1048,8 @@ export default function Home() {
         syncState={syncState}
         onForceSave={pushState}
         onToggleNav={() => setNavOpen((o) => !o)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <div className="cnsl-body">
@@ -1071,28 +1079,39 @@ export default function Home() {
         )}
 
         <div className="cnsl-content">
-          {/* The TaskLine-based views (project/backlog/today/archive) have no
-              column grid, so they don't use the column header. */}
-          {!(
-            tool === "tracker" &&
-            (view === "project" ||
-              view === "backlog" ||
-              view === "today" ||
-              view === "archive")
-          ) && (
-            <TableHeader
-              view={tool === "tracker" ? view : tool}
-              sort={sort}
-              onSort={toggleSort}
-            />
-          )}
+          {/* The TaskLine-based views (project/backlog/today/archive) and the
+              search results have no column grid, so they skip the column header. */}
+          {!searchActive &&
+            !(
+              tool === "tracker" &&
+              (view === "project" ||
+                view === "backlog" ||
+                view === "today" ||
+                view === "archive")
+            ) && (
+              <TableHeader
+                view={tool === "tracker" ? view : tool}
+                sort={sort}
+                onSort={toggleSort}
+              />
+            )}
 
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main
             className="cnsl-scroll flex-1 overflow-auto"
             style={{ paddingBottom: "104px" }}
           >
-            {tool === "tracker" && (
+            {searchActive && (
+              <SearchResultsView
+                tasks={activeTasks}
+                query={searchQuery}
+                onClear={() => setSearchQuery("")}
+                onToggleTimer={toggleTimer}
+                onEditTask={openEdit}
+                onArchive={(id) => setArchived(id, true)}
+              />
+            )}
+            {!searchActive && tool === "tracker" && (
               <>
             {view === "backlog" && (
           <BacklogView
@@ -1144,7 +1163,7 @@ export default function Home() {
         )}
               </>
             )}
-        {tool === "notepad" && (
+        {!searchActive && tool === "notepad" && (
           <NotePad
             notes={notes}
             onCreate={createNote}
@@ -1152,7 +1171,7 @@ export default function Home() {
             onDelete={deleteNote}
           />
         )}
-        {tool === "log" && (
+        {!searchActive && tool === "log" && (
           <TrackingLogView
             log={log}
             projects={projects}
