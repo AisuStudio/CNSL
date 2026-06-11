@@ -13,6 +13,8 @@ import {
   formatHM,
   formatDate,
 } from "@/lib/mock-data";
+import { type CalendarEvent, isoToTimeInput } from "@/lib/calendar";
+import type { Note } from "@/lib/notes";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import SidePanel from "./SidePanel";
@@ -118,6 +120,12 @@ export default function EditTaskModal({
   onSubmit,
   onDelete,
   onArchive,
+  linkedEvents = [],
+  onOpenEvent,
+  onAddToCalendar,
+  linkedNotes = [],
+  onOpenNote,
+  onAddNote,
 }: {
   task: Task;
   isNew?: boolean;
@@ -129,6 +137,14 @@ export default function EditTaskModal({
   onSubmit: (task: Task) => void;
   onDelete: (id: string) => void;
   onArchive: (id: string, archived: boolean) => void;
+  // Calendar link (#221) — events pointing at this task, derived in page.tsx.
+  linkedEvents?: CalendarEvent[];
+  onOpenEvent?: (eventId: string) => void; // jump to a linked event
+  onAddToCalendar?: (task: Task) => void; // create + link a new event
+  // Notes link (A1) — notes pointing at this task, derived in page.tsx.
+  linkedNotes?: Note[];
+  onOpenNote?: (noteId: string) => void; // jump to a linked note
+  onAddNote?: (task: Task) => void; // create + link a new note
 }) {
   const [taskText, setTaskText] = useState(task.task);
   const [project, setProject] = useState(task.project);
@@ -208,6 +224,25 @@ export default function EditTaskModal({
         .map((s) => ({ ...s, text: s.text.trim() }))
         .filter((s) => s.text.length > 0),
     });
+  }
+
+  // Calendar cross-navigation (#221): persist task edits first (save() closes
+  // this modal), then open the event / create a linked one — no lost work.
+  function openLinkedEvent(eventId: string) {
+    save();
+    onOpenEvent?.(eventId);
+  }
+  function addToCalendar() {
+    save();
+    onAddToCalendar?.({ ...task, task: taskText.trim() });
+  }
+  function openLinkedNote(noteId: string) {
+    save();
+    onOpenNote?.(noteId);
+  }
+  function addNote() {
+    save();
+    onAddNote?.({ ...task, task: taskText.trim() });
   }
 
   return (
@@ -461,6 +496,146 @@ export default function EditTaskModal({
             ))}
           </PillField>
         </div>
+
+        {/* Calendar link (#221) — events linked to this task + add-to-calendar.
+            Hidden for unsaved new tasks (link by id needs a persisted task). */}
+        {!isNew && (onAddToCalendar || linkedEvents.length > 0) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ fontSize: "10px", color: META }}>
+              <b>CALENDAR</b>
+            </div>
+            {linkedEvents.map((ev) => {
+              const time = ev.allDay ? "" : isoToTimeInput(ev.start);
+              return (
+                <div
+                  key={ev.id}
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: "var(--text-base)",
+                      color: INK,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {formatDate(ev.start)}
+                    {time ? ` · ${time}` : ""} — {ev.title || "(untitled)"}
+                  </span>
+                  {onOpenEvent && (
+                    <button
+                      type="button"
+                      onClick={() => openLinkedEvent(ev.id)}
+                      style={{
+                        height: "28px",
+                        padding: "0 12px",
+                        background: "transparent",
+                        color: INK,
+                        border: `1px solid ${C1}`,
+                        borderRadius: "6px",
+                        fontSize: "var(--text-sm)",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      Open
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {onAddToCalendar && (
+              <button
+                type="button"
+                onClick={addToCalendar}
+                style={{
+                  alignSelf: "flex-start",
+                  height: "28px",
+                  padding: "0 12px",
+                  background: "transparent",
+                  color: INK,
+                  border: `1px solid ${C1}`,
+                  borderRadius: "6px",
+                  fontSize: "var(--text-sm)",
+                  cursor: "pointer",
+                }}
+              >
+                + Add to calendar
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Notes link (A1) — notes linked to this task + add-a-note. Hidden for
+            unsaved new tasks (link by id needs a persisted task). */}
+        {!isNew && (onAddNote || linkedNotes.length > 0) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ fontSize: "10px", color: META }}>
+              <b>NOTES</b>
+            </div>
+            {linkedNotes.map((n) => (
+              <div
+                key={n.id}
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: "var(--text-base)",
+                    color: INK,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {n.title || "Untitled"}
+                </span>
+                {onOpenNote && (
+                  <button
+                    type="button"
+                    onClick={() => openLinkedNote(n.id)}
+                    style={{
+                      height: "28px",
+                      padding: "0 12px",
+                      background: "transparent",
+                      color: INK,
+                      border: `1px solid ${C1}`,
+                      borderRadius: "6px",
+                      fontSize: "var(--text-sm)",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Open
+                  </button>
+                )}
+              </div>
+            ))}
+            {onAddNote && (
+              <button
+                type="button"
+                onClick={addNote}
+                style={{
+                  alignSelf: "flex-start",
+                  height: "28px",
+                  padding: "0 12px",
+                  background: "transparent",
+                  color: INK,
+                  border: `1px solid ${C1}`,
+                  borderRadius: "6px",
+                  fontSize: "var(--text-sm)",
+                  cursor: "pointer",
+                }}
+              >
+                + New note
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>

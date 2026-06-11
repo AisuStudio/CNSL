@@ -224,6 +224,18 @@ export function TodayIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function CalIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom calendar glyph (CNSL_Icon_Cal.svg): top bar + framed grid body.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect width="20" height="3.5" />
+        <path d="M0,5.5v14.5h20V5.5H0ZM16.5,16.5H3.5v-7.5h13v7.5Z" />
+      </g>
+    </svg>
+  );
+}
+
 export function SidebarIcon({ color = "currentColor" }: { color?: string }) {
   // Panel glyph: left rail + content grid (CNSL_Icon_Sidebar.svg).
   const cols = [5.5, 11, 16.5];

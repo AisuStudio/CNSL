@@ -15,10 +15,14 @@ import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
+import CalendarView from "@/components/CalendarView";
+import EventModal, { blankEvent } from "@/components/EventModal";
 import SearchResultsView from "@/components/SearchResultsView";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Note } from "@/lib/notes";
+import type { CalendarEvent } from "@/lib/calendar";
+import { type Project, ensureProjects, dedupeProjects } from "@/lib/projects";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -73,6 +77,15 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  // Calendar tool (#221) — Phase 1: localStorage only (Phase 2 moves to the DB).
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventModal, setEventModal] = useState<CalendarEvent | null>(null);
+  const [isNewEvent, setIsNewEvent] = useState(false);
+  // A1 — open a specific note from outside the NotePad (e.g. a task's NOTES list).
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
+  // A3 — Project registry (stable ids per project name). Persisted in demo;
+  // rebuilt from names in the real app until Phase B stores it server-side.
+  const [projectList, setProjectList] = useState<Project[]>([]);
   const [sort, setSort] = useState<Sort>(null);
   // Backlog filter: All ↔ Untouched (open only) — #53.
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
@@ -163,6 +176,8 @@ export default function Home() {
         saved.notes.map((n) => [n.id, JSON.stringify(n)])
       );
     }
+    if (saved?.events) setEvents(saved.events);
+    if (saved?.projects) setProjectList(saved.projects);
     // Data-safety guard: only seed when there is genuinely no prior board.
     // If a key existed but failed to load (corrupt — loadState has backed it up
     // to cnsl.v1.corrupt.*), start EMPTY rather than silently replacing real
@@ -264,7 +279,7 @@ export default function Home() {
   // the manual "save now" click on the sync indicator.
   const pushState = useCallback(async () => {
     if (DEMO) {
-      saveState({ tasks, log, projectColors, notes });
+      saveState({ tasks, log, projectColors, notes, events, projects: projectList });
       setSyncState("synced");
       return;
     }
@@ -333,7 +348,7 @@ export default function Home() {
     } catch {
       setSyncState("unsynced");
     }
-  }, [tasks, log, projectColors, notes, rev, conflict]);
+  }, [tasks, log, projectColors, notes, events, projectList, rev, conflict]);
 
   // Auto-save: debounce 1.5s after any change.
   // ── Monochrome theme — now the DEFAULT (the "radical cut") ──
@@ -358,7 +373,7 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated) return;
     if (DEMO) {
-      saveState({ tasks, log, projectColors, notes });
+      saveState({ tasks, log, projectColors, notes, events, projects: projectList });
       setSyncState("synced");
       return;
     }
@@ -368,7 +383,21 @@ export default function Home() {
       pushState();
     }, 800);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, notes, hydrated, conflict, pushState]);
+  }, [tasks, log, projectColors, notes, events, projectList, hydrated, conflict, pushState]);
+
+  // A3 — keep the Project registry in sync: ensure a Project (stable id) exists
+  // for every project name used by a task/note/event. Purely ADDITIVE and
+  // idempotent (ensureProjects returns the same ref when nothing is new, so this
+  // never loops and NEVER mutates tasks/notes/events — only the registry slice).
+  useEffect(() => {
+    if (!hydrated) return;
+    const names = [
+      ...tasks.map((t) => t.project),
+      ...notes.map((n) => n.project ?? ""),
+      ...events.map((e) => e.project ?? ""),
+    ];
+    setProjectList((prev) => ensureProjects(prev, names));
+  }, [tasks, notes, events, hydrated]);
 
   // Always-current snapshot for the flush-on-hide handler below.
   const latest = useRef({ tasks, log, projectColors, notes, rev });
@@ -588,6 +617,10 @@ export default function Home() {
   function deleteTask(id: string) {
     deletedTaskIds.current.add(id); // explicit delete — server removes only these
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    // Unlink any calendar events that pointed at this task (no dangling links).
+    setEvents((prev) =>
+      prev.map((e) => (e.taskId === id ? { ...e, taskId: undefined } : e))
+    );
     setModalTask(null);
   }
   function openEdit(id: string) {
@@ -738,8 +771,27 @@ export default function Home() {
       prev.map((t) => (t[field] === from ? { ...t, [field]: next } : t))
     );
   }
-  const renameProject = (from: string, to: string) =>
-    renameField("project", from, to);
+  // Project rename also touches notes + events (they carry a project name now)
+  // and the registry — keeping the denormalized names and the stable ids in sync.
+  // Renaming onto an existing name MERGES (registry dedupes by name).
+  function renameProject(from: string, to: string) {
+    const next = to.trim();
+    if (!next || next === from) return;
+    setTasks((prev) =>
+      prev.map((t) => (t.project === from ? { ...t, project: next } : t))
+    );
+    setNotes((prev) =>
+      prev.map((n) => (n.project === from ? { ...n, project: next } : n))
+    );
+    setEvents((prev) =>
+      prev.map((e) => (e.project === from ? { ...e, project: next } : e))
+    );
+    setProjectList((prev) =>
+      dedupeProjects(
+        prev.map((p) => (p.name === from ? { ...p, name: next } : p))
+      )
+    );
+  }
   const renameEpic = (from: string, to: string) => renameField("epic", from, to);
 
   // Project bar colours (#18) — override layer; auto = remove override.
@@ -779,6 +831,111 @@ export default function Home() {
   function deleteNote(id: string) {
     deletedNoteIds.current.add(id); // explicit delete — server removes only these
     setNotes((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  // ─── Calendar (#221) ────────────────────────────────────
+  function openCreateEvent(dateKey?: string) {
+    setEventModal(blankEvent(dateKey));
+    setIsNewEvent(true);
+  }
+  function openEditEvent(ev: CalendarEvent) {
+    setEventModal(ev);
+    setIsNewEvent(false);
+  }
+  // Add-or-replace by id, so the same modal handles create and edit.
+  function submitEvent(ev: CalendarEvent) {
+    setEvents((prev) => {
+      const exists = prev.some((e) => e.id === ev.id);
+      return exists ? prev.map((e) => (e.id === ev.id ? ev : e)) : [...prev, ev];
+    });
+    setEventModal(null);
+  }
+  function deleteEvent(id: string) {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    setEventModal(null);
+  }
+
+  // ─── Task ↔ Calendar link (#221, bidirectional) ─────────
+  // Single source of truth = event.taskId; task→events is DERIVED, so the two
+  // sides can never disagree. A task may have many events (1:n).
+  // From a task: open a new event prefilled + linked, ready to schedule.
+  function addEventForTask(task: Task) {
+    const ev = blankEvent();
+    ev.title = task.task || "(untitled task)";
+    ev.taskId = task.id;
+    ev.project = task.project || undefined; // A2 — inherit the task's project
+    setModalTask(null);
+    setEventModal(ev);
+    setIsNewEvent(true);
+  }
+  // Jump from a task's linked-events list to that event.
+  function openEventById(id: string) {
+    const ev = events.find((e) => e.id === id);
+    if (!ev) return;
+    setModalTask(null);
+    setEventModal(ev);
+    setIsNewEvent(false);
+  }
+  // Jump from an event to its linked task.
+  function openTaskById(id: string) {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return;
+    setEventModal(null);
+    setModalTask(t);
+    setIsNewTask(false);
+  }
+  // From an event: create a new task from the event title, return its id so the
+  // event modal can link it locally (mirrors createTaskFromEntry's minimal shape).
+  // Inherits the event's project (A2) when provided.
+  function createTaskForEvent(title: string, project?: string): string {
+    const id = newId("task");
+    setTasks((prev) => {
+      const number = prev.reduce((m, t) => Math.max(m, t.number), 0) + 1;
+      const task: Task = {
+        id,
+        number,
+        createdAt: new Date().toISOString(),
+        project: project?.trim() || "—",
+        epic: "—",
+        task: title.trim() || "(untitled)",
+        urgency: "unsorted",
+        status: "open",
+        complexity: null,
+        isTracking: false,
+        trackedMinutes: 0,
+        description: "",
+      };
+      return [...prev, task];
+    });
+    return id;
+  }
+
+  // ─── Task ↔ Note link (A1, "Story text") ────────────────
+  // Open a linked note: switch to the Note Pad tool and focus that note.
+  function openNoteById(id: string) {
+    setModalTask(null);
+    setTool("notepad");
+    setFocusNoteId(id);
+  }
+  // From a task: create a note linked to it (+ inherit the task's project),
+  // switch to the Note Pad and focus it.
+  function addNoteForTask(task: Task) {
+    const now = new Date().toISOString();
+    const id = newId("note");
+    const note: Note = {
+      id,
+      folderId: null,
+      title: task.task || "Untitled",
+      body: "",
+      project: task.project || undefined,
+      taskId: task.id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes((prev) => [note, ...prev]);
+    setModalTask(null);
+    setTool("notepad");
+    setFocusNoteId(id);
   }
 
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
@@ -852,10 +1009,16 @@ export default function Home() {
   }
 
   // Existing projects/epics for the triage autocomplete.
-  const projects = useMemo(
-    () => Array.from(new Set(tasks.map((t) => t.project))).filter(Boolean),
-    [tasks]
-  );
+  // All known project names (for the assignment datalists) — union of names used
+  // by tasks/notes/events plus any in the registry.
+  const projects = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) if (t.project) s.add(t.project);
+    for (const n of notes) if (n.project) s.add(n.project);
+    for (const e of events) if (e.project) s.add(e.project);
+    for (const p of projectList) s.add(p.name);
+    return Array.from(s).filter(Boolean);
+  }, [tasks, notes, events, projectList]);
   const epics = useMemo(
     () => Array.from(new Set(tasks.map((t) => t.epic))).filter(Boolean),
     [tasks]
@@ -1082,6 +1245,7 @@ export default function Home() {
           {/* The TaskLine-based views (project/backlog/today/archive) and the
               search results have no column grid, so they skip the column header. */}
           {!searchActive &&
+            tool !== "calendar" &&
             !(
               tool === "tracker" &&
               (view === "project" ||
@@ -1169,6 +1333,18 @@ export default function Home() {
             onCreate={createNote}
             onUpdate={updateNote}
             onDelete={deleteNote}
+            projects={projects}
+            tasks={activeTasks}
+            onOpenTask={openTaskById}
+            focusNoteId={focusNoteId}
+            onFocusHandled={() => setFocusNoteId(null)}
+          />
+        )}
+        {!searchActive && tool === "calendar" && (
+          <CalendarView
+            events={events}
+            onCreateOnDay={openCreateEvent}
+            onEditEvent={openEditEvent}
           />
         )}
         {!searchActive && tool === "log" && (
@@ -1200,6 +1376,26 @@ export default function Home() {
           onSubmit={submitTask}
           onDelete={deleteTask}
           onArchive={setArchived}
+          linkedEvents={events.filter((e) => e.taskId === modalTask.id)}
+          onOpenEvent={openEventById}
+          onAddToCalendar={addEventForTask}
+          linkedNotes={notes.filter((n) => n.taskId === modalTask.id)}
+          onOpenNote={openNoteById}
+          onAddNote={addNoteForTask}
+        />
+      )}
+
+      {eventModal && (
+        <EventModal
+          event={eventModal}
+          isNew={isNewEvent}
+          tasks={activeTasks}
+          projects={projects}
+          onClose={() => setEventModal(null)}
+          onSubmit={submitEvent}
+          onDelete={deleteEvent}
+          onOpenTask={openTaskById}
+          onCreateTask={createTaskForEvent}
         />
       )}
 

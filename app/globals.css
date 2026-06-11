@@ -478,6 +478,16 @@ a:focus-visible {
   --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
   --color-text-muted:   color-mix(in srgb, var(--mono) 16%, #000);
 }
+/* Calendar month grid sits on the lavender canvas → same trick as .cnsl-row-line:
+   flip text + border + accent vars to dark so day numbers, dividers and the
+   today/event-chip accents read on the lavender (chips use --color-accent as a
+   fill with --color-card-bg = lavender text → dark chip, light text). */
+:root[data-theme="mono"] .cnsl-calendar {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 38%, #000);
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
+}
 
 /* Footer over the lavender: make it a black container with a lavender
    border (matching the project bars) so it doesn't blend in. The footer's

@@ -9,6 +9,7 @@ import {
   ArchiveIcon,
   StatsIcon,
   NotePadIcon,
+  CalIcon,
   LogIcon,
 } from "./icons";
 import type { View, Tool } from "./Header";
@@ -20,6 +21,7 @@ export const TOOL_DEFS: {
 }[] = [
   { key: "tracker", label: "Task Tracker", Icon: TaskTrackerIcon },
   { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
+  { key: "calendar", label: "Calendar", Icon: CalIcon },
   { key: "log", label: "Log", Icon: LogIcon },
 ];
 
