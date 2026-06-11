@@ -407,6 +407,12 @@ a:focus-visible {
   height: 1px;
   background: var(--color-border);
 }
+/* No trailing divider on the LAST row of a project group — otherwise that last
+   task's line floats in the 2px gap just above the next project bar. Scoped to
+   the last row of the last topic group so inter-topic dividers stay intact. */
+.cnsl-projectview > div > div:last-child > .cnsl-row-line:last-child::after {
+  display: none;
+}
 
 /* ─── Mono theme: lavender content surface (per the old mockup) ──
    The area below the header becomes the lavender "card"; project bars
