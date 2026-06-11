@@ -117,9 +117,9 @@ export default function ProjectView({
       {groups.map(({ project, items, topics }) => {
         const isCollapsed = collapsed.has(project);
         const running = items.some((t) => t.isTracking);
-        const nameColor = running
-          ? "var(--color-running)"
-          : "var(--color-text-primary)";
+        // #227 follow-up: running is shown via ITALIC only now — the green text
+        // colour was too much alongside it. Name/count/time stay primary.
+        const nameColor = "var(--color-text-primary)";
         return (
           <div key={project}>
             {/* Project header */}
@@ -219,10 +219,8 @@ export default function ProjectView({
                   ? !expandedTopics.has(topicKey(project, topic))
                   : false;
                 const tRunning = tItems.some((t) => t.isTracking);
-                // Topic colour: bright beige normally, green when a task runs.
-                const tColor = tRunning
-                  ? "var(--color-running)"
-                  : "var(--color-text-primary)";
+                // #227 follow-up: running shown via italic only (no green text).
+                const tColor = "var(--color-text-primary)";
                 return (
                   <div key={topic || "__none"}>
                     {topic && (
