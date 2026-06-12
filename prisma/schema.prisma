@@ -180,6 +180,23 @@ model Note {
   @@index([boardId])
 }
 
+// ─── Projects (registry) — Phase C1 ─────────────────────
+/// A project as a first-class entity with a stable id. Persists the client
+/// registry (A3); the id is what project membership/sharing references (Phase C).
+/// Hangs off the tracker board today; entities still reference it by name until
+/// the projectId backfill (C2).
+model Project {
+  id        String   @id @default(uuid())
+  boardId   String
+  name      String
+  color     String?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+}
+
 // ─── Calendar (board kind='calendar') — Phase B ─────────
 /// A calendar event. Hangs off the tracker board today; may move to its own
 /// calendar board later. `taskId`/`project` are soft string refs (the UI

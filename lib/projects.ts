@@ -12,6 +12,8 @@ export interface Project {
   color?: string;
   archived?: boolean;
   createdAt?: string;
+  // Phase C1 — server @updatedAt; the base version for per-project newer-wins.
+  updatedAt?: string;
 }
 
 // "—" / "-" / "" are the legacy "no project" placeholders → not real projects.

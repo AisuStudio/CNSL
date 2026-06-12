@@ -3,12 +3,14 @@
 import type { Task, LogEntry, Complexity, Subtask } from "./mock-data";
 import type { Note } from "./notes";
 import type { CalendarEvent } from "./calendar";
+import type { Project } from "./projects";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
   LogEntry as DbLogEntry,
   Note as DbNote,
   Event as DbEvent,
+  Project as DbProject,
   Prisma,
 } from "@prisma/client";
 
@@ -153,6 +155,30 @@ export function eventFromDb(row: DbEvent): CalendarEvent {
     recurrence: row.recurrence ?? undefined,
     createdAt: row.createdAt?.toISOString(),
     updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// DB row → app Project
+export function projectFromDb(row: DbProject): Project {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color ?? undefined,
+    archived: row.archived,
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// app Project → DB columns (id + boardId handled by the caller's upsert)
+export function projectToDb(p: Project, boardId: string) {
+  return {
+    boardId,
+    name: p.name ?? "",
+    color: p.color ?? null,
+    archived: p.archived ?? false,
+    createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }
 

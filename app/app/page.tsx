@@ -105,6 +105,7 @@ export default function Home() {
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
   const deletedEventIds = useRef<Set<string>>(new Set());
+  const deletedProjectIds = useRef<Set<string>>(new Set());
   const deletedLogIds = useRef<Set<string>>(new Set());
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
@@ -114,6 +115,8 @@ export default function Home() {
   const notesSavedRef = useRef<Map<string, string>>(new Map());
   // eventId → last-saved JSON: diff-save + newer-wins baseline for events (Phase B).
   const eventsSavedRef = useRef<Map<string, string>>(new Map());
+  // projectId → last-saved JSON: same baseline for the project registry (Phase C1).
+  const projectsSavedRef = useRef<Map<string, string>>(new Map());
   // Board ids (from GET) so the live-sync effect can scope its subscription.
   const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
@@ -165,6 +168,11 @@ export default function Home() {
           setEvents(loadedEvents);
           eventsSavedRef.current = new Map(
             loadedEvents.map((e) => [e.id, JSON.stringify(e)])
+          );
+          const loadedProjects: Project[] = data.projects ?? [];
+          setProjectList(loadedProjects);
+          projectsSavedRef.current = new Map(
+            loadedProjects.map((p) => [p.id, JSON.stringify(p)])
           );
           setRev(typeof data.rev === "number" ? data.rev : 0);
           boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
@@ -301,6 +309,8 @@ export default function Home() {
     const changedNotes = diffChangedTasks(notes, notesSavedRef.current);
     // Same for events (Phase B).
     const changedEvents = diffChangedTasks(events, eventsSavedRef.current);
+    // Same for the project registry (Phase C1).
+    const changedProjects = diffChangedTasks(projectList, projectsSavedRef.current);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -312,10 +322,12 @@ export default function Home() {
           projectColors,
           notes: changedNotes,
           events: changedEvents,
+          projects: changedProjects,
           rev,
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
           deletedEventIds: [...deletedEventIds.current],
+          deletedProjectIds: [...deletedProjectIds.current],
           deletedLogIds: [...deletedLogIds.current],
         }),
       });
@@ -362,12 +374,25 @@ export default function Home() {
         for (const [id, json] of savedEntries) eventsSavedRef.current.set(id, json);
         return nextEvents;
       });
+      // Same reconcile for the project registry (Phase C1).
+      const returnedProjects: Project[] = Array.isArray(d.projects) ? d.projects : [];
+      setProjectList((prev) => {
+        const { tasks: nextProjects, savedEntries } = reconcileSave(
+          prev,
+          changedProjects,
+          returnedProjects
+        );
+        for (const [id, json] of savedEntries) projectsSavedRef.current.set(id, json);
+        return nextProjects;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedNoteIds.current.forEach((id) => notesSavedRef.current.delete(id));
       deletedEventIds.current.forEach((id) => eventsSavedRef.current.delete(id));
+      deletedProjectIds.current.forEach((id) => projectsSavedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
       deletedEventIds.current.clear();
+      deletedProjectIds.current.clear();
       deletedLogIds.current.clear();
       setSyncState("synced");
     } catch {
@@ -425,8 +450,8 @@ export default function Home() {
   }, [tasks, notes, events, hydrated]);
 
   // Always-current snapshot for the flush-on-hide handler below.
-  const latest = useRef({ tasks, log, projectColors, notes, events, rev });
-  latest.current = { tasks, log, projectColors, notes, events, rev };
+  const latest = useRef({ tasks, log, projectColors, notes, events, projectList, rev });
+  latest.current = { tasks, log, projectColors, notes, events, projectList, rev };
 
   // Flush immediately when the app is hidden/closed (PWA close, tab switch,
   // backgrounding). The debounced auto-save is cancelled on unmount, so a
@@ -441,13 +466,16 @@ export default function Home() {
       const changed = diffChangedTasks(l.tasks, savedRef.current);
       const changedNotes = diffChangedTasks(l.notes, notesSavedRef.current);
       const changedEvents = diffChangedTasks(l.events, eventsSavedRef.current);
+      const changedProjects = diffChangedTasks(l.projectList, projectsSavedRef.current);
       if (
         changed.length === 0 &&
         changedNotes.length === 0 &&
         changedEvents.length === 0 &&
+        changedProjects.length === 0 &&
         deletedTaskIds.current.size === 0 &&
         deletedNoteIds.current.size === 0 &&
         deletedEventIds.current.size === 0 &&
+        deletedProjectIds.current.size === 0 &&
         deletedLogIds.current.size === 0
       )
         return; // nothing pending → don't fire on every tab switch
@@ -462,10 +490,12 @@ export default function Home() {
             projectColors: l.projectColors,
             notes: changedNotes,
             events: changedEvents,
+            projects: changedProjects,
             rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
             deletedEventIds: [...deletedEventIds.current],
+            deletedProjectIds: [...deletedProjectIds.current],
             deletedLogIds: [...deletedLogIds.current],
           }),
         }).catch(() => {});
@@ -529,6 +559,15 @@ export default function Home() {
         );
         setEvents(mergedEvents.filter((e) => !deletedEventIds.current.has(e.id)));
         eventsSavedRef.current = nextEventsSaved;
+        // Same newer-wins merge for the project registry (Phase C1).
+        const serverProjects: Project[] = data.projects ?? [];
+        const { tasks: mergedProjects, nextSaved: nextProjectsSaved } = mergeResync(
+          serverProjects,
+          latest.current.projectList,
+          projectsSavedRef.current
+        );
+        setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
+        projectsSavedRef.current = nextProjectsSaved;
         if (data.projectColors) setProjectColors(data.projectColors);
         setRev(typeof data.rev === "number" ? data.rev : 0);
         setSyncState("synced");
@@ -578,6 +617,12 @@ export default function Home() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "Event", filter: `boardId=eq.${trackerId}` },
+        ping
+      )
+      // Project registry lives on the tracker board (Phase C1).
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Project", filter: `boardId=eq.${trackerId}` },
         ping
       );
     if (notesBoardId) {
@@ -831,11 +876,16 @@ export default function Home() {
     setEvents((prev) =>
       prev.map((e) => (e.project === from ? { ...e, project: next } : e))
     );
-    setProjectList((prev) =>
-      dedupeProjects(
-        prev.map((p) => (p.name === from ? { ...p, name: next } : p))
-      )
+    const renamed = projectList.map((p) =>
+      p.name === from ? { ...p, name: next } : p
     );
+    const deduped = dedupeProjects(renamed);
+    // A merge (rename onto an existing name) drops a project → server-delete it.
+    const keptIds = new Set(deduped.map((p) => p.id));
+    renamed.forEach((p) => {
+      if (!keptIds.has(p.id)) deletedProjectIds.current.add(p.id);
+    });
+    setProjectList(deduped);
   }
   const renameEpic = (from: string, to: string) => renameField("epic", from, to);
 

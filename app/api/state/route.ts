@@ -12,10 +12,13 @@ import {
   noteToDb,
   eventFromDb,
   eventToDb,
+  projectFromDb,
+  projectToDb,
 } from "@/lib/serialize";
 import type { Task, LogEntry } from "@/lib/mock-data";
 import type { Note } from "@/lib/notes";
 import type { CalendarEvent } from "@/lib/calendar";
+import type { Project } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +38,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { trackerId, notesId } = await ensureUserBoards(user.id, user.email);
-  const [tasks, log, board, notes, events] = await Promise.all([
+  const [tasks, log, board, notes, events, projects] = await Promise.all([
     prisma.task.findMany({
       where: { boardId: trackerId },
       include: { timeEntries: true },
@@ -45,6 +48,8 @@ export async function GET() {
     prisma.note.findMany({ where: { boardId: notesId }, orderBy: { updatedAt: "desc" } }),
     // Calendar events hang off the tracker board (Phase B).
     prisma.event.findMany({ where: { boardId: trackerId }, orderBy: { start: "asc" } }),
+    // Project registry hangs off the tracker board (Phase C1).
+    prisma.project.findMany({ where: { boardId: trackerId }, orderBy: { name: "asc" } }),
   ]);
   return NextResponse.json({
     tasks: tasks.map(taskFromDb),
@@ -52,6 +57,7 @@ export async function GET() {
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
     notes: notes.map(noteFromDb),
     events: events.map(eventFromDb),
+    projects: projects.map(projectFromDb),
     rev: board?.rev ?? 0,
     // Board ids so the client can open a scoped Realtime subscription.
     boardId: trackerId,
@@ -71,6 +77,7 @@ export async function POST(req: NextRequest) {
   const log: LogEntry[] = Array.isArray(body.log) ? body.log : [];
   const notes: Note[] = Array.isArray(body.notes) ? body.notes : [];
   const events: CalendarEvent[] = Array.isArray(body.events) ? body.events : [];
+  const projects: Project[] = Array.isArray(body.projects) ? body.projects : [];
   const projectColors = body.projectColors ?? {};
   // Explicit deletions: a save only removes ids it names (never "everything
   // not in the payload"), so a diff-save can't wipe tasks it didn't send.
@@ -82,6 +89,9 @@ export async function POST(req: NextRequest) {
     : [];
   const deletedEventIds: string[] = Array.isArray(body.deletedEventIds)
     ? body.deletedEventIds
+    : [];
+  const deletedProjectIds: string[] = Array.isArray(body.deletedProjectIds)
+    ? body.deletedProjectIds
     : [];
   const deletedLogIds: string[] = Array.isArray(body.deletedLogIds)
     ? body.deletedLogIds
@@ -97,9 +107,11 @@ export async function POST(req: NextRequest) {
     log.length > MAX_ITEMS ||
     notes.length > MAX_ITEMS ||
     events.length > MAX_ITEMS ||
+    projects.length > MAX_ITEMS ||
     tasks.some((t) => big(t.task) || big(t.description)) ||
     notes.some((n) => big(n.title) || big(n.body)) ||
     events.some((e) => big(e.title) || big(e.note)) ||
+    projects.some((p) => big(p.name)) ||
     log.some((l) => big(l.text));
   if (oversized) {
     return NextResponse.json({ error: "payload too large" }, { status: 413 });
@@ -119,6 +131,8 @@ export async function POST(req: NextRequest) {
   const touchedNoteIds: string[] = [];
   // Same for events (Phase B).
   const touchedEventIds: string[] = [];
+  // Same for projects (Phase C1).
+  const touchedProjectIds: string[] = [];
   await prisma.$transaction(
       async (tx) => {
         // ── Explicit deletes only — NEVER "delete everything not in payload".
@@ -238,6 +252,34 @@ export async function POST(req: NextRequest) {
         touchedEventIds.push(e.id);
       }
 
+      // Projects: explicit deletes only, then upsert with per-project newer-wins.
+      // Scoped to the tracker board (Phase C1).
+      if (deletedProjectIds.length > 0) {
+        await tx.project.deleteMany({
+          where: { boardId: trackerId, id: { in: deletedProjectIds } },
+        });
+      }
+      for (const p of projects) {
+        const data = projectToDb(p, trackerId);
+        const existing = await tx.project.findUnique({
+          where: { id: p.id },
+          select: { boardId: true, updatedAt: true },
+        });
+        // scope writes to THIS board: never touch another board's row.
+        if (existing && existing.boardId !== trackerId) continue;
+        if (!existing) {
+          await tx.project.create({ data: { id: p.id, ...data } });
+        } else {
+          const baseMs = p.updatedAt ? new Date(p.updatedAt).getTime() : null;
+          if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
+            touchedProjectIds.push(p.id);
+            continue;
+          }
+          await tx.project.updateMany({ where: { id: p.id, boardId: trackerId }, data });
+        }
+        touchedProjectIds.push(p.id);
+      }
+
       await tx.board.update({
         where: { id: trackerId },
         data: { projectColors },
@@ -246,19 +288,21 @@ export async function POST(req: NextRequest) {
     { timeout: 20_000 }
   );
 
-  // Authoritative versions of the tasks/notes/events we touched, for reconciliation.
-  const [fresh, freshNotes, freshEvents] = await Promise.all([
+  // Authoritative versions of the rows we touched, for client reconciliation.
+  const [fresh, freshNotes, freshEvents, freshProjects] = await Promise.all([
     prisma.task.findMany({
       where: { id: { in: touchedTaskIds } },
       include: { timeEntries: true },
     }),
     prisma.note.findMany({ where: { id: { in: touchedNoteIds } } }),
     prisma.event.findMany({ where: { id: { in: touchedEventIds } } }),
+    prisma.project.findMany({ where: { id: { in: touchedProjectIds } } }),
   ]);
   return NextResponse.json({
     ok: true,
     tasks: fresh.map(taskFromDb),
     notes: freshNotes.map(noteFromDb),
     events: freshEvents.map(eventFromDb),
+    projects: freshProjects.map(projectFromDb),
   });
 }
