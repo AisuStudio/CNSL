@@ -1414,6 +1414,9 @@ export default function Home() {
     );
   }
 
+  // Blurp logger (footer capture) shows only in the Projects view + the Log view.
+  const showBlurp = (tool === "tracker" && view === "project") || tool === "log";
+
   return (
     <div className="cnsl-app" data-nav-open={navOpen ? "true" : "false"}>
       {conflict && (
@@ -1510,7 +1513,7 @@ export default function Home() {
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main
             className="cnsl-scroll flex-1 overflow-auto"
-            style={{ paddingBottom: "104px" }}
+            style={{ paddingBottom: showBlurp ? "104px" : "24px" }}
           >
             {searchActive && (
               <SearchResultsView
@@ -1621,7 +1624,7 @@ export default function Home() {
         )}
           </main>
 
-          <Footer onTrack={addLogEntry} />
+          {showBlurp && <Footer onTrack={addLogEntry} />}
         </div>
       </div>
 
