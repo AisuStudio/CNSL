@@ -102,6 +102,7 @@ model Task {
   board          Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
   number         Int
   project        String      @default("")
+  projectId      String?     // C2 — FK to Project.id (server-resolved from name)
   epic           String      @default("")
   title          String      @default("") // the "task" text
   description    String      @default("")
@@ -122,6 +123,7 @@ model Task {
   timeEntries    TimeEntry[]
 
   @@index([boardId])
+  @@index([projectId])
 }
 
 // ─── Cross-cutting ──────────────────────────────────────
@@ -171,13 +173,15 @@ model Note {
   folderId    String? // null = root
   title       String   @default("")
   body        String   @default("") // markdown
-  project     String? // A1 — note belongs to a project (string; projectId later)
+  project     String? // A1 — note belongs to a project (string)
+  projectId   String? // C2 — FK to Project.id (server-resolved from name)
   taskId      String? // A1 — "Story text" link to a task (soft ref; UI handles dangling)
   createdById String?  @db.Uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([boardId])
+  @@index([projectId])
 }
 
 // ─── Projects (registry) — Phase C1 ─────────────────────
@@ -210,12 +214,14 @@ model Event {
   allDay     Boolean   @default(false)
   note       String?
   project    String?
+  projectId  String? // C2 — FK to Project.id (server-resolved from name)
   taskId     String?
   recurrence String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt // per-row version (newer-wins sync)
 
   @@index([boardId])
+  @@index([projectId])
 }
 
 // ─── Later (uncomment when building each tool) ──────────

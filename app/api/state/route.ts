@@ -135,6 +135,23 @@ export async function POST(req: NextRequest) {
   const touchedProjectIds: string[] = [];
   await prisma.$transaction(
       async (tx) => {
+        // C2 — resolve each entity's projectId from its project NAME. Map = the
+        // board's persisted projects PLUS any in this payload (new/renamed ones
+        // not yet upserted; the projects block below persists them in this same
+        // tx, so the stamped id stays consistent). "—"/empty → null (unassigned).
+        const dbProjects = await tx.project.findMany({
+          where: { boardId: trackerId },
+          select: { id: true, name: true },
+        });
+        const projMap = new Map<string, string>();
+        for (const p of dbProjects) projMap.set(p.name.trim().toLowerCase(), p.id);
+        for (const p of projects) projMap.set((p.name ?? "").trim().toLowerCase(), p.id);
+        const resolvePid = (name?: string): string | null => {
+          const n = (name ?? "").trim().toLowerCase();
+          if (!n || n === "—" || n === "-") return null;
+          return projMap.get(n) ?? null;
+        };
+
         // ── Explicit deletes only — NEVER "delete everything not in payload".
         // A short/stale snapshot can no longer wipe tasks it simply doesn't know.
         if (deletedTaskIds.length > 0) {
@@ -143,7 +160,7 @@ export async function POST(req: NextRequest) {
           });
         }
         for (const t of tasks) {
-        const data = taskToDb(t, trackerId, user.id);
+        const data = { ...taskToDb(t, trackerId, user.id), projectId: resolvePid(t.project) };
         const existing = await tx.task.findUnique({
           where: { id: t.id },
           select: { boardId: true, updatedAt: true },
@@ -201,7 +218,7 @@ export async function POST(req: NextRequest) {
         });
       }
       for (const n of notes) {
-        const data = noteToDb(n, notesId, user.id);
+        const data = { ...noteToDb(n, notesId, user.id), projectId: resolvePid(n.project) };
         const existing = await tx.note.findUnique({
           where: { id: n.id },
           select: { boardId: true, updatedAt: true },
@@ -232,7 +249,7 @@ export async function POST(req: NextRequest) {
         });
       }
       for (const e of events) {
-        const data = eventToDb(e, trackerId);
+        const data = { ...eventToDb(e, trackerId), projectId: resolvePid(e.project) };
         const existing = await tx.event.findUnique({
           where: { id: e.id },
           select: { boardId: true, updatedAt: true },
