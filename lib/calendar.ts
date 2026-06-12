@@ -122,6 +122,24 @@ export function monthMatrix(year: number, month: number): Date[][] {
   return weeks;
 }
 
+// `count` Monday-first week-rows starting from the week that contains `anchor`.
+// Powers the Week (count=1) and Two Weeks (count=2) calendar views.
+export function weekMatrix(anchor: Date, count = 1): Date[][] {
+  const start = startOfWeekMonday(anchor);
+  const rows: Date[][] = [];
+  for (let w = 0; w < count; w++) {
+    const row: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      const offset = w * 7 + d;
+      row.push(
+        new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset)
+      );
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 // Step the (year, month) cursor by `delta` months, normalising overflow.
 export function addMonths(
   year: number,
