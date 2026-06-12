@@ -332,7 +332,18 @@ function MiniOverview({ today, onPick }: { today: Date; onPick: (day: Date) => v
   });
   const second = addMonths(anchor.year, anchor.month, 1);
   return (
-    <div style={{ width: "196px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "18px" }}>
+    <div
+      style={{
+        width: "196px",
+        flexShrink: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: "18px",
+        // Start level with the day boxes (below the toolbar + weekday header),
+        // not at the very top next to the toolbar title.
+        marginTop: "72px",
+      }}
+    >
       <MiniMonth
         year={anchor.year}
         month={anchor.month}
