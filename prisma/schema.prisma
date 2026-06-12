@@ -54,11 +54,13 @@ enum Status {
 /// Mirror of Supabase auth.users (id == auth.uid()).
 model Profile {
   id          String        @id @db.Uuid
+  email       String?       // C3 — synced from auth.users; lets invites resolve by email
   displayName String?
   createdAt   DateTime      @default(now())
 
   ownedBoards Board[]       @relation("BoardOwner")
   memberships BoardMember[]
+  projectMemberships ProjectMember[] // C3 — project-level sharing
   tasks       Task[]        @relation("TaskCreatedBy")
   timeEntries TimeEntry[]
   logEntries  LogEntry[]
@@ -92,6 +94,40 @@ model BoardMember {
   createdAt DateTime @default(now())
 
   @@unique([boardId, userId])
+}
+
+/// Who may access a PROJECT (= project-level sharing, C3). Role gates read/write.
+/// `projectId` is a soft ref to Project.id (no FK cascade, matching the rest of
+/// the project links). `role` is a plain string ('owner' | 'editor' | 'viewer')
+/// — not the Role enum — to avoid depending on that enum type existing in prod.
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String   @db.Uuid
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("viewer")
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+/// A pending invite to a project, by email. Resolved into a ProjectMember when
+/// the invited user logs in (accept-on-login in lib/board.ts). `token` is for a
+/// future link flow. `status` = 'pending' | 'accepted' | 'revoked'.
+model Invite {
+  id           String   @id @default(uuid())
+  projectId    String
+  email        String
+  role         String   @default("viewer")
+  token        String   @unique @default(uuid())
+  status       String   @default("pending")
+  invitedById  String?  @db.Uuid
+  acceptedById String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+  @@index([projectId])
 }
 
 // ─── Content: Tracker (today's model) ───────────────────

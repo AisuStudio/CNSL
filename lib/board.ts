@@ -36,9 +36,30 @@ export async function ensureUserBoards(
 ): Promise<{ trackerId: string; notesId: string }> {
   await prisma.profile.upsert({
     where: { id: userId },
-    update: {},
-    create: { id: userId, displayName: email ?? null },
+    update: email ? { email } : {},
+    create: { id: userId, email: email ?? null, displayName: email ?? null },
   });
+
+  // C3 — accept-on-login: turn any pending project invites for this email into
+  // memberships (idempotent; runs every request but only acts while invites are
+  // pending). This is what makes a shared project appear once the invitee logs in.
+  if (email) {
+    const lower = email.toLowerCase();
+    const pending = await prisma.invite.findMany({
+      where: { email: lower, status: "pending" },
+    });
+    for (const inv of pending) {
+      await prisma.projectMember.upsert({
+        where: { projectId_userId: { projectId: inv.projectId, userId } },
+        update: { role: inv.role },
+        create: { projectId: inv.projectId, userId, role: inv.role },
+      });
+      await prisma.invite.update({
+        where: { id: inv.id },
+        data: { status: "accepted", acceptedById: userId },
+      });
+    }
+  }
 
   // Tracker board
   let tracker = await prisma.board.findFirst({
