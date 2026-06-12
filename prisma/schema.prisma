@@ -218,6 +218,41 @@ model Event {
   @@index([boardId])
 }
 
+// ─── Scheduler (board kind='sport') — Phase 2 ───────────
+/// A reusable schedule template (fitness programme, workshop). Sections + their
+/// steps are stored as nested JSON (`sections`), matching the client Schedule —
+/// they're only ever read/written as a whole, so no per-step table. Hangs off the
+/// tracker board today. `project` is a soft string ref (projectId later, Phase C).
+model Schedule {
+  id        String   @id @default(uuid())
+  boardId   String
+  name      String   @default("")
+  project   String?
+  sections  Json?    // [{ id, name, order, steps: [{ id, name, description?, durationSeconds, order }] }]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+}
+
+/// One played run of a Schedule ("Saved activity") — the recorded time goes here,
+/// under the schedule's project. Flat; soft `scheduleId`/`project` refs.
+model Activity {
+  id              String   @id @default(uuid())
+  boardId         String
+  scheduleId      String
+  scheduleName    String   @default("")
+  project         String?
+  startedAt       DateTime
+  recordedSeconds Int      @default(0)
+  completed       Boolean  @default(false)
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+}
+
 // ─── Later (uncomment when building each tool) ──────────
 //
 // model Invite {

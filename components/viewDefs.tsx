@@ -10,6 +10,7 @@ import {
   StatsIcon,
   NotePadIcon,
   CalIcon,
+  SchedulerIcon,
   LogIcon,
 } from "./icons";
 import type { View, Tool } from "./Header";
@@ -22,6 +23,7 @@ export const TOOL_DEFS: {
   { key: "tracker", label: "Task Tracker", Icon: TaskTrackerIcon },
   { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
   { key: "calendar", label: "Calendar", Icon: CalIcon },
+  { key: "scheduler", label: "Scheduler", Icon: SchedulerIcon },
   { key: "log", label: "Log", Icon: LogIcon },
 ];
 

@@ -488,6 +488,16 @@ a:focus-visible {
   --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
   --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
 }
+/* Scheduler editor sits on the lavender canvas → same dark-on-lavender flip as
+   the calendar so labels, inputs, dividers and tinted cards stay legible. The
+   Player is a separate full-screen dark overlay (NOT in main) and keeps the
+   global light tokens, so this rule never touches it. */
+:root[data-theme="mono"] .cnsl-scheduler {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 38%, #000);
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
+}
 
 /* Footer over the lavender: make it a black container with a lavender
    border (matching the project bars) so it doesn't blend in. The footer's

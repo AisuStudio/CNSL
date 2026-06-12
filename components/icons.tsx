@@ -276,6 +276,19 @@ export function CalIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function SchedulerIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom scheduler glyph (CNSL_Icon_Scheduler3.svg): a "play through
+  // sections" mark — left bracket with a notch + a solid right block.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M9,20H0V0h9v3.5H3.5v13h2v-5.5h3.5v9ZM11,20V0h9v20h-9ZM16.5,3.5h-2v13h2V3.5Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 export function SidebarIcon({ color = "currentColor" }: { color?: string }) {
   // Panel glyph: left rail + content grid (CNSL_Icon_Sidebar.svg).
   const cols = [5.5, 11, 16.5];
