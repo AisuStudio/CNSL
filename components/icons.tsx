@@ -224,6 +224,46 @@ export function TodayIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function ArrowLeftIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowLeft.svg): left triangle in a frame.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill={color}
+        d="M5.5,10l9-4.5v9s-9-4.5-9-4.5ZM20,0v20H0V0h20ZM3.5,16.5h13s0-13,0-13H3.5s0,13,0,13Z"
+      />
+    </svg>
+  );
+}
+
+export function ArrowRightIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowRight.svg): right triangle in a frame.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill={color}
+        d="M5.5,14.5V5.5l9,4.5-9,4.5ZM20,0v20H0V0h20ZM16.5,3.5H3.5v13h13V3.5Z"
+      />
+    </svg>
+  );
+}
+
 export function CalIcon({ color = "currentColor" }: { color?: string }) {
   // CNSL custom calendar glyph (CNSL_Icon_Cal.svg): top bar + framed grid body.
   return (
