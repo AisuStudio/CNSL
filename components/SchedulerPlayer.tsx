@@ -220,6 +220,7 @@ export default function SchedulerPlayer({
       style={{
         position: "fixed",
         inset: 0,
+        height: "100dvh", // visible viewport (not 100vh) → bottom controls clear the mobile browser chrome
         zIndex: 60,
         background: "var(--color-bg)",
         color: text,
@@ -298,6 +299,26 @@ export default function SchedulerPlayer({
             <div style={{ fontSize: "var(--text-base)", color: muted }}>
               Recorded {formatDuration(recorded)}
             </div>
+            <button
+              type="button"
+              onClick={saveActivity}
+              style={{
+                height: "58px",
+                minWidth: "220px",
+                padding: "0 24px",
+                borderRadius: "12px",
+                border: "none",
+                background: accent,
+                color: "var(--color-bg)",
+                fontWeight: 700,
+                fontSize: "var(--text-logo)",
+                fontFamily: "var(--font-family)",
+                cursor: "pointer",
+                marginTop: "8px",
+              }}
+            >
+              {saved ? "Saved ✓" : "Save Activity"}
+            </button>
           </>
         ) : (
           <>
@@ -337,43 +358,67 @@ export default function SchedulerPlayer({
             <div style={{ fontSize: "var(--text-base)", color: muted }}>
               {next ? `Next: ${next.step.name || "(unnamed)"}` : "Last step"}
             </div>
+
+            {/* PRIMARY controls — directly under the countdown, centered (thumb
+                zone), so on a phone they're always visible, never behind the
+                browser's bottom toolbar. */}
+            <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "420px", marginTop: "8px" }}>
+              <button
+                type="button"
+                onClick={togglePlay}
+                style={{
+                  flex: 2,
+                  height: "58px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: accent,
+                  color: "var(--color-bg)",
+                  fontWeight: 700,
+                  fontSize: "var(--text-logo)",
+                  fontFamily: "var(--font-family)",
+                  cursor: "pointer",
+                }}
+              >
+                {running ? "Pause" : "Play"}
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                style={{
+                  flex: 1,
+                  height: "58px",
+                  borderRadius: "12px",
+                  border: "1px solid var(--color-border)",
+                  background: "transparent",
+                  color: text,
+                  fontWeight: 700,
+                  fontSize: "var(--text-base)",
+                  fontFamily: "var(--font-family)",
+                  cursor: "pointer",
+                }}
+              >
+                Next ▸
+              </button>
+            </div>
           </>
         )}
       </div>
 
-      {/* Controls */}
+      {/* Secondary actions — Restart + (while playing) Save Activity. The
+          critical Play/Pause/Next live in the centered stage above. */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", alignItems: "center" }}>
-        {!finished && (
-          <button
-            type="button"
-            onClick={togglePlay}
-            style={{
-              ...ctrlBtn,
-              minWidth: "120px",
-              fontWeight: 700,
-              background: accent,
-              color: "var(--color-bg)",
-              border: "none",
-            }}
-          >
-            {running ? "Pause" : "Play"}
-          </button>
-        )}
-        {!finished && (
-          <button type="button" onClick={goNext} style={ctrlBtn}>
-            Next ▸
-          </button>
-        )}
         <button type="button" onClick={restart} style={ctrlBtn}>
           Restart
         </button>
-        <button
-          type="button"
-          onClick={saveActivity}
-          style={{ ...ctrlBtn, fontWeight: 700, borderColor: accent, color: accent }}
-        >
-          {saved ? "Saved ✓" : "Save Activity"}
-        </button>
+        {!finished && (
+          <button
+            type="button"
+            onClick={saveActivity}
+            style={{ ...ctrlBtn, fontWeight: 700, borderColor: accent, color: accent }}
+          >
+            {saved ? "Saved ✓" : "Save Activity"}
+          </button>
+        )}
       </div>
 
       {/* Mode toggles */}
