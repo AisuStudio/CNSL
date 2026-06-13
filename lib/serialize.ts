@@ -4,6 +4,7 @@ import type { Task, LogEntry, Complexity, Subtask } from "./mock-data";
 import type { Note } from "./notes";
 import type { CalendarEvent } from "./calendar";
 import type { Project } from "./projects";
+import type { Schedule, Section, Activity } from "./scheduler";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
@@ -11,6 +12,8 @@ import type {
   Note as DbNote,
   Event as DbEvent,
   Project as DbProject,
+  Schedule as DbSchedule,
+  Activity as DbActivity,
   Prisma,
 } from "@prisma/client";
 
@@ -195,6 +198,65 @@ export function eventToDb(e: CalendarEvent, boardId: string) {
     taskId: e.taskId ?? null,
     recurrence: e.recurrence ?? null,
     createdAt: e.createdAt ? new Date(e.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
+  };
+}
+
+// ─── Scheduler (Phase 2) ────────────────────────────────────────────────────
+// DB row → app Schedule (sections+steps round-trip as nested JSON)
+export function scheduleFromDb(row: DbSchedule): Schedule {
+  return {
+    id: row.id,
+    name: row.name,
+    project: row.project ?? undefined,
+    sections: Array.isArray(row.sections)
+      ? (row.sections as unknown as Section[])
+      : [],
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// app Schedule → DB columns (id + boardId handled by the caller's upsert)
+export function scheduleToDb(s: Schedule, boardId: string) {
+  return {
+    boardId,
+    name: s.name ?? "",
+    project: s.project ?? null,
+    sections: (s.sections ?? []) as unknown as Prisma.InputJsonValue,
+    createdAt: s.createdAt ? new Date(s.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
+  };
+}
+
+// DB row → app Activity
+export function activityFromDb(row: DbActivity): Activity {
+  return {
+    id: row.id,
+    scheduleId: row.scheduleId,
+    scheduleName: row.scheduleName,
+    project: row.project ?? undefined,
+    startedAt: row.startedAt.toISOString(),
+    recordedSeconds: row.recordedSeconds,
+    completed: row.completed,
+    note: row.note ?? undefined,
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// app Activity → DB columns (id + boardId handled by the caller's upsert)
+export function activityToDb(a: Activity, boardId: string) {
+  return {
+    boardId,
+    scheduleId: a.scheduleId,
+    scheduleName: a.scheduleName ?? "",
+    project: a.project ?? null,
+    startedAt: new Date(a.startedAt),
+    recordedSeconds: a.recordedSeconds ?? 0,
+    completed: a.completed ?? false,
+    note: a.note ?? null,
+    createdAt: a.createdAt ? new Date(a.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }
