@@ -11,6 +11,7 @@ import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
 import TrackingLogView from "@/components/TrackingLogView";
 import EditTaskModal from "@/components/EditTaskModal";
+import ShareModal from "@/components/ShareModal";
 import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
@@ -31,7 +32,7 @@ import {
   duplicateSchedule,
   normalizeImported,
 } from "@/lib/scheduler";
-import { type Project, ensureProjects, dedupeProjects } from "@/lib/projects";
+import { type Project, ensureProjects, dedupeProjects, projectByName } from "@/lib/projects";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -99,6 +100,12 @@ export default function Home() {
   // A3 — Project registry (stable ids per project name). Persisted in demo;
   // rebuilt from names in the real app until Phase B stores it server-side.
   const [projectList, setProjectList] = useState<Project[]>([]);
+  // C4 — projects shared WITH me (by name + my role); drives the marker + viewer
+  // read-only. `shareTarget` = the project name whose Share dialog is open.
+  const [sharedProjects, setSharedProjects] = useState<
+    { name: string; role: "editor" | "viewer" }[]
+  >([]);
+  const [shareTarget, setShareTarget] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>(null);
   // Backlog filter: All ↔ Untouched (open only) — #53.
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
@@ -193,6 +200,7 @@ export default function Home() {
           projectsSavedRef.current = new Map(
             loadedProjects.map((p) => [p.id, JSON.stringify(p)])
           );
+          setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
           const loadedSchedules: Schedule[] = data.schedules ?? [];
           setSchedules(loadedSchedules);
           schedulesSavedRef.current = new Map(
@@ -643,6 +651,7 @@ export default function Home() {
         );
         setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
         projectsSavedRef.current = nextProjectsSaved;
+        setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
         // Same newer-wins merge for schedules + activities (Phase 2).
         const serverSchedules: Schedule[] = data.schedules ?? [];
         const { tasks: mergedSchedules, nextSaved: nextSchedulesSaved } = mergeResync(
@@ -1564,6 +1573,10 @@ export default function Home() {
             onNewInProject={(project) => openCreate(project)}
             onNewInTopic={(project, topic) => openCreate(project, topic)}
             onExportProject={(project) => exportCopyMarkdown(project)}
+            onShareProject={(project) => setShareTarget(project)}
+            sharedRole={(project) =>
+              sharedProjects.find((s) => s.name === project)?.role
+            }
           />
         )}
         {view === "archive" && (
@@ -1633,6 +1646,10 @@ export default function Home() {
           task={modalTask}
           isNew={isNewTask}
           demo={DEMO}
+          readOnly={
+            sharedProjects.find((s) => s.name === modalTask.project)?.role ===
+            "viewer"
+          }
           projects={projects}
           epics={epics}
           epicsByProject={epicsByProject}
@@ -1646,6 +1663,14 @@ export default function Home() {
           linkedNotes={notes.filter((n) => n.taskId === modalTask.id)}
           onOpenNote={openNoteById}
           onAddNote={addNoteForTask}
+        />
+      )}
+
+      {shareTarget && (
+        <ShareModal
+          projectName={shareTarget}
+          projectId={projectByName(projectList, shareTarget)?.id ?? ""}
+          onClose={() => setShareTarget(null)}
         />
       )}
 

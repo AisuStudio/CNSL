@@ -45,6 +45,18 @@ export function InfoIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function ShareIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL_Icon_Share.svg — arrow out of a box.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fill={color}
+        d="M20,0v9h-3.5v-2l-2,2h0s0,0,0,0l-5.5,5.5h-3.5v-3.5l7.5-7.5h-2V0h9ZM20,11h-3.5v5.5H3.5V3.5h5.5V0H0v20h20v-9Z"
+      />
+    </svg>
+  );
+}
+
 export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
   // Pixel-grid gear — CNSL_Icon_Settings.svg.
   return (

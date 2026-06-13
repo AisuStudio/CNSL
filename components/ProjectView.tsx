@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
-import { PlusIcon } from "./icons";
+import { PlusIcon, ShareIcon } from "./icons";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -21,6 +21,8 @@ export default function ProjectView({
   onNewInProject,
   onNewInTopic,
   onExportProject,
+  onShareProject,
+  sharedRole,
 }: {
   tasks: Task[];
   onUpdate?: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
@@ -30,6 +32,9 @@ export default function ProjectView({
   onNewInProject: (project: string) => void;
   onNewInTopic?: (project: string, topic: string) => void;
   onExportProject: (project: string) => void;
+  // C4 sharing: open the Share dialog; sharedRole marks projects shared WITH me.
+  onShareProject?: (project: string) => void;
+  sharedRole?: (project: string) => "editor" | "viewer" | undefined;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   // Collapse state starts empty (SSR-safe) and is loaded from localStorage AFTER
@@ -158,6 +163,26 @@ export default function ProjectView({
                 {items.length}
               </span>
 
+              {/* C4 — marker when this project is shared WITH me (+ my role). */}
+              {sharedRole?.(project) && (
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                    color: "var(--color-accent)",
+                    border:
+                      "1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)",
+                    borderRadius: "5px",
+                    padding: "1px 6px",
+                    flexShrink: 0,
+                  }}
+                >
+                  shared · {sharedRole(project)}
+                </span>
+              )}
+
               {/* + new task and MD export — only when the project is expanded
                   (collapsed bars stay clean). */}
               {!isCollapsed && (
@@ -191,6 +216,23 @@ export default function ProjectView({
                   >
                     {copied === project ? "copied" : "MD"}
                   </button>
+
+                  {/* Share (C4) — only for my OWN projects (not ones shared with me) */}
+                  {onShareProject && !sharedRole?.(project) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShareProject(project);
+                      }}
+                      aria-label={`Share ${project}`}
+                      title={`Share ${project}`}
+                      className="flex items-center justify-center"
+                      style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+                    >
+                      <ShareIcon color={nameColor} />
+                    </button>
+                  )}
                 </>
               )}
 

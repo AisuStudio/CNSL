@@ -59,15 +59,53 @@ export async function GET() {
     prisma.schedule.findMany({ where: { boardId: trackerId }, orderBy: { createdAt: "asc" } }),
     prisma.activity.findMany({ where: { boardId: trackerId }, orderBy: { startedAt: "desc" } }),
   ]);
+
+  // C4 — project sharing: also load rows from projects shared WITH this user
+  // (their `projectId` is in one of the user's ProjectMember rows). These live
+  // in OTHER owners' boards. Merge them in (dedupe by id) so the client renders
+  // the shared project alongside the user's own — read-only if role = viewer.
+  const memberships = await prisma.projectMember.findMany({
+    where: { userId: user.id },
+    select: { projectId: true, role: true },
+  });
+  const memberProjectIds = memberships.map((m) => m.projectId);
+  let sharedTaskRows: typeof tasks = [];
+  let sharedNoteRows: typeof notes = [];
+  let sharedEventRows: typeof events = [];
+  let sharedProjectRows: typeof projects = [];
+  if (memberProjectIds.length) {
+    [sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows] =
+      await Promise.all([
+        prisma.task.findMany({
+          where: { projectId: { in: memberProjectIds } },
+          include: { timeEntries: true },
+        }),
+        prisma.note.findMany({ where: { projectId: { in: memberProjectIds } } }),
+        prisma.event.findMany({ where: { projectId: { in: memberProjectIds } } }),
+        prisma.project.findMany({ where: { id: { in: memberProjectIds } } }),
+      ]);
+  }
+  const dedupe = <T extends { id: string }>(own: T[], shared: T[]): T[] => {
+    const seen = new Set(own.map((r) => r.id));
+    return [...own, ...shared.filter((r) => !seen.has(r.id))];
+  };
+  const roleByPid = new Map(memberships.map((m) => [m.projectId, m.role]));
+  const sharedProjects = sharedProjectRows.map((p) => ({
+    name: p.name,
+    role: roleByPid.get(p.id) ?? "viewer",
+  }));
+
   return NextResponse.json({
-    tasks: tasks.map(taskFromDb),
+    tasks: dedupe(tasks, sharedTaskRows).map(taskFromDb),
     log: log.map(logFromDb),
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
-    notes: notes.map(noteFromDb),
-    events: events.map(eventFromDb),
+    notes: dedupe(notes, sharedNoteRows).map(noteFromDb),
+    events: dedupe(events, sharedEventRows).map(eventFromDb),
     projects: projects.map(projectFromDb),
     schedules: schedules.map(scheduleFromDb),
     activities: activities.map(activityFromDb),
+    // Projects shared WITH this user (by name + role) → marker + viewer read-only.
+    sharedProjects,
     rev: board?.rev ?? 0,
     // Board ids so the client can open a scoped Realtime subscription.
     boardId: trackerId,
@@ -177,41 +215,88 @@ export async function POST(req: NextRequest) {
           return projMap.get(n) ?? null;
         };
 
+        // C4 — project sharing authz. A user may write rows of projects they are
+        // an editor/owner of, even though those rows live in ANOTHER owner's board.
+        const memberships = await tx.projectMember.findMany({
+          where: { userId: user.id },
+          select: { projectId: true, role: true },
+        });
+        const editableProjectIds = new Set(
+          memberships
+            .filter((m) => m.role === "editor" || m.role === "owner")
+            .map((m) => m.projectId)
+        );
+        // Owner board per editable shared project (tasks/events live on the
+        // tracker board). Also extends name→id resolution to shared project
+        // names, so a new task created in a shared project resolves correctly.
+        const editableProjects = editableProjectIds.size
+          ? await tx.project.findMany({
+              where: { id: { in: [...editableProjectIds] } },
+              select: { id: true, name: true, boardId: true },
+            })
+          : [];
+        const boardByPid = new Map(editableProjects.map((p) => [p.id, p.boardId]));
+        for (const p of editableProjects) {
+          const k = p.name.trim().toLowerCase();
+          if (!projMap.has(k)) projMap.set(k, p.id); // own project name wins on collision
+        }
+        const editableIdList = [...editableProjectIds];
+        const canEditShared = (pid: string | null): boolean =>
+          pid != null && editableProjectIds.has(pid);
+        // Target board for a NEW task/event: the shared project's owner board if
+        // it's an editable shared project, else the user's own tracker board.
+        const targetBoard = (pid: string | null): string =>
+          (pid && boardByPid.get(pid)) || trackerId;
+
         // ── Explicit deletes only — NEVER "delete everything not in payload".
         // A short/stale snapshot can no longer wipe tasks it simply doesn't know.
         if (deletedTaskIds.length > 0) {
           await tx.task.deleteMany({
-            where: { boardId: trackerId, id: { in: deletedTaskIds } },
+            where: {
+              id: { in: deletedTaskIds },
+              OR: [{ boardId: trackerId }, { projectId: { in: editableIdList } }],
+            },
           });
         }
         for (const t of tasks) {
-        const data = { ...taskToDb(t, trackerId, user.id), projectId: resolvePid(t.project) };
+        const pid = resolvePid(t.project);
         const existing = await tx.task.findUnique({
           where: { id: t.id },
-          select: { boardId: true, updatedAt: true },
+          select: { boardId: true, projectId: true, updatedAt: true },
         });
-        // #1 — scope writes to THIS board: never touch another board's row.
-        if (existing && existing.boardId !== trackerId) continue;
+        // Scope writes: own board OR a project the user can edit (C4 sharing).
+        // Not mine + not editable-shared → skip (viewer / non-member / IDOR).
+        if (
+          existing &&
+          existing.boardId !== trackerId &&
+          !canEditShared(existing.projectId)
+        )
+          continue;
+        // Updates keep the row in its current board; new rows in a shared project
+        // are created in that project's owner board.
+        const board = existing ? existing.boardId : targetBoard(pid);
+        const data = { ...taskToDb(t, board, user.id), projectId: pid };
         if (!existing) {
           await tx.task.create({ data: { id: t.id, ...data } });
         } else {
           // Per-task optimistic concurrency ("newer wins", no global 409):
           // if the DB row is newer than the version this client based its edit
-          // on, the write is STALE → skip it (don't let a stale device revert a
-          // newer change, e.g. un-archive a task), but return the fresh row so
-          // the client reconciles. getTime() compares at ms precision (Prisma
-          // Dates are ms), avoiding microsecond round-trip false-positives.
+          // on, the write is STALE → skip it but return the fresh row so the
+          // client reconciles.
           const baseMs = t.updatedAt ? new Date(t.updatedAt).getTime() : null;
           if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
             touchedTaskIds.push(t.id);
             continue;
           }
-          await tx.task.updateMany({ where: { id: t.id, boardId: trackerId }, data });
+          await tx.task.updateMany({ where: { id: t.id }, data });
         }
-        // applied (created or updated): @updatedAt bumped the version; rewrite time
-        await tx.timeEntry.deleteMany({ where: { taskId: t.id } });
-        const tes = dailyMinutesToTimeEntries(t, user.id);
-        if (tes.length) await tx.timeEntry.createMany({ data: tes });
+        // Rewrite time entries only for OWN rows — never clobber a shared task
+        // owner's TimeEntry rows when an editor saves it.
+        if (board === trackerId) {
+          await tx.timeEntry.deleteMany({ where: { taskId: t.id } });
+          const tes = dailyMinutesToTimeEntries(t, user.id);
+          if (tes.length) await tx.timeEntry.createMany({ data: tes });
+        }
         touchedTaskIds.push(t.id);
       }
 
@@ -236,51 +321,68 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Notes: explicit deletes only (same rule as tasks).
+      // Notes: explicit deletes only (own notes board OR editable shared project).
       if (deletedNoteIds.length > 0) {
         await tx.note.deleteMany({
-          where: { boardId: notesId, id: { in: deletedNoteIds } },
+          where: {
+            id: { in: deletedNoteIds },
+            OR: [{ boardId: notesId }, { projectId: { in: editableIdList } }],
+          },
         });
       }
       for (const n of notes) {
-        const data = { ...noteToDb(n, notesId, user.id), projectId: resolvePid(n.project) };
+        const pid = resolvePid(n.project);
         const existing = await tx.note.findUnique({
           where: { id: n.id },
-          select: { boardId: true, updatedAt: true },
+          select: { boardId: true, projectId: true, updatedAt: true },
         });
-        // scope writes to THIS board: never touch another board's row.
-        if (existing && existing.boardId !== notesId) continue;
+        // own notes board OR an editable shared project → allowed; else skip.
+        if (
+          existing &&
+          existing.boardId !== notesId &&
+          !canEditShared(existing.projectId)
+        )
+          continue;
+        // New notes go to the user's own notes board (no create-in-shared for
+        // notes this round — notes live on a separate board); edits keep the row.
+        const board = existing ? existing.boardId : notesId;
+        const data = { ...noteToDb(n, board, user.id), projectId: pid };
         if (!existing) {
           await tx.note.create({ data: { id: n.id, ...data } });
         } else {
-          // Per-note newer-wins (same rule as tasks): if the DB row is newer than
-          // the version this client based its edit on, skip the stale write but
-          // still return the fresh row so the client reconciles.
           const baseMs = n.updatedAt ? new Date(n.updatedAt).getTime() : null;
           if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {
             touchedNoteIds.push(n.id);
             continue;
           }
-          await tx.note.updateMany({ where: { id: n.id, boardId: notesId }, data });
+          await tx.note.updateMany({ where: { id: n.id }, data });
         }
         touchedNoteIds.push(n.id);
       }
 
-      // Events: explicit deletes only (same rule as tasks/notes), then upsert
-      // with per-event newer-wins. Scoped to the tracker board (Phase B).
+      // Events: explicit deletes only (own tracker board OR editable shared project).
       if (deletedEventIds.length > 0) {
         await tx.event.deleteMany({
-          where: { boardId: trackerId, id: { in: deletedEventIds } },
+          where: {
+            id: { in: deletedEventIds },
+            OR: [{ boardId: trackerId }, { projectId: { in: editableIdList } }],
+          },
         });
       }
       for (const e of events) {
-        const data = { ...eventToDb(e, trackerId), projectId: resolvePid(e.project) };
+        const pid = resolvePid(e.project);
         const existing = await tx.event.findUnique({
           where: { id: e.id },
-          select: { boardId: true, updatedAt: true },
+          select: { boardId: true, projectId: true, updatedAt: true },
         });
-        // scope writes to THIS board: never touch another board's row.
-        if (existing && existing.boardId !== trackerId) continue;
+        if (
+          existing &&
+          existing.boardId !== trackerId &&
+          !canEditShared(existing.projectId)
+        )
+          continue;
+        const board = existing ? existing.boardId : targetBoard(pid);
+        const data = { ...eventToDb(e, board), projectId: pid };
         if (!existing) {
           await tx.event.create({ data: { id: e.id, ...data } });
         } else {
@@ -289,7 +391,7 @@ export async function POST(req: NextRequest) {
             touchedEventIds.push(e.id);
             continue;
           }
-          await tx.event.updateMany({ where: { id: e.id, boardId: trackerId }, data });
+          await tx.event.updateMany({ where: { id: e.id }, data });
         }
         touchedEventIds.push(e.id);
       }

@@ -113,6 +113,7 @@ export default function EditTaskModal({
   task,
   isNew = false,
   demo = false,
+  readOnly = false,
   projects = [],
   epics = [],
   epicsByProject = {},
@@ -130,6 +131,7 @@ export default function EditTaskModal({
   task: Task;
   isNew?: boolean;
   demo?: boolean; // demo mode: deleting is disabled
+  readOnly?: boolean; // C4 — viewer of a shared project: disable all editing
   projects?: string[];
   epics?: string[];
   epicsByProject?: Record<string, string[]>; // #35 — epics scoped per project
@@ -251,6 +253,27 @@ export default function EditTaskModal({
       width={500}
       onClose={guardedClose}
     >
+      {readOnly && (
+        <div
+          style={{
+            fontSize: "var(--text-sm)",
+            color: "var(--color-card-ink)",
+            background: "rgba(0,0,0,0.06)",
+            border: `1px solid ${C1}`,
+            borderRadius: "6px",
+            padding: "8px 12px",
+          }}
+        >
+          Shared with you — <b>view only</b>.
+        </div>
+      )}
+      {/* readOnly (C4): a disabled fieldset natively disables every control
+          inside (inputs, selects, textareas, Save/Delete/Archive). display:contents
+          keeps the layout untouched. */}
+      <fieldset
+        disabled={readOnly}
+        style={{ display: "contents", border: "none", margin: 0, padding: 0 }}
+      >
       {/* Task title */}
       <input
         value={taskText}
@@ -696,6 +719,7 @@ export default function EditTaskModal({
             </button>
           </div>
         </div>
+      </fieldset>
     </SidePanel>
   );
 }
