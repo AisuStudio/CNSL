@@ -744,6 +744,20 @@ export default function Home() {
     deletedNoteIds.current.add(id); // explicit delete — server removes only these
     setNotes((prev) => prev.filter((n) => n.id !== id));
   }
+  // Publish/unpublish state (published/topic/slug) is server-managed via /api/publish
+  // and NOT part of noteToDb, so the /api/state diff-save can't touch it. Patch the
+  // local note for the button/URL, and re-base the diff baseline so this change
+  // doesn't trigger a redundant /api/state save.
+  function publishChangeNote(id: string, patch: Partial<Note>) {
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id !== id) return n;
+        const next = { ...n, ...patch };
+        notesSavedRef.current.set(id, JSON.stringify(next));
+        return next;
+      })
+    );
+  }
 
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
   function exportSuffix(project?: string) {
@@ -1113,6 +1127,7 @@ export default function Home() {
             onCreate={createNote}
             onUpdate={updateNote}
             onDelete={deleteNote}
+            onPublishChange={publishChangeNote}
           />
         )}
         {tool === "log" && (

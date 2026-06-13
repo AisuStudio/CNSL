@@ -6,6 +6,11 @@ export interface Note {
   body: string; // markdown
   createdAt?: string;
   updatedAt?: string;
+  // Public publishing state (server-managed via /api/publish, surfaced read-only
+  // to the client so the NotePad can show Publish vs Unpublish).
+  published?: boolean;
+  topic?: string | null;
+  slug?: string | null;
 }
 
 // Folder tree (schema ready; no UI in v1).

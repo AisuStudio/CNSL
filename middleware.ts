@@ -37,6 +37,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
     path.startsWith("/api") || // API routes self-guard (return 401)
+    path.startsWith("/note/") || // published notes are public (read-only)
     // Legal pages must be reachable without a login (§ 5 DDG: ständig verfügbar)
     path === "/impressum" ||
     path === "/datenschutz" ||

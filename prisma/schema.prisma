@@ -55,6 +55,9 @@ enum Status {
 model Profile {
   id          String        @id @db.Uuid
   displayName String?
+  // Public publisher handle (set once on first publish, then immutable). Used as
+  // the namespace in /note/{publisherHandle}/{topic}/{slug}.
+  publisherHandle String?   @unique
   createdAt   DateTime      @default(now())
 
   ownedBoards Board[]       @relation("BoardOwner")
@@ -175,6 +178,16 @@ model Note {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // ── Public publishing (/note/{handle}/{topic}/{slug}) ──
+  // published=true exposes the note publicly (content rendered live). topic +
+  // slug form the URL; slug is frozen on first publish so links don't break.
+  // listed is a future "discoverable" flag — pre-beta it stays false (noindex).
+  published   Boolean  @default(false)
+  topic       String?
+  slug        String?
+  listed      Boolean  @default(false)
+
+  @@unique([boardId, topic, slug])
   @@index([boardId])
 }
 

@@ -118,6 +118,9 @@ export function noteFromDb(row: DbNote): Note {
     body: row.body,
     createdAt: row.createdAt?.toISOString(),
     updatedAt: row.updatedAt?.toISOString(),
+    published: row.published,
+    topic: row.topic ?? null,
+    slug: row.slug ?? null,
   };
 }
 

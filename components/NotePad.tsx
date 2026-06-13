@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Note } from "@/lib/notes";
 import { useIsMobile } from "@/lib/useIsMobile";
 import NoteEditor from "./NoteEditor";
+import PublishModal from "./PublishModal";
 
 export default function NotePad({
   notes,
   onCreate,
   onUpdate,
   onDelete,
+  onPublishChange,
 }: {
   notes: Note[];
   onCreate: () => string;
   onUpdate: (id: string, patch: Partial<Note>) => void;
   onDelete: (id: string) => void;
+  onPublishChange: (id: string, patch: Partial<Note>) => void;
 }) {
   const sorted = [...notes].sort((a, b) =>
     (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")
@@ -28,9 +31,41 @@ export default function NotePad({
   const showList = !isMobile || !selected;
   const showEditor = !isMobile || !!selected;
 
+  // Publishing: the user's handle (set once) + their used topics, fetched lazily
+  // so a published note can show its live URL and the modal can suggest topics.
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [handle, setHandle] = useState<string | null>(null);
+  const [topics, setTopics] = useState<string[]>([]);
+  useEffect(() => {
+    fetch("/api/publish")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setHandle(d.handle ?? null);
+        setTopics(Array.isArray(d.topics) ? d.topics : []);
+      })
+      .catch(() => {});
+  }, []);
+
   function newNote() {
     setSelectedId(onCreate());
   }
+
+  async function unpublish(id: string) {
+    onPublishChange(id, { published: false });
+    try {
+      await fetch(`/api/publish?noteId=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+    } catch {
+      /* state already updated optimistically; resync reconciles */
+    }
+  }
+
+  const publicUrl =
+    selected?.published && handle && selected.topic && selected.slug
+      ? `/note/${handle}/${encodeURIComponent(selected.topic)}/${selected.slug}`
+      : null;
 
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
@@ -172,6 +207,43 @@ export default function NotePad({
                   fontFamily: "var(--font-family)",
                 }}
               />
+              {selected.published ? (
+                <button
+                  type="button"
+                  onClick={() => unpublish(selected.id)}
+                  title="Make this note private again"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--color-accent)",
+                    borderRadius: "6px",
+                    color: "var(--color-accent)",
+                    padding: "4px 10px",
+                    cursor: "pointer",
+                    fontSize: "var(--text-sm)",
+                    flexShrink: 0,
+                  }}
+                >
+                  Unpublish
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPublishOpen(true)}
+                  title="Publish this note as a public page"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "6px",
+                    color: "var(--color-text-muted)",
+                    padding: "4px 10px",
+                    cursor: "pointer",
+                    fontSize: "var(--text-sm)",
+                    flexShrink: 0,
+                  }}
+                >
+                  Publish
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -193,6 +265,25 @@ export default function NotePad({
                 Delete
               </button>
             </div>
+            {publicUrl && (
+              <div
+                style={{
+                  marginBottom: "12px",
+                  fontSize: "var(--text-sm)",
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                Live at{" "}
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "var(--color-accent)" }}
+                >
+                  {publicUrl}
+                </a>
+              </div>
+            )}
             <NoteEditor
               key={selected.id}
               value={selected.body}
@@ -205,6 +296,22 @@ export default function NotePad({
           </div>
         )}
       </div>
+      )}
+
+      {publishOpen && selected && (
+        <PublishModal
+          note={selected}
+          initialHandle={handle}
+          topics={topics}
+          onClose={() => setPublishOpen(false)}
+          onPublished={(patch, h) => {
+            setHandle(h);
+            if (patch.topic && !topics.includes(patch.topic)) {
+              setTopics((prev) => [...prev, patch.topic!].sort());
+            }
+            onPublishChange(selected.id, patch);
+          }}
+        />
       )}
     </div>
   );
