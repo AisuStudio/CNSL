@@ -72,11 +72,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "noteId and topic required" }, { status: 400 });
   }
 
-  // The note must belong to this user's notes board.
-  const note = await prisma.note.findFirst({
+  // The note must belong to this user's notes board. If it isn't persisted yet
+  // (brand-new note, /api/state auto-save hasn't run), create it now from the
+  // title/body the client sent — so publishing never dead-ends on a missing row.
+  let note = await prisma.note.findFirst({
     where: { id: noteId, boardId: notesId },
   });
-  if (!note) return NextResponse.json({ error: "note not found" }, { status: 404 });
+  if (!note) {
+    // Guard: never hijack a note id that exists on another board.
+    const elsewhere = await prisma.note.findUnique({
+      where: { id: noteId },
+      select: { id: true },
+    });
+    if (elsewhere) {
+      return NextResponse.json({ error: "note not found" }, { status: 404 });
+    }
+    note = await prisma.note.create({
+      data: {
+        id: noteId,
+        boardId: notesId,
+        title: typeof body.title === "string" ? body.title : "",
+        body: typeof body.body === "string" ? body.body : "",
+        createdById: user.id,
+      },
+    });
+  }
 
   // Resolve the publisher handle: set it once, then it's immutable.
   const profile = await prisma.profile.findUnique({ where: { id: user.id } });

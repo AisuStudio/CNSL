@@ -75,10 +75,13 @@ export default function NotePad({
 
   // Publishing: the user's handle (set once) + their used topics, fetched lazily
   // so a published note can show its live URL and the modal can suggest topics.
+  // Publishing needs the backend; the static demo has none, so it's disabled there.
+  const canPublishNotes = process.env.NEXT_PUBLIC_DEMO !== "true";
   const [publishOpen, setPublishOpen] = useState(false);
   const [handle, setHandle] = useState<string | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
   useEffect(() => {
+    if (!canPublishNotes) return;
     fetch("/api/publish")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -87,7 +90,7 @@ export default function NotePad({
         setTopics(Array.isArray(d.topics) ? d.topics : []);
       })
       .catch(() => {});
-  }, []);
+  }, [canPublishNotes]);
 
   function newNote() {
     setSelectedId(onCreate());
@@ -249,43 +252,44 @@ export default function NotePad({
                   fontFamily: "var(--font-family)",
                 }}
               />
-              {selected.published ? (
-                <button
-                  type="button"
-                  onClick={() => unpublish(selected.id)}
-                  title="Make this note private again"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--color-accent)",
-                    borderRadius: "6px",
-                    color: "var(--color-accent)",
-                    padding: "4px 10px",
-                    cursor: "pointer",
-                    fontSize: "var(--text-sm)",
-                    flexShrink: 0,
-                  }}
-                >
-                  Unpublish
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setPublishOpen(true)}
-                  title="Publish this note as a public page"
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "6px",
-                    color: "var(--color-text-muted)",
-                    padding: "4px 10px",
-                    cursor: "pointer",
-                    fontSize: "var(--text-sm)",
-                    flexShrink: 0,
-                  }}
-                >
-                  Publish
-                </button>
-              )}
+              {canPublishNotes &&
+                (selected.published ? (
+                  <button
+                    type="button"
+                    onClick={() => unpublish(selected.id)}
+                    title="Make this note private again"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--color-accent)",
+                      borderRadius: "6px",
+                      color: "var(--color-accent)",
+                      padding: "4px 10px",
+                      cursor: "pointer",
+                      fontSize: "var(--text-sm)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Unpublish
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPublishOpen(true)}
+                    title="Publish this note as a public page"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "6px",
+                      color: "var(--color-text-muted)",
+                      padding: "4px 10px",
+                      cursor: "pointer",
+                      fontSize: "var(--text-sm)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Publish
+                  </button>
+                ))}
               <button
                 type="button"
                 onClick={() => {
