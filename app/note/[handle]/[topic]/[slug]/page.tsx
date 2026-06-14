@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import { prisma } from "@/lib/prisma";
 import CnslLogo from "@/components/CnslLogo";
+import MonoTheme from "@/components/MonoTheme";
 
 export const dynamic = "force-dynamic";
 
@@ -69,8 +70,10 @@ export default async function PublicNotePage({
         display: "flex",
         justifyContent: "center",
         padding: "40px 20px",
+        background: "var(--color-surface)",
       }}
     >
+      <MonoTheme />
       <article
         className="note-md"
         style={{

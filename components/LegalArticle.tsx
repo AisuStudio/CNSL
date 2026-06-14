@@ -1,5 +1,6 @@
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
+import MonoTheme from "@/components/MonoTheme";
 
 // Shared chrome for the legal pages (Terms, Impressum, Datenschutz): centered
 // article, logo header, title/subtitle, and the legal footer nav.
@@ -19,8 +20,10 @@ export default function LegalArticle({
         display: "flex",
         justifyContent: "center",
         padding: "40px 20px",
+        background: "var(--color-surface)",
       }}
     >
+      <MonoTheme />
       <article
         style={{
           width: "720px",
