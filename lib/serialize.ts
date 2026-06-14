@@ -127,6 +127,9 @@ export function noteFromDb(row: DbNote): Note {
     taskId: row.taskId ?? undefined,
     createdAt: row.createdAt?.toISOString(),
     updatedAt: row.updatedAt?.toISOString(),
+    published: row.published,
+    topic: row.topic ?? null,
+    slug: row.slug ?? null,
   };
 }
 
