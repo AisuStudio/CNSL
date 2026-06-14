@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -85,17 +86,22 @@ export default async function PublicNotePage({
           lineHeight: 1.6,
         }}
       >
-        <div
+        <Link
+          href="/"
+          aria-label="CNSL home"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "12px",
             marginBottom: "var(--space-4)",
+            width: "fit-content",
+            color: "inherit",
+            textDecoration: "none",
           }}
         >
           <CnslLogo size={28} />
           <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
-        </div>
+        </Link>
 
         <h1 style={{ fontSize: "28px", fontWeight: 700, margin: "0 0 4px" }}>
           {note.title || "Untitled"}

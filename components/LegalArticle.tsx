@@ -1,3 +1,4 @@
+import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
 import MonoTheme from "@/components/MonoTheme";
@@ -34,17 +35,22 @@ export default function LegalArticle({
           lineHeight: 1.6,
         }}
       >
-        <div
+        <Link
+          href="/"
+          aria-label="CNSL home"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "12px",
             marginBottom: "var(--space-4)",
+            width: "fit-content",
+            color: "inherit",
+            textDecoration: "none",
           }}
         >
           <CnslLogo size={32} />
           <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
-        </div>
+        </Link>
 
         <h1 style={{ fontSize: "var(--text-logo)", fontWeight: 700, margin: "0 0 4px" }}>
           {title}
