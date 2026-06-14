@@ -308,6 +308,48 @@ model Activity {
   @@index([boardId])
 }
 
+// ─── Chat (board kind='chat') — Phase 2 ─────────────────
+/// A conversation: 1:1 direct message (kind='dm') or a project channel
+/// (kind='channel', future). Participants are explicit rows
+/// (ConversationParticipant) — that membership is what RLS keys on, so Supabase
+/// Realtime delivers a message only to its participants. Soft refs throughout
+/// (no FK cascade), like Event/Schedule.
+model Conversation {
+  id        String   @id @default(uuid())
+  kind      String   @default("dm") // 'dm' | 'channel'
+  projectId String? // channel only (future); null for DMs
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt // bumped per message → sort key
+
+  @@index([projectId])
+}
+
+/// Who is in a conversation. For a DM there are exactly two rows. The participant
+/// SELECT policies (data/phase-chat.sql) authorise a member to read the
+/// conversation + its messages, which also gates Realtime delivery.
+model ConversationParticipant {
+  id             String    @id @default(uuid())
+  conversationId String
+  userId         String    @db.Uuid
+  lastReadAt     DateTime? // unread tracking
+  createdAt      DateTime  @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+/// A chat message (append-only — no edit/delete in the MVP).
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderId       String   @db.Uuid
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
 // ─── Later (uncomment when building each tool) ──────────
 //
 // model Invite {
@@ -330,14 +372,8 @@ model Activity {
 //   createdAt DateTime @default(now())
 // }
 //
-// model Message {       // chat on a board (Supabase Realtime)
-//   id        String   @id @default(uuid())
-//   boardId   String
-//   userId    String   @db.Uuid
-//   body      String
-//   replyTo   String?
-//   createdAt DateTime @default(now())
-// }
+// (Chat Conversation / ConversationParticipant / Message are now real models
+//  above — see "Chat (board kind='chat') — Phase 2".)
 //
 // model Link {          // connect anything to anything (task↔event, task↔doc)
 //   id        String   @id @default(uuid())
