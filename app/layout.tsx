@@ -65,11 +65,13 @@ export default function RootLayout({
           hydrates. This only ignores attribute mismatches on <body>. */}
       <body suppressHydrationWarning>
         {/* Apply the mono theme BEFORE first paint to kill the FOUC (old purple
-            flash). Runs synchronously during parsing. Mirrors the useEffects:
-            mono on "/" and "/app" unless ?theme=classic; optional ?hue. */}
+            flash). Runs synchronously during parsing. Mirrors the useEffects /
+            <MonoTheme/>: mono on the landing, the app, the published article
+            pages and the public legal/info pages, unless ?theme=classic;
+            optional ?hue. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);if((p==="/"||p.indexOf("/app")===0)&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h)r.style.setProperty("--mono",h);}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);var mono=p==="/"||p.indexOf("/app")===0||p.indexOf("/note")===0||p==="/impressum"||p==="/datenschutz"||p==="/terms"||p==="/story";if(mono&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h)r.style.setProperty("--mono",h);}}catch(e){}})();`,
           }}
         />
         {children}
