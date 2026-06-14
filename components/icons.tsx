@@ -301,6 +301,19 @@ export function SchedulerIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function ChatIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom chat glyph (CNSL_Icon_Chat_1.svg): a speech-bubble outline with
+  // two notches at the top (the "contacts + conversations" mark).
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <polygon
+        fill={color}
+        points="14.5 0 11 0 11 5.5 3.5 5.5 3.5 0 0 0 0 20 20 20 20 5.5 16.5 5.5 16.5 16.5 14.5 16.5 14.5 0"
+      />
+    </svg>
+  );
+}
+
 export function SidebarIcon({ color = "currentColor" }: { color?: string }) {
   // Panel glyph: left rail + content grid (CNSL_Icon_Sidebar.svg).
   const cols = [5.5, 11, 16.5];

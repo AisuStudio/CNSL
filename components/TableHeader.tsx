@@ -27,6 +27,7 @@ const TITLES: Partial<Record<string, string>> = {
   archive: "ARCHIVE",
   stats: "STATS",
   notepad: "NOTE PAD",
+  chat: "CHAT",
 };
 
 export default function TableHeader({

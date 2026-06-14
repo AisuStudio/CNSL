@@ -11,6 +11,7 @@ import {
   NotePadIcon,
   CalIcon,
   SchedulerIcon,
+  ChatIcon,
   LogIcon,
 } from "./icons";
 import type { View, Tool } from "./Header";
@@ -24,6 +25,7 @@ export const TOOL_DEFS: {
   { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
   { key: "calendar", label: "Calendar", Icon: CalIcon },
   { key: "scheduler", label: "Scheduler", Icon: SchedulerIcon },
+  { key: "chat", label: "Chat", Icon: ChatIcon },
   { key: "log", label: "Log", Icon: LogIcon },
 ];
 

@@ -20,6 +20,7 @@ import CalendarView from "@/components/CalendarView";
 import EventModal, { blankEvent } from "@/components/EventModal";
 import SchedulerView from "@/components/SchedulerView";
 import SchedulerPlayer from "@/components/SchedulerPlayer";
+import ChatView from "@/components/ChatView";
 import SearchResultsView from "@/components/SearchResultsView";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -43,6 +44,18 @@ import {
   type LogEntry,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
+import {
+  type Contact,
+  type Conversation,
+  type Message,
+  mockSeed,
+  loadChat,
+  saveChat,
+  newConversationWith,
+  newMessage,
+  newInvitedContact,
+  dmWith,
+} from "@/lib/chat";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { diffChangedTasks, mergeResync, reconcileSave } from "@/lib/boardSync";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
@@ -53,6 +66,11 @@ export type Sort = { key: string; dir: "asc" | "desc" } | null;
 
 // Demo mode (GitHub Pages): visitors can add/edit but not delete (#127).
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+
+// Chat Phase-1 mock seed (deterministic ids/timestamps → SSR-safe). Persisted
+// chat overrides this on load; in the real app (no chat backend yet) it just
+// makes the shell reviewable.
+const CHAT_SEED = mockSeed();
 
 // Re-anchor running timers + accrue elapsed time after a load/resync gap.
 function catchUpTimers(arr: Task[]): Task[] {
@@ -95,6 +113,14 @@ export default function Home() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [playerSchedule, setPlayerSchedule] = useState<Schedule | null>(null);
+  // Chat tool — Phase 1: UI shell on a device-local localStorage key (own store,
+  // isolated from the board save path). Real messaging backend = Phase 2.
+  const [contacts, setContacts] = useState<Contact[]>(CHAT_SEED.contacts);
+  const [conversations, setConversations] = useState<Conversation[]>(
+    CHAT_SEED.conversations
+  );
+  const [messages, setMessages] = useState<Message[]>(CHAT_SEED.messages);
+  const [chatHydrated, setChatHydrated] = useState(false);
   // A1 — open a specific note from outside the NotePad (e.g. a task's NOTES list).
   const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
   // A3 — Project registry (stable ids per project name). Persisted in demo;
@@ -521,6 +547,24 @@ export default function Home() {
     ];
     setProjectList((prev) => ensureProjects(prev, names));
   }, [tasks, notes, events, schedules, activities, hydrated]);
+
+  // Chat (Phase 1) — own localStorage store, deliberately separate from the
+  // board PersistedState / server save path (chat is client-only mock data, so
+  // it must never touch the task save/sync machinery). Hydration gate is STATE
+  // (not a ref) so the save effect can't fire with the stale seed before load.
+  useEffect(() => {
+    const c = loadChat();
+    if (c && c.contacts.length) {
+      setContacts(c.contacts);
+      setConversations(c.conversations);
+      setMessages(c.messages);
+    }
+    setChatHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!chatHydrated) return;
+    saveChat({ contacts, conversations, messages });
+  }, [contacts, conversations, messages, chatHydrated]);
 
   // Always-current snapshot for the flush-on-hide handler below.
   const latest = useRef({ tasks, log, projectColors, notes, events, projectList, schedules, activities, rev });
@@ -1075,6 +1119,38 @@ export default function Home() {
     deletedEventIds.current.add(id); // explicit delete — server removes only these
     setEvents((prev) => prev.filter((e) => e.id !== id));
     setEventModal(null);
+  }
+
+  // ─── Chat (Phase 1 — 1:1 DMs; scales to project channels later) ──
+  function startConversation(contactId: string): string {
+    const existing = dmWith(conversations, contactId);
+    if (existing) return existing.id; // never open a duplicate DM
+    const conv = newConversationWith(contactId);
+    setConversations((prev) => [...prev, conv]);
+    return conv.id;
+  }
+  function sendMessage(conversationId: string, body: string) {
+    const msg = newMessage(conversationId, body);
+    setMessages((prev) => [...prev, msg]);
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversationId ? { ...c, updatedAt: msg.createdAt } : c
+      )
+    );
+  }
+  function deleteConversation(id: string) {
+    setConversations((prev) => prev.filter((c) => c.id !== id));
+    setMessages((prev) => prev.filter((m) => m.conversationId !== id));
+  }
+  function inviteContact(data: {
+    email: string;
+    name: string;
+    role: string;
+    project: string;
+  }) {
+    // Mock: add a pending contact so the invite UX is reviewable. Phase 2 hooks
+    // this to the real project Invite (projectId, email, role) + accept-on-login.
+    setContacts((prev) => [...prev, newInvitedContact(data.email, data.name)]);
   }
 
   // ─── Scheduler (Editor + Player) ────────────────────────────
@@ -1637,6 +1713,18 @@ export default function Home() {
             onPlay={(s) => setPlayerSchedule(s)}
             onExportSchedule={exportSchedule}
             onImportSchedule={importSchedule}
+          />
+        )}
+        {!searchActive && tool === "chat" && (
+          <ChatView
+            contacts={contacts}
+            conversations={conversations}
+            messages={messages}
+            projects={projects}
+            onSend={sendMessage}
+            onStartConversation={startConversation}
+            onDeleteConversation={deleteConversation}
+            onInvite={inviteContact}
           />
         )}
         {!searchActive && tool === "log" && (

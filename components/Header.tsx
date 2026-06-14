@@ -15,7 +15,13 @@ export type View =
   | "stats";
 
 // Top-level tools (header switcher)
-export type Tool = "tracker" | "notepad" | "calendar" | "scheduler" | "log";
+export type Tool =
+  | "tracker"
+  | "notepad"
+  | "calendar"
+  | "scheduler"
+  | "chat"
+  | "log";
 
 const ICON_BTN: React.CSSProperties = {
   width: "35.1px",

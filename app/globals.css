@@ -505,6 +505,16 @@ a:focus-visible {
   --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
   --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
 }
+/* Chat sits on the lavender canvas → same dark-on-lavender flip. "Me" bubbles
+   use --color-accent as a fill with --color-card-bg (lavender) text → dark
+   bubble, light text (like the calendar event chips); "their" bubbles are a
+   faint dark tint with dark text. */
+:root[data-theme="mono"] .cnsl-chat {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 38%, #000);
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
+}
 
 /* Footer over the lavender: make it a black container with a lavender
    border (matching the project bars) so it doesn't blend in. The footer's
