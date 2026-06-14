@@ -46,6 +46,13 @@ body {
   text-rendering:          optimizeLegibility;
 }
 
+/* Links inside a published article: keep the regular text colour (no browser
+   blue/purple, which clashed on the dark surface) and just underline them. */
+.note-md a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 .cnsl-scroll {
   scrollbar-width: thin;
