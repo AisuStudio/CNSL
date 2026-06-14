@@ -11,13 +11,28 @@ import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
 import TrackingLogView from "@/components/TrackingLogView";
 import EditTaskModal from "@/components/EditTaskModal";
+import ShareModal from "@/components/ShareModal";
 import InfoModal from "@/components/InfoModal";
 import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
+import CalendarView from "@/components/CalendarView";
+import EventModal, { blankEvent } from "@/components/EventModal";
+import SchedulerView from "@/components/SchedulerView";
+import SchedulerPlayer from "@/components/SchedulerPlayer";
+import SearchResultsView from "@/components/SearchResultsView";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Note } from "@/lib/notes";
+import type { CalendarEvent } from "@/lib/calendar";
+import {
+  type Schedule,
+  type Activity,
+  blankSchedule,
+  duplicateSchedule,
+  normalizeImported,
+} from "@/lib/scheduler";
+import { type Project, ensureProjects, dedupeProjects, projectByName } from "@/lib/projects";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -49,12 +64,48 @@ function catchUpTimers(arr: Task[]): Task[] {
   );
 }
 
+// De-dup task NRs (fix A): keep the first occurrence of each `number`, bump later
+// duplicates above the current max. Idempotent / self-healing — applied on every
+// load and resync (real DB + demo), until numbers are server-assigned (task #75).
+function dedupeTaskNumbers(arr: Task[]): Task[] {
+  const seen = new Set<number>();
+  let maxN = arr.reduce((m, t) => Math.max(m, t.number), 0);
+  return arr.map((t) => {
+    if (seen.has(t.number)) {
+      maxN += 1;
+      return { ...t, number: maxN };
+    }
+    seen.add(t.number);
+    return t;
+  });
+}
+
 export default function Home() {
   const [tool, setTool] = useState<Tool>("tracker");
   const [view, setView] = useState<View>("project");
+  const [searchQuery, setSearchQuery] = useState(""); // #42 task search
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  // Calendar tool (#221) — Phase 1: localStorage only (Phase 2 moves to the DB).
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventModal, setEventModal] = useState<CalendarEvent | null>(null);
+  const [isNewEvent, setIsNewEvent] = useState(false);
+  // Scheduler tool — Phase 1: localStorage only (Phase 2 moves to the DB).
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [playerSchedule, setPlayerSchedule] = useState<Schedule | null>(null);
+  // A1 — open a specific note from outside the NotePad (e.g. a task's NOTES list).
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
+  // A3 — Project registry (stable ids per project name). Persisted in demo;
+  // rebuilt from names in the real app until Phase B stores it server-side.
+  const [projectList, setProjectList] = useState<Project[]>([]);
+  // C4 — projects shared WITH me (by name + my role); drives the marker + viewer
+  // read-only. `shareTarget` = the project name whose Share dialog is open.
+  const [sharedProjects, setSharedProjects] = useState<
+    { name: string; role: "editor" | "viewer" }[]
+  >([]);
+  const [shareTarget, setShareTarget] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>(null);
   // Backlog filter: All ↔ Untouched (open only) — #53.
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
@@ -73,6 +124,10 @@ export default function Home() {
   // Ids the user explicitly deleted (only these are removed server-side).
   const deletedTaskIds = useRef<Set<string>>(new Set());
   const deletedNoteIds = useRef<Set<string>>(new Set());
+  const deletedEventIds = useRef<Set<string>>(new Set());
+  const deletedProjectIds = useRef<Set<string>>(new Set());
+  const deletedScheduleIds = useRef<Set<string>>(new Set());
+  const deletedActivityIds = useRef<Set<string>>(new Set());
   const deletedLogIds = useRef<Set<string>>(new Set());
   // taskId → last-saved JSON, so we only POST tasks that actually changed
   // (diff-save). Turns a ~140-task snapshot into a 1-task write on mobile.
@@ -80,6 +135,14 @@ export default function Home() {
   // noteId → last-saved JSON: the diff-save + newer-wins baseline for notes,
   // mirroring savedRef for tasks (so notes get the same conflict protection).
   const notesSavedRef = useRef<Map<string, string>>(new Map());
+  // eventId → last-saved JSON: diff-save + newer-wins baseline for events (Phase B).
+  const eventsSavedRef = useRef<Map<string, string>>(new Map());
+  // projectId → last-saved JSON: same baseline for the project registry (Phase C1).
+  const projectsSavedRef = useRef<Map<string, string>>(new Map());
+  // scheduleId / activityId → last-saved JSON: diff-save + newer-wins baseline for
+  // the Scheduler (Phase 2).
+  const schedulesSavedRef = useRef<Map<string, string>>(new Map());
+  const activitiesSavedRef = useRef<Map<string, string>>(new Map());
   // Board ids (from GET) so the live-sync effect can scope its subscription.
   const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
@@ -103,15 +166,22 @@ export default function Home() {
       );
     };
 
+
     // Real app: load the board from the DB-backed API (auth via middleware).
     if (!DEMO) {
       fetch("/api/state")
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
         .then((data) => {
-          const loaded = catchUp(data.tasks ?? []);
+          const caught = catchUp(data.tasks ?? []);
+          const loaded = dedupeTaskNumbers(caught);
           setTasks(loaded);
-          // seed the diff baseline so the first save sends only real changes
-          savedRef.current = new Map(loaded.map((t) => [t.id, JSON.stringify(t)]));
+          // Seed the diff baseline so the first save sends only real changes.
+          // BUT if dedup renumbered anything, baseline = pre-dedup so the fix gets
+          // persisted to the DB (otherwise dedup would re-run every load forever).
+          const renumbered = loaded.some((t, i) => t.number !== caught[i].number);
+          savedRef.current = new Map(
+            (renumbered ? caught : loaded).map((t) => [t.id, JSON.stringify(t)])
+          );
           setLog(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
           const loadedNotes: Note[] = data.notes ?? [];
@@ -119,6 +189,27 @@ export default function Home() {
           // seed the notes diff baseline so the first save sends only real changes
           notesSavedRef.current = new Map(
             loadedNotes.map((n) => [n.id, JSON.stringify(n)])
+          );
+          const loadedEvents: CalendarEvent[] = data.events ?? [];
+          setEvents(loadedEvents);
+          eventsSavedRef.current = new Map(
+            loadedEvents.map((e) => [e.id, JSON.stringify(e)])
+          );
+          const loadedProjects: Project[] = data.projects ?? [];
+          setProjectList(loadedProjects);
+          projectsSavedRef.current = new Map(
+            loadedProjects.map((p) => [p.id, JSON.stringify(p)])
+          );
+          setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
+          const loadedSchedules: Schedule[] = data.schedules ?? [];
+          setSchedules(loadedSchedules);
+          schedulesSavedRef.current = new Map(
+            loadedSchedules.map((s) => [s.id, JSON.stringify(s)])
+          );
+          const loadedActivities: Activity[] = data.activities ?? [];
+          setActivities(loadedActivities);
+          activitiesSavedRef.current = new Map(
+            loadedActivities.map((a) => [a.id, JSON.stringify(a)])
           );
           setRev(typeof data.rev === "number" ? data.rev : 0);
           boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
@@ -138,6 +229,10 @@ export default function Home() {
         saved.notes.map((n) => [n.id, JSON.stringify(n)])
       );
     }
+    if (saved?.events) setEvents(saved.events);
+    if (saved?.schedules) setSchedules(saved.schedules);
+    if (saved?.activities) setActivities(saved.activities);
+    if (saved?.projects) setProjectList(saved.projects);
     // Data-safety guard: only seed when there is genuinely no prior board.
     // If a key existed but failed to load (corrupt — loadState has backed it up
     // to cnsl.v1.corrupt.*), start EMPTY rather than silently replacing real
@@ -227,6 +322,8 @@ export default function Home() {
       window.localStorage.setItem(REPAIR_KEY, "1");
     }
 
+    nextTasks = dedupeTaskNumbers(nextTasks);
+
     setTasks(catchUp(nextTasks));
     setHydrated(true);
   }, []);
@@ -237,7 +334,7 @@ export default function Home() {
   // the manual "save now" click on the sync indicator.
   const pushState = useCallback(async () => {
     if (DEMO) {
-      saveState({ tasks, log, projectColors, notes });
+      saveState({ tasks, log, projectColors, notes, events, projects: projectList, schedules, activities });
       setSyncState("synced");
       return;
     }
@@ -249,6 +346,13 @@ export default function Home() {
     // Same diff-save + newer-wins protocol for notes (each carries its `updatedAt`
     // base for the server to apply newer-wins per note).
     const changedNotes = diffChangedTasks(notes, notesSavedRef.current);
+    // Same for events (Phase B).
+    const changedEvents = diffChangedTasks(events, eventsSavedRef.current);
+    // Same for the project registry (Phase C1).
+    const changedProjects = diffChangedTasks(projectList, projectsSavedRef.current);
+    // Same for the Scheduler (Phase 2).
+    const changedSchedules = diffChangedTasks(schedules, schedulesSavedRef.current);
+    const changedActivities = diffChangedTasks(activities, activitiesSavedRef.current);
     setSyncState("saving");
     try {
       const res = await fetch("/api/state", {
@@ -259,9 +363,17 @@ export default function Home() {
           log,
           projectColors,
           notes: changedNotes,
+          events: changedEvents,
+          projects: changedProjects,
+          schedules: changedSchedules,
+          activities: changedActivities,
           rev,
           deletedTaskIds: [...deletedTaskIds.current],
           deletedNoteIds: [...deletedNoteIds.current],
+          deletedEventIds: [...deletedEventIds.current],
+          deletedProjectIds: [...deletedProjectIds.current],
+          deletedScheduleIds: [...deletedScheduleIds.current],
+          deletedActivityIds: [...deletedActivityIds.current],
           deletedLogIds: [...deletedLogIds.current],
         }),
       });
@@ -297,16 +409,67 @@ export default function Home() {
         for (const [id, json] of savedEntries) notesSavedRef.current.set(id, json);
         return nextNotes;
       });
+      // Same reconcile for events (Phase B).
+      const returnedEvents: CalendarEvent[] = Array.isArray(d.events) ? d.events : [];
+      setEvents((prev) => {
+        const { tasks: nextEvents, savedEntries } = reconcileSave(
+          prev,
+          changedEvents,
+          returnedEvents
+        );
+        for (const [id, json] of savedEntries) eventsSavedRef.current.set(id, json);
+        return nextEvents;
+      });
+      // Same reconcile for the project registry (Phase C1).
+      const returnedProjects: Project[] = Array.isArray(d.projects) ? d.projects : [];
+      setProjectList((prev) => {
+        const { tasks: nextProjects, savedEntries } = reconcileSave(
+          prev,
+          changedProjects,
+          returnedProjects
+        );
+        for (const [id, json] of savedEntries) projectsSavedRef.current.set(id, json);
+        return nextProjects;
+      });
+      // Same reconcile for schedules + activities (Phase 2).
+      const returnedSchedules: Schedule[] = Array.isArray(d.schedules) ? d.schedules : [];
+      setSchedules((prev) => {
+        const { tasks: nextSchedules, savedEntries } = reconcileSave(
+          prev,
+          changedSchedules,
+          returnedSchedules
+        );
+        for (const [id, json] of savedEntries) schedulesSavedRef.current.set(id, json);
+        return nextSchedules;
+      });
+      const returnedActivities: Activity[] = Array.isArray(d.activities) ? d.activities : [];
+      setActivities((prev) => {
+        const { tasks: nextActivities, savedEntries } = reconcileSave(
+          prev,
+          changedActivities,
+          returnedActivities
+        );
+        for (const [id, json] of savedEntries) activitiesSavedRef.current.set(id, json);
+        return nextActivities;
+      });
       deletedTaskIds.current.forEach((id) => savedRef.current.delete(id));
       deletedNoteIds.current.forEach((id) => notesSavedRef.current.delete(id));
+      deletedEventIds.current.forEach((id) => eventsSavedRef.current.delete(id));
+      deletedProjectIds.current.forEach((id) => projectsSavedRef.current.delete(id));
+      deletedScheduleIds.current.forEach((id) => schedulesSavedRef.current.delete(id));
+      deletedActivityIds.current.forEach((id) => activitiesSavedRef.current.delete(id));
       deletedTaskIds.current.clear();
       deletedNoteIds.current.clear();
+      deletedEventIds.current.clear();
+      deletedProjectIds.current.clear();
+      deletedScheduleIds.current.clear();
+      deletedActivityIds.current.clear();
       deletedLogIds.current.clear();
       setSyncState("synced");
     } catch {
       setSyncState("unsynced");
     }
-  }, [tasks, log, projectColors, notes, rev, conflict]);
+  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, rev, conflict]);
 
   // Auto-save: debounce 1.5s after any change.
   // ── Monochrome theme — now the DEFAULT (the "radical cut") ──
@@ -331,7 +494,7 @@ export default function Home() {
   useEffect(() => {
     if (!hydrated) return;
     if (DEMO) {
-      saveState({ tasks, log, projectColors, notes });
+      saveState({ tasks, log, projectColors, notes, events, projects: projectList, schedules, activities });
       setSyncState("synced");
       return;
     }
@@ -341,11 +504,27 @@ export default function Home() {
       pushState();
     }, 800);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, notes, hydrated, conflict, pushState]);
+  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, hydrated, conflict, pushState]);
+
+  // A3 — keep the Project registry in sync: ensure a Project (stable id) exists
+  // for every project name used by a task/note/event. Purely ADDITIVE and
+  // idempotent (ensureProjects returns the same ref when nothing is new, so this
+  // never loops and NEVER mutates tasks/notes/events — only the registry slice).
+  useEffect(() => {
+    if (!hydrated) return;
+    const names = [
+      ...tasks.map((t) => t.project),
+      ...notes.map((n) => n.project ?? ""),
+      ...events.map((e) => e.project ?? ""),
+      ...schedules.map((s) => s.project ?? ""),
+      ...activities.map((a) => a.project ?? ""),
+    ];
+    setProjectList((prev) => ensureProjects(prev, names));
+  }, [tasks, notes, events, schedules, activities, hydrated]);
 
   // Always-current snapshot for the flush-on-hide handler below.
-  const latest = useRef({ tasks, log, projectColors, notes, rev });
-  latest.current = { tasks, log, projectColors, notes, rev };
+  const latest = useRef({ tasks, log, projectColors, notes, events, projectList, schedules, activities, rev });
+  latest.current = { tasks, log, projectColors, notes, events, projectList, schedules, activities, rev };
 
   // Flush immediately when the app is hidden/closed (PWA close, tab switch,
   // backgrounding). The debounced auto-save is cancelled on unmount, so a
@@ -359,11 +538,23 @@ export default function Home() {
       const l = latest.current;
       const changed = diffChangedTasks(l.tasks, savedRef.current);
       const changedNotes = diffChangedTasks(l.notes, notesSavedRef.current);
+      const changedEvents = diffChangedTasks(l.events, eventsSavedRef.current);
+      const changedProjects = diffChangedTasks(l.projectList, projectsSavedRef.current);
+      const changedSchedules = diffChangedTasks(l.schedules, schedulesSavedRef.current);
+      const changedActivities = diffChangedTasks(l.activities, activitiesSavedRef.current);
       if (
         changed.length === 0 &&
         changedNotes.length === 0 &&
+        changedEvents.length === 0 &&
+        changedProjects.length === 0 &&
+        changedSchedules.length === 0 &&
+        changedActivities.length === 0 &&
         deletedTaskIds.current.size === 0 &&
         deletedNoteIds.current.size === 0 &&
+        deletedEventIds.current.size === 0 &&
+        deletedProjectIds.current.size === 0 &&
+        deletedScheduleIds.current.size === 0 &&
+        deletedActivityIds.current.size === 0 &&
         deletedLogIds.current.size === 0
       )
         return; // nothing pending → don't fire on every tab switch
@@ -377,9 +568,17 @@ export default function Home() {
             log: l.log,
             projectColors: l.projectColors,
             notes: changedNotes,
+            events: changedEvents,
+            projects: changedProjects,
+            schedules: changedSchedules,
+            activities: changedActivities,
             rev: l.rev,
             deletedTaskIds: [...deletedTaskIds.current],
             deletedNoteIds: [...deletedNoteIds.current],
+            deletedEventIds: [...deletedEventIds.current],
+            deletedProjectIds: [...deletedProjectIds.current],
+            deletedScheduleIds: [...deletedScheduleIds.current],
+            deletedActivityIds: [...deletedActivityIds.current],
             deletedLogIds: [...deletedLogIds.current],
           }),
         }).catch(() => {});
@@ -420,7 +619,7 @@ export default function Home() {
           latest.current.tasks,
           savedRef.current
         );
-        setTasks(merged);
+        setTasks(dedupeTaskNumbers(merged));
         savedRef.current = nextSaved;
         setLog(data.log ?? []);
         // Same newer-wins merge for notes (keeps an unsaved local edit/new note,
@@ -434,6 +633,42 @@ export default function Home() {
         );
         setNotes(mergedNotes.filter((n) => !deletedNoteIds.current.has(n.id)));
         notesSavedRef.current = nextNotesSaved;
+        // Same newer-wins merge for events (Phase B).
+        const serverEvents: CalendarEvent[] = data.events ?? [];
+        const { tasks: mergedEvents, nextSaved: nextEventsSaved } = mergeResync(
+          serverEvents,
+          latest.current.events,
+          eventsSavedRef.current
+        );
+        setEvents(mergedEvents.filter((e) => !deletedEventIds.current.has(e.id)));
+        eventsSavedRef.current = nextEventsSaved;
+        // Same newer-wins merge for the project registry (Phase C1).
+        const serverProjects: Project[] = data.projects ?? [];
+        const { tasks: mergedProjects, nextSaved: nextProjectsSaved } = mergeResync(
+          serverProjects,
+          latest.current.projectList,
+          projectsSavedRef.current
+        );
+        setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
+        projectsSavedRef.current = nextProjectsSaved;
+        setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
+        // Same newer-wins merge for schedules + activities (Phase 2).
+        const serverSchedules: Schedule[] = data.schedules ?? [];
+        const { tasks: mergedSchedules, nextSaved: nextSchedulesSaved } = mergeResync(
+          serverSchedules,
+          latest.current.schedules,
+          schedulesSavedRef.current
+        );
+        setSchedules(mergedSchedules.filter((s) => !deletedScheduleIds.current.has(s.id)));
+        schedulesSavedRef.current = nextSchedulesSaved;
+        const serverActivities: Activity[] = data.activities ?? [];
+        const { tasks: mergedActivities, nextSaved: nextActivitiesSaved } = mergeResync(
+          serverActivities,
+          latest.current.activities,
+          activitiesSavedRef.current
+        );
+        setActivities(mergedActivities.filter((a) => !deletedActivityIds.current.has(a.id)));
+        activitiesSavedRef.current = nextActivitiesSaved;
         if (data.projectColors) setProjectColors(data.projectColors);
         setRev(typeof data.rev === "number" ? data.rev : 0);
         setSyncState("synced");
@@ -478,7 +713,30 @@ export default function Home() {
         ping
       )
       // RLS scopes LogEntry to the current user, so no client-side filter needed.
-      .on("postgres_changes", { event: "*", schema: "public", table: "LogEntry" }, ping);
+      .on("postgres_changes", { event: "*", schema: "public", table: "LogEntry" }, ping)
+      // Calendar events live on the tracker board (Phase B).
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Event", filter: `boardId=eq.${trackerId}` },
+        ping
+      )
+      // Project registry lives on the tracker board (Phase C1).
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Project", filter: `boardId=eq.${trackerId}` },
+        ping
+      )
+      // Scheduler schedules + activities live on the tracker board (Phase 2).
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Schedule", filter: `boardId=eq.${trackerId}` },
+        ping
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Activity", filter: `boardId=eq.${trackerId}` },
+        ping
+      );
     if (notesBoardId) {
       channel = channel.on(
         "postgres_changes",
@@ -548,29 +806,37 @@ export default function Home() {
         };
       }
 
-      return prevTask
-        ? prev.map((t) => (t.id === updated.id ? final : t))
-        : [...prev, final];
+      if (prevTask) {
+        return prev.map((t) => (t.id === updated.id ? final : t));
+      }
+      // New task: assign the NR here, from the freshest list, so two drafts
+      // opened before either saves can't collide (#dup-numbers, fix B).
+      const number = prev.reduce((m, t) => Math.max(m, t.number), 0) + 1;
+      return [...prev, { ...final, number }];
     });
     setModalTask(null);
   }
   function deleteTask(id: string) {
     deletedTaskIds.current.add(id); // explicit delete — server removes only these
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    // Unlink any calendar events that pointed at this task (no dangling links).
+    setEvents((prev) =>
+      prev.map((e) => (e.taskId === id ? { ...e, taskId: undefined } : e))
+    );
     setModalTask(null);
   }
   function openEdit(id: string) {
     setModalTask(tasks.find((t) => t.id === id) ?? null);
     setIsNewTask(false);
   }
-  function openCreate(project = "") {
+  function openCreate(project = "", epic = "") {
     const number = tasks.reduce((m, t) => Math.max(m, t.number), 0) + 1;
     setModalTask({
       id: newId("task"),
       number,
       createdAt: new Date().toISOString(),
       project,
-      epic: "",
+      epic,
       task: "",
       urgency: "unsorted",
       status: "open",
@@ -661,27 +927,32 @@ export default function Home() {
   function createTaskFromEntry(entryId: string, project: string, epic: string) {
     const entry = log.find((e) => e.id === entryId);
     if (!entry || entry.processed) return;
-    const number =
-      tasks.reduce((max, t) => Math.max(max, t.number), 0) + 1;
-    const task: Task = {
-      id: newId("task"),
-      number,
-      createdAt: entry.ts,
-      project: project || "—",
-      epic: epic || "—",
-      task: entry.text,
-      urgency: "unsorted",
-      status: "open",
-      complexity: null,
-      isTracking: false,
-      trackedMinutes: 0,
-      description: "",
-    };
-    setTasks((prev) => [...prev, task]);
+    const taskId = newId("task");
+    // Assign the NR inside the updater from the freshest list (fix B). The
+    // setTasks updater flushes before setLog's, so `assignedNumber` is set.
+    let assignedNumber = 0;
+    setTasks((prev) => {
+      assignedNumber = prev.reduce((max, t) => Math.max(max, t.number), 0) + 1;
+      const task: Task = {
+        id: taskId,
+        number: assignedNumber,
+        createdAt: entry.ts,
+        project: project || "—",
+        epic: epic || "—",
+        task: entry.text,
+        urgency: "unsorted",
+        status: "open",
+        complexity: null,
+        isTracking: false,
+        trackedMinutes: 0,
+        description: "",
+      };
+      return [...prev, task];
+    });
     setLog((prev) =>
       prev.map((e) =>
         e.id === entryId
-          ? { ...e, processed: true, taskId: task.id, taskNumber: number }
+          ? { ...e, processed: true, taskId, taskNumber: assignedNumber }
           : e
       )
     );
@@ -702,8 +973,32 @@ export default function Home() {
       prev.map((t) => (t[field] === from ? { ...t, [field]: next } : t))
     );
   }
-  const renameProject = (from: string, to: string) =>
-    renameField("project", from, to);
+  // Project rename also touches notes + events (they carry a project name now)
+  // and the registry — keeping the denormalized names and the stable ids in sync.
+  // Renaming onto an existing name MERGES (registry dedupes by name).
+  function renameProject(from: string, to: string) {
+    const next = to.trim();
+    if (!next || next === from) return;
+    setTasks((prev) =>
+      prev.map((t) => (t.project === from ? { ...t, project: next } : t))
+    );
+    setNotes((prev) =>
+      prev.map((n) => (n.project === from ? { ...n, project: next } : n))
+    );
+    setEvents((prev) =>
+      prev.map((e) => (e.project === from ? { ...e, project: next } : e))
+    );
+    const renamed = projectList.map((p) =>
+      p.name === from ? { ...p, name: next } : p
+    );
+    const deduped = dedupeProjects(renamed);
+    // A merge (rename onto an existing name) drops a project → server-delete it.
+    const keptIds = new Set(deduped.map((p) => p.id));
+    renamed.forEach((p) => {
+      if (!keptIds.has(p.id)) deletedProjectIds.current.add(p.id);
+    });
+    setProjectList(deduped);
+  }
   const renameEpic = (from: string, to: string) => renameField("epic", from, to);
 
   // Project bar colours (#18) — override layer; auto = remove override.
@@ -757,6 +1052,158 @@ export default function Home() {
         return next;
       })
     );
+  }
+
+  // ─── Calendar (#221) ────────────────────────────────────
+  function openCreateEvent(dateKey?: string) {
+    setEventModal(blankEvent(dateKey));
+    setIsNewEvent(true);
+  }
+  function openEditEvent(ev: CalendarEvent) {
+    setEventModal(ev);
+    setIsNewEvent(false);
+  }
+  // Add-or-replace by id, so the same modal handles create and edit.
+  function submitEvent(ev: CalendarEvent) {
+    setEvents((prev) => {
+      const exists = prev.some((e) => e.id === ev.id);
+      return exists ? prev.map((e) => (e.id === ev.id ? ev : e)) : [...prev, ev];
+    });
+    setEventModal(null);
+  }
+  function deleteEvent(id: string) {
+    deletedEventIds.current.add(id); // explicit delete — server removes only these
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    setEventModal(null);
+  }
+
+  // ─── Scheduler (Editor + Player) ────────────────────────────
+  function createSchedule() {
+    setSchedules((prev) => [...prev, blankSchedule()]);
+  }
+  function updateSchedule(s: Schedule) {
+    setSchedules((prev) => prev.map((x) => (x.id === s.id ? s : x)));
+  }
+  function deleteSchedule(id: string) {
+    deletedScheduleIds.current.add(id); // explicit delete — server removes only these
+    setSchedules((prev) => prev.filter((s) => s.id !== id));
+    setPlayerSchedule((p) => (p?.id === id ? null : p));
+  }
+  function copySchedule(id: string) {
+    setSchedules((prev) => {
+      const src = prev.find((s) => s.id === id);
+      return src ? [...prev, duplicateSchedule(src)] : prev;
+    });
+  }
+  function saveActivity(a: Activity) {
+    setActivities((prev) => [a, ...prev]);
+  }
+  function exportSchedule(id: string) {
+    const s = schedules.find((x) => x.id === id);
+    if (!s) return;
+    const safe = (s.name || "schedule").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    downloadFile(
+      `cnsl-schedule-${safe}.json`,
+      JSON.stringify(s, null, 2),
+      "application/json"
+    );
+  }
+  function importSchedule(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const sched = normalizeImported(parsed);
+        if (sched) setSchedules((prev) => [...prev, sched]);
+        else window.alert("That file is not a valid CNSL schedule.");
+      } catch {
+        window.alert("Could not read that file as JSON.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ─── Task ↔ Calendar link (#221, bidirectional) ─────────
+  // Single source of truth = event.taskId; task→events is DERIVED, so the two
+  // sides can never disagree. A task may have many events (1:n).
+  // From a task: open a new event prefilled + linked, ready to schedule.
+  function addEventForTask(task: Task) {
+    const ev = blankEvent();
+    ev.title = task.task || "(untitled task)";
+    ev.taskId = task.id;
+    ev.project = task.project || undefined; // A2 — inherit the task's project
+    setModalTask(null);
+    setEventModal(ev);
+    setIsNewEvent(true);
+  }
+  // Jump from a task's linked-events list to that event.
+  function openEventById(id: string) {
+    const ev = events.find((e) => e.id === id);
+    if (!ev) return;
+    setModalTask(null);
+    setEventModal(ev);
+    setIsNewEvent(false);
+  }
+  // Jump from an event to its linked task.
+  function openTaskById(id: string) {
+    const t = tasks.find((x) => x.id === id);
+    if (!t) return;
+    setEventModal(null);
+    setModalTask(t);
+    setIsNewTask(false);
+  }
+  // From an event: create a new task from the event title, return its id so the
+  // event modal can link it locally (mirrors createTaskFromEntry's minimal shape).
+  // Inherits the event's project (A2) when provided.
+  function createTaskForEvent(title: string, project?: string): string {
+    const id = newId("task");
+    setTasks((prev) => {
+      const number = prev.reduce((m, t) => Math.max(m, t.number), 0) + 1;
+      const task: Task = {
+        id,
+        number,
+        createdAt: new Date().toISOString(),
+        project: project?.trim() || "—",
+        epic: "—",
+        task: title.trim() || "(untitled)",
+        urgency: "unsorted",
+        status: "open",
+        complexity: null,
+        isTracking: false,
+        trackedMinutes: 0,
+        description: "",
+      };
+      return [...prev, task];
+    });
+    return id;
+  }
+
+  // ─── Task ↔ Note link (A1, "Story text") ────────────────
+  // Open a linked note: switch to the Note Pad tool and focus that note.
+  function openNoteById(id: string) {
+    setModalTask(null);
+    setTool("notepad");
+    setFocusNoteId(id);
+  }
+  // From a task: create a note linked to it (+ inherit the task's project),
+  // switch to the Note Pad and focus it.
+  function addNoteForTask(task: Task) {
+    const now = new Date().toISOString();
+    const id = newId("note");
+    const note: Note = {
+      id,
+      folderId: null,
+      title: task.task || "Untitled",
+      body: "",
+      project: task.project || undefined,
+      taskId: task.id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes((prev) => [note, ...prev]);
+    setModalTask(null);
+    setTool("notepad");
+    setFocusNoteId(id);
   }
 
   // Export the dataset for Claude / Cowork — optionally scoped to one project (#119).
@@ -830,10 +1277,17 @@ export default function Home() {
   }
 
   // Existing projects/epics for the triage autocomplete.
-  const projects = useMemo(
-    () => Array.from(new Set(tasks.map((t) => t.project))).filter(Boolean),
-    [tasks]
-  );
+  // All known project names (for the assignment datalists) — union of names used
+  // by tasks/notes/events plus any in the registry.
+  const projects = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) if (t.project) s.add(t.project);
+    for (const n of notes) if (n.project) s.add(n.project);
+    for (const e of events) if (e.project) s.add(e.project);
+    for (const sc of schedules) if (sc.project) s.add(sc.project);
+    for (const p of projectList) s.add(p.name);
+    return Array.from(s).filter(Boolean);
+  }, [tasks, notes, events, schedules, projectList]);
   const epics = useMemo(
     () => Array.from(new Set(tasks.map((t) => t.epic))).filter(Boolean),
     [tasks]
@@ -910,6 +1364,10 @@ export default function Home() {
     ];
   }, [sortedTasks]);
 
+  // #42: when there's a query, the content area becomes a global results page
+  // (overriding the current tool/view).
+  const searchActive = searchQuery.trim().length > 0;
+
   function setArchived(id: string, archived: boolean) {
     setTasks((prev) =>
       prev.map((t) => {
@@ -979,6 +1437,9 @@ export default function Home() {
     );
   }
 
+  // Blurp logger (footer capture) shows only in the Projects view + the Log view.
+  const showBlurp = (tool === "tracker" && view === "project") || tool === "log";
+
   return (
     <div className="cnsl-app" data-nav-open={navOpen ? "true" : "false"}>
       {conflict && (
@@ -1017,60 +1478,77 @@ export default function Home() {
         </div>
       )}
       <Header
-        tool={tool}
-        onToolChange={setTool}
         onNewTask={() => openCreate()}
         onLogoClick={() => setShowInfo(true)}
         syncState={syncState}
         onForceSave={pushState}
-        onToggleNav={tool === "tracker" ? () => setNavOpen((o) => !o) : undefined}
+        onToggleNav={() => setNavOpen((o) => !o)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <div className="cnsl-body">
-        {tool === "tracker" && (
-          <>
-            <Sidebar
-              view={view}
-              onViewChange={(v) => {
-                setView(v);
-                setNavOpen(false); // close drawer after picking a view (mobile)
-              }}
-              onOpenSettings={() => setShowSettings(true)}
-              mobileOpen={navOpen}
-            />
-            {navOpen && (
-              <div
-                className="cnsl-nav-backdrop"
-                onClick={() => setNavOpen(false)}
-                aria-hidden="true"
-              />
-            )}
-          </>
+        {/* Sidebar is always present now — it holds both the Task-Tracker views
+            AND the tool switcher (moved out of the header, #218). */}
+        <Sidebar
+          view={view}
+          tool={tool}
+          onViewChange={(v) => {
+            setTool("tracker"); // views are sub-views of the tracker
+            setView(v);
+            setNavOpen(false); // close drawer after picking (mobile)
+          }}
+          onToolChange={(t) => {
+            setTool(t);
+            setNavOpen(false);
+          }}
+          onOpenSettings={() => setShowSettings(true)}
+          mobileOpen={navOpen}
+        />
+        {navOpen && (
+          <div
+            className="cnsl-nav-backdrop"
+            onClick={() => setNavOpen(false)}
+            aria-hidden="true"
+          />
         )}
 
         <div className="cnsl-content">
-          {/* The TaskLine-based views (project/backlog/today/archive) have no
-              column grid, so they don't use the column header. */}
-          {!(
-            tool === "tracker" &&
-            (view === "project" ||
-              view === "backlog" ||
-              view === "today" ||
-              view === "archive")
-          ) && (
-            <TableHeader
-              view={tool === "tracker" ? view : tool}
-              sort={sort}
-              onSort={toggleSort}
-            />
-          )}
+          {/* The TaskLine-based views (project/backlog/today/archive) and the
+              search results have no column grid, so they skip the column header. */}
+          {!searchActive &&
+            tool !== "calendar" &&
+            tool !== "scheduler" &&
+            !(
+              tool === "tracker" &&
+              (view === "project" ||
+                view === "backlog" ||
+                view === "today" ||
+                view === "archive")
+            ) && (
+              <TableHeader
+                view={tool === "tracker" ? view : tool}
+                sort={sort}
+                onSort={toggleSort}
+              />
+            )}
 
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main
             className="cnsl-scroll flex-1 overflow-auto"
-            style={{ paddingBottom: "104px" }}
+            style={{ paddingBottom: showBlurp ? "104px" : "24px" }}
           >
-            {tool === "tracker" && (
+            {searchActive && (
+              <SearchResultsView
+                tasks={activeTasks}
+                query={searchQuery}
+                onClear={() => setSearchQuery("")}
+                onToggleTimer={toggleTimer}
+                onEditTask={openEdit}
+                onArchive={(id) => setArchived(id, true)}
+              />
+            )}
+            {!searchActive && tool === "tracker" && (
               <>
             {view === "backlog" && (
           <BacklogView
@@ -1107,7 +1585,12 @@ export default function Home() {
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
             onNewInProject={(project) => openCreate(project)}
+            onNewInTopic={(project, topic) => openCreate(project, topic)}
             onExportProject={(project) => exportCopyMarkdown(project)}
+            onShareProject={(project) => setShareTarget(project)}
+            sharedRole={(project) =>
+              sharedProjects.find((s) => s.name === project)?.role
+            }
           />
         )}
         {view === "archive" && (
@@ -1121,20 +1604,45 @@ export default function Home() {
         )}
               </>
             )}
-        {tool === "notepad" && (
+        {!searchActive && tool === "notepad" && (
           <NotePad
             notes={notes}
             onCreate={createNote}
             onUpdate={updateNote}
             onDelete={deleteNote}
             onPublishChange={publishChangeNote}
+            projects={projects}
+            tasks={activeTasks}
+            onOpenTask={openTaskById}
+            focusNoteId={focusNoteId}
+            onFocusHandled={() => setFocusNoteId(null)}
           />
         )}
-        {tool === "log" && (
+        {!searchActive && tool === "calendar" && (
+          <CalendarView
+            events={events}
+            onCreateOnDay={openCreateEvent}
+            onEditEvent={openEditEvent}
+          />
+        )}
+        {!searchActive && tool === "scheduler" && (
+          <SchedulerView
+            schedules={schedules}
+            activities={activities}
+            projects={projects}
+            onUpdateSchedule={updateSchedule}
+            onCreateSchedule={createSchedule}
+            onDeleteSchedule={deleteSchedule}
+            onCopySchedule={copySchedule}
+            onPlay={(s) => setPlayerSchedule(s)}
+            onExportSchedule={exportSchedule}
+            onImportSchedule={importSchedule}
+          />
+        )}
+        {!searchActive && tool === "log" && (
           <TrackingLogView
             log={log}
             projects={projects}
-            epics={epics}
             onCreateTask={createTaskFromEntry}
             onDeleteEntry={deleteLogEntry}
             onCopyMarkdown={exportCopyMarkdown}
@@ -1144,7 +1652,7 @@ export default function Home() {
         )}
           </main>
 
-          <Footer onTrack={addLogEntry} />
+          {showBlurp && <Footer onTrack={addLogEntry} />}
         </div>
       </div>
 
@@ -1153,6 +1661,10 @@ export default function Home() {
           task={modalTask}
           isNew={isNewTask}
           demo={DEMO}
+          readOnly={
+            sharedProjects.find((s) => s.name === modalTask.project)?.role ===
+            "viewer"
+          }
           projects={projects}
           epics={epics}
           epicsByProject={epicsByProject}
@@ -1160,6 +1672,42 @@ export default function Home() {
           onSubmit={submitTask}
           onDelete={deleteTask}
           onArchive={setArchived}
+          linkedEvents={events.filter((e) => e.taskId === modalTask.id)}
+          onOpenEvent={openEventById}
+          onAddToCalendar={addEventForTask}
+          linkedNotes={notes.filter((n) => n.taskId === modalTask.id)}
+          onOpenNote={openNoteById}
+          onAddNote={addNoteForTask}
+        />
+      )}
+
+      {shareTarget && (
+        <ShareModal
+          projectName={shareTarget}
+          projectId={projectByName(projectList, shareTarget)?.id ?? ""}
+          onClose={() => setShareTarget(null)}
+        />
+      )}
+
+      {eventModal && (
+        <EventModal
+          event={eventModal}
+          isNew={isNewEvent}
+          tasks={activeTasks}
+          projects={projects}
+          onClose={() => setEventModal(null)}
+          onSubmit={submitEvent}
+          onDelete={deleteEvent}
+          onOpenTask={openTaskById}
+          onCreateTask={createTaskForEvent}
+        />
+      )}
+
+      {playerSchedule && (
+        <SchedulerPlayer
+          schedule={playerSchedule}
+          onClose={() => setPlayerSchedule(null)}
+          onSaveActivity={saveActivity}
         />
       )}
 

@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 import type { Note } from "@/lib/notes";
+import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
+
+const noteMetaBtn: React.CSSProperties = {
+  height: "26px",
+  padding: "0 8px",
+  borderRadius: "6px",
+  border: "1px solid var(--color-border)",
+  background: "transparent",
+  color: "var(--color-surface)",
+  fontSize: "var(--text-sm)",
+  cursor: "pointer",
+  flexShrink: 0,
+};
 
 export default function NotePad({
   notes,
@@ -12,12 +25,23 @@ export default function NotePad({
   onUpdate,
   onDelete,
   onPublishChange,
+  projects = [],
+  tasks = [],
+  onOpenTask,
+  focusNoteId,
+  onFocusHandled,
 }: {
   notes: Note[];
   onCreate: () => string;
   onUpdate: (id: string, patch: Partial<Note>) => void;
   onDelete: (id: string) => void;
   onPublishChange: (id: string, patch: Partial<Note>) => void;
+  // A1 — project assignment + task link (+ task→note navigation).
+  projects?: string[];
+  tasks?: Task[];
+  onOpenTask?: (taskId: string) => void;
+  focusNoteId?: string | null; // open a specific note from outside (e.g. a task)
+  onFocusHandled?: () => void; // clear the external focus once applied
 }) {
   const sorted = [...notes].sort((a, b) =>
     (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "")
@@ -25,8 +49,26 @@ export default function NotePad({
   const [selectedId, setSelectedId] = useState<string | null>(
     sorted[0]?.id ?? null
   );
+  const [taskQuery, setTaskQuery] = useState("");
   const selected = notes.find((n) => n.id === selectedId) ?? null;
   const isMobile = useIsMobile();
+
+  // External focus (task modal "Open note" / "+ New note"): select that note,
+  // then clear the focus so re-opening the same note works next time.
+  useEffect(() => {
+    if (focusNoteId) {
+      setSelectedId(focusNoteId);
+      onFocusHandled?.();
+    }
+  }, [focusNoteId, onFocusHandled]);
+
+  // Reset the link-search box when switching notes.
+  useEffect(() => setTaskQuery(""), [selectedId]);
+
+  const taskLabel = (t: Task) => `#${t.number} ${t.task || "(untitled)"}`;
+  const linkedTask = selected?.taskId
+    ? tasks.find((t) => t.id === selected.taskId)
+    : undefined;
   // Mobile = single pane: list OR editor (with a back button).
   const showList = !isMobile || !selected;
   const showEditor = !isMobile || !!selected;
@@ -284,9 +326,126 @@ export default function NotePad({
                 </a>
               </div>
             )}
+            {/* A1 — Project + linked task metadata bar */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "8px 16px",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+                  Project
+                </span>
+                <input
+                  value={selected.project ?? ""}
+                  onChange={(e) =>
+                    onUpdate(selected.id, { project: e.target.value || undefined })
+                  }
+                  placeholder="—"
+                  list="note-projects"
+                  style={{
+                    height: "26px",
+                    padding: "0 8px",
+                    minWidth: "120px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--color-border)",
+                    background: "transparent",
+                    color: "var(--color-surface)",
+                    fontFamily: "var(--font-family)",
+                    fontSize: "var(--text-sm)",
+                    outline: "none",
+                  }}
+                />
+                <datalist id="note-projects">
+                  {projects.map((p) => (
+                    <option key={p} value={p} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+                  Task
+                </span>
+                {selected.taskId ? (
+                  <>
+                    <span
+                      style={{
+                        fontSize: "var(--text-sm)",
+                        color: "var(--color-surface)",
+                        maxWidth: "220px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {linkedTask ? taskLabel(linkedTask) : "(task deleted)"}
+                    </span>
+                    {linkedTask && onOpenTask && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenTask(selected.taskId!)}
+                        style={noteMetaBtn}
+                      >
+                        Open
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onUpdate(selected.id, { taskId: undefined })}
+                      style={noteMetaBtn}
+                    >
+                      Unlink
+                    </button>
+                  </>
+                ) : (
+                  <input
+                    value={taskQuery}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setTaskQuery(v);
+                      const m = tasks.find((t) => taskLabel(t) === v);
+                      if (m) {
+                        // Linking a task infers the project when the note has none.
+                        onUpdate(selected.id, {
+                          taskId: m.id,
+                          project: selected.project ?? m.project ?? undefined,
+                        });
+                        setTaskQuery("");
+                      }
+                    }}
+                    placeholder="Link a task…"
+                    list="note-link-tasks"
+                    style={{
+                      height: "26px",
+                      padding: "0 8px",
+                      minWidth: "140px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--color-border)",
+                      background: "transparent",
+                      color: "var(--color-surface)",
+                      fontFamily: "var(--font-family)",
+                      fontSize: "var(--text-sm)",
+                      outline: "none",
+                    }}
+                  />
+                )}
+                <datalist id="note-link-tasks">
+                  {tasks.map((t) => (
+                    <option key={t.id} value={taskLabel(t)} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
             <NoteEditor
               key={selected.id}
               value={selected.body}
+              title={selected.title}
               onChange={(md) => onUpdate(selected.id, { body: md })}
             />
           </>

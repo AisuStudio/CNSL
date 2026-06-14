@@ -1,9 +1,8 @@
 "use client";
 
-import { PlusIcon, SidebarIcon } from "./icons";
+import { PlusIcon, SidebarIcon, SearchIcon } from "./icons";
 import CnslLogo from "./CnslLogo";
 import SyncIndicator, { type SyncState } from "./SyncIndicator";
-import { TOOL_DEFS } from "./viewDefs";
 
 // Task Tracker sub-views (sidebar)
 export type View =
@@ -16,7 +15,7 @@ export type View =
   | "stats";
 
 // Top-level tools (header switcher)
-export type Tool = "tracker" | "notepad" | "log";
+export type Tool = "tracker" | "notepad" | "calendar" | "scheduler" | "log";
 
 const ICON_BTN: React.CSSProperties = {
   width: "35.1px",
@@ -28,21 +27,21 @@ const ICON_BTN: React.CSSProperties = {
 };
 
 export default function Header({
-  tool,
-  onToolChange,
   onNewTask,
   onLogoClick,
   syncState,
   onForceSave,
   onToggleNav,
+  searchQuery = "",
+  onSearchChange,
 }: {
-  tool: Tool;
-  onToolChange: (t: Tool) => void;
   onNewTask?: () => void;
   onLogoClick?: () => void;
   syncState?: SyncState;
   onForceSave?: () => void;
   onToggleNav?: () => void; // mobile drawer toggle (hamburger)
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void; // #42 search
 }) {
   return (
     <header
@@ -86,7 +85,30 @@ export default function Header({
           </button>
         )}
 
-        <div className="ml-8 flex items-center gap-3">
+        {/* Beta label (#219) — product is in public beta. */}
+        <span
+          style={{
+            marginLeft: "10px",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--color-accent)",
+            border:
+              "1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)",
+            borderRadius: "6px",
+            padding: "2px 7px",
+            lineHeight: 1.4,
+            userSelect: "none",
+          }}
+        >
+          Beta
+        </span>
+
+        <div
+          className="ml-6 flex items-center gap-3"
+          style={{ flex: 1, minWidth: 0 }}
+        >
           {onNewTask && (
             <button
               type="button"
@@ -94,51 +116,72 @@ export default function Header({
               aria-label="New task"
               title="New task"
               className="flex items-center justify-center"
-              style={ICON_BTN}
+              style={{ ...ICON_BTN, flexShrink: 0 }}
             >
               <PlusIcon color="var(--color-text-muted)" />
             </button>
           )}
 
-          {/* Tool switcher: Task Tracker · Note Pad · Log — connected segments */}
-          <div
-            className="flex items-center"
-            style={{
-              borderRadius: "8px",
-              overflow: "hidden",
-              gap: "2px",
-              marginLeft: "4px",
-              background: "var(--color-bg)",
-            }}
-          >
-            {TOOL_DEFS.map((t) => {
-              const active = tool === t.key;
-              return (
+          {/* Search field (#42) — filters tasks into a results view. */}
+          {onSearchChange && (
+            <div
+              className="flex items-center"
+              style={{
+                flex: 1,
+                maxWidth: "300px",
+                minWidth: 0,
+                height: "34.2px",
+                gap: "8px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                background: "var(--color-bg-deep)",
+              }}
+            >
+              <SearchIcon color="var(--color-text-muted)" size={16} />
+              <input
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search tasks…"
+                aria-label="Search tasks"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "var(--color-text-primary)",
+                  fontSize: "var(--text-sm)",
+                  fontFamily: "var(--font-family)",
+                }}
+              />
+              {searchQuery && (
                 <button
-                  key={t.key}
                   type="button"
-                  onClick={() => onToolChange(t.key)}
-                  aria-pressed={active}
-                  title={t.label}
-                  className="flex items-center justify-center"
+                  onClick={() => onSearchChange("")}
+                  aria-label="Clear search"
+                  title="Clear search"
                   style={{
-                    width: "47px",
-                    height: "34.2px",
-                    background: "var(--color-bg-deep)",
+                    background: "transparent",
                     border: "none",
+                    color: "var(--color-text-muted)",
                     cursor: "pointer",
+                    fontSize: "14px",
+                    lineHeight: 1,
+                    padding: 0,
+                    flexShrink: 0,
                   }}
                 >
-                  <t.Icon
-                    color={active ? "var(--color-card-bg)" : "var(--color-text-muted)"}
-                  />
+                  ✕
                 </button>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div
+          className="flex items-center gap-3"
+          style={{ marginLeft: "12px", flexShrink: 0 }}
+        >
           {syncState && (
             <SyncIndicator state={syncState} onClick={onForceSave} />
           )}

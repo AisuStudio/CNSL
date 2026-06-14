@@ -13,15 +13,17 @@ import {
   formatHM,
   formatDate,
 } from "@/lib/mock-data";
+import { type CalendarEvent, isoToTimeInput } from "@/lib/calendar";
+import type { Note } from "@/lib/notes";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import SidePanel from "./SidePanel";
+import { SubtaskRadioIcon } from "./icons";
 
 /* ── Light-card palette → design tokens (see tokens.css) ── */
 const INK = "var(--color-card-ink)";
 const META = "var(--color-card-meta)";
 const C1 = "var(--color-card-border)";
-const ACCENT = "var(--color-accent)";
 
 /* Parse "H:MM" / "HH:MM" (or a plain minute count) into minutes (#133). */
 function parseHM(s: string, fallback: number): number {
@@ -111,6 +113,7 @@ export default function EditTaskModal({
   task,
   isNew = false,
   demo = false,
+  readOnly = false,
   projects = [],
   epics = [],
   epicsByProject = {},
@@ -118,10 +121,17 @@ export default function EditTaskModal({
   onSubmit,
   onDelete,
   onArchive,
+  linkedEvents = [],
+  onOpenEvent,
+  onAddToCalendar,
+  linkedNotes = [],
+  onOpenNote,
+  onAddNote,
 }: {
   task: Task;
   isNew?: boolean;
   demo?: boolean; // demo mode: deleting is disabled
+  readOnly?: boolean; // C4 — viewer of a shared project: disable all editing
   projects?: string[];
   epics?: string[];
   epicsByProject?: Record<string, string[]>; // #35 — epics scoped per project
@@ -129,6 +139,14 @@ export default function EditTaskModal({
   onSubmit: (task: Task) => void;
   onDelete: (id: string) => void;
   onArchive: (id: string, archived: boolean) => void;
+  // Calendar link (#221) — events pointing at this task, derived in page.tsx.
+  linkedEvents?: CalendarEvent[];
+  onOpenEvent?: (eventId: string) => void; // jump to a linked event
+  onAddToCalendar?: (task: Task) => void; // create + link a new event
+  // Notes link (A1) — notes pointing at this task, derived in page.tsx.
+  linkedNotes?: Note[];
+  onOpenNote?: (noteId: string) => void; // jump to a linked note
+  onAddNote?: (task: Task) => void; // create + link a new note
 }) {
   const [taskText, setTaskText] = useState(task.task);
   const [project, setProject] = useState(task.project);
@@ -210,12 +228,52 @@ export default function EditTaskModal({
     });
   }
 
+  // Calendar cross-navigation (#221): persist task edits first (save() closes
+  // this modal), then open the event / create a linked one — no lost work.
+  function openLinkedEvent(eventId: string) {
+    save();
+    onOpenEvent?.(eventId);
+  }
+  function addToCalendar() {
+    save();
+    onAddToCalendar?.({ ...task, task: taskText.trim() });
+  }
+  function openLinkedNote(noteId: string) {
+    save();
+    onOpenNote?.(noteId);
+  }
+  function addNote() {
+    save();
+    onAddNote?.({ ...task, task: taskText.trim() });
+  }
+
   return (
     <SidePanel
       title={isNew ? "New task" : "Edit task"}
       width={500}
       onClose={guardedClose}
     >
+      {readOnly && (
+        <div
+          style={{
+            fontSize: "var(--text-sm)",
+            color: "var(--color-card-ink)",
+            background: "rgba(0,0,0,0.06)",
+            border: `1px solid ${C1}`,
+            borderRadius: "6px",
+            padding: "8px 12px",
+          }}
+        >
+          Shared with you — <b>view only</b>.
+        </div>
+      )}
+      {/* readOnly (C4): a disabled fieldset natively disables every control
+          inside (inputs, selects, textareas, Save/Delete/Archive). display:contents
+          keeps the layout untouched. */}
+      <fieldset
+        disabled={readOnly}
+        style={{ display: "contents", border: "none", margin: 0, padding: 0 }}
+      >
       {/* Task title */}
       <input
         value={taskText}
@@ -351,13 +409,25 @@ export default function EditTaskModal({
               key={s.id}
               style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-              <input
-                type="checkbox"
-                checked={s.done}
-                onChange={(e) => patchSubtask(s.id, { done: e.target.checked })}
-                aria-label="Done"
-                style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: ACCENT }}
-              />
+              <button
+                type="button"
+                onClick={() => patchSubtask(s.id, { done: !s.done })}
+                role="checkbox"
+                aria-checked={s.done}
+                aria-label={s.done ? "Mark not done" : "Mark done"}
+                className="flex items-center justify-center"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <SubtaskRadioIcon checked={s.done} color={INK} size={18} />
+              </button>
               <input
                 value={s.text}
                 onChange={(e) => patchSubtask(s.id, { text: e.target.value })}
@@ -450,6 +520,146 @@ export default function EditTaskModal({
           </PillField>
         </div>
 
+        {/* Calendar link (#221) — events linked to this task + add-to-calendar.
+            Hidden for unsaved new tasks (link by id needs a persisted task). */}
+        {!isNew && (onAddToCalendar || linkedEvents.length > 0) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ fontSize: "10px", color: META }}>
+              <b>CALENDAR</b>
+            </div>
+            {linkedEvents.map((ev) => {
+              const time = ev.allDay ? "" : isoToTimeInput(ev.start);
+              return (
+                <div
+                  key={ev.id}
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: "var(--text-base)",
+                      color: INK,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {formatDate(ev.start)}
+                    {time ? ` · ${time}` : ""} — {ev.title || "(untitled)"}
+                  </span>
+                  {onOpenEvent && (
+                    <button
+                      type="button"
+                      onClick={() => openLinkedEvent(ev.id)}
+                      style={{
+                        height: "28px",
+                        padding: "0 12px",
+                        background: "transparent",
+                        color: INK,
+                        border: `1px solid ${C1}`,
+                        borderRadius: "6px",
+                        fontSize: "var(--text-sm)",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      Open
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {onAddToCalendar && (
+              <button
+                type="button"
+                onClick={addToCalendar}
+                style={{
+                  alignSelf: "flex-start",
+                  height: "28px",
+                  padding: "0 12px",
+                  background: "transparent",
+                  color: INK,
+                  border: `1px solid ${C1}`,
+                  borderRadius: "6px",
+                  fontSize: "var(--text-sm)",
+                  cursor: "pointer",
+                }}
+              >
+                + Add to calendar
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Notes link (A1) — notes linked to this task + add-a-note. Hidden for
+            unsaved new tasks (link by id needs a persisted task). */}
+        {!isNew && (onAddNote || linkedNotes.length > 0) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ fontSize: "10px", color: META }}>
+              <b>NOTES</b>
+            </div>
+            {linkedNotes.map((n) => (
+              <div
+                key={n.id}
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: "var(--text-base)",
+                    color: INK,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {n.title || "Untitled"}
+                </span>
+                {onOpenNote && (
+                  <button
+                    type="button"
+                    onClick={() => openLinkedNote(n.id)}
+                    style={{
+                      height: "28px",
+                      padding: "0 12px",
+                      background: "transparent",
+                      color: INK,
+                      border: `1px solid ${C1}`,
+                      borderRadius: "6px",
+                      fontSize: "var(--text-sm)",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    Open
+                  </button>
+                )}
+              </div>
+            ))}
+            {onAddNote && (
+              <button
+                type="button"
+                onClick={addNote}
+                style={{
+                  alignSelf: "flex-start",
+                  height: "28px",
+                  padding: "0 12px",
+                  background: "transparent",
+                  color: INK,
+                  border: `1px solid ${C1}`,
+                  borderRadius: "6px",
+                  fontSize: "var(--text-sm)",
+                  cursor: "pointer",
+                }}
+              >
+                + New note
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {!isNew && (
@@ -509,6 +719,7 @@ export default function EditTaskModal({
             </button>
           </div>
         </div>
+      </fieldset>
     </SidePanel>
   );
 }

@@ -289,24 +289,6 @@ function ToolsPanel() {
       <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
         {SOON.map((t) => row(t.icon, t.label, true))}
       </ul>
-
-      <a
-        href="https://aisustudio.github.io/CNSL"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          marginTop: "16px",
-          fontSize: "var(--text-xs)",
-          fontFamily: "var(--font-family-mono)",
-          color: "var(--color-accent)",
-          textDecoration: "none",
-        }}
-      >
-        ▸ Demo on Github
-      </a>
     </div>
   );
 }

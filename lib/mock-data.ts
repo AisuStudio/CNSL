@@ -920,6 +920,21 @@ export const initialTasks: Task[] = [
     description: "",
     completedAt: "2026-06-06T08:00:00Z",
   },
+  {
+    id: "task_0075",
+    createdAt: "2026-06-11T08:00:00Z",
+    number: 75,
+    project: "CNSL",
+    epic: "Infra",
+    task: "Server-authoritative task numbers (no duplicate NRs)",
+    urgency: "this_week",
+    status: "open",
+    complexity: 3,
+    isTracking: false,
+    trackedMinutes: 0,
+    description:
+      "Duplicate NRs happen because a new task's `number` is computed client-side as max+1; two devices (Supabase Realtime) or quick races assign the same number. Client mitigations are in place (assign-at-commit in submitTask/createTaskFromEntry + idempotent dedup-on-load in page.tsx), but the real fix is to assign `number` ATOMICALLY on the server in app/api/state/route.ts within the upsert transaction (per-user max+1 or a counter), so concurrent creates can never collide.",
+  },
 ];
 
 // ─── Sorting ───────────────────────────────────────────────

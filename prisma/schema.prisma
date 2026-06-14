@@ -54,6 +54,7 @@ enum Status {
 /// Mirror of Supabase auth.users (id == auth.uid()).
 model Profile {
   id          String        @id @db.Uuid
+  email       String?       // C3 — synced from auth.users; lets invites resolve by email
   displayName String?
   // Public publisher handle (set once on first publish, then immutable). Used as
   // the namespace in /note/{publisherHandle}/{topic}/{slug}.
@@ -62,6 +63,7 @@ model Profile {
 
   ownedBoards Board[]       @relation("BoardOwner")
   memberships BoardMember[]
+  projectMemberships ProjectMember[] // C3 — project-level sharing
   tasks       Task[]        @relation("TaskCreatedBy")
   timeEntries TimeEntry[]
   logEntries  LogEntry[]
@@ -97,6 +99,40 @@ model BoardMember {
   @@unique([boardId, userId])
 }
 
+/// Who may access a PROJECT (= project-level sharing, C3). Role gates read/write.
+/// `projectId` is a soft ref to Project.id (no FK cascade, matching the rest of
+/// the project links). `role` is a plain string ('owner' | 'editor' | 'viewer')
+/// — not the Role enum — to avoid depending on that enum type existing in prod.
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String   @db.Uuid
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("viewer")
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+/// A pending invite to a project, by email. Resolved into a ProjectMember when
+/// the invited user logs in (accept-on-login in lib/board.ts). `token` is for a
+/// future link flow. `status` = 'pending' | 'accepted' | 'revoked'.
+model Invite {
+  id           String   @id @default(uuid())
+  projectId    String
+  email        String
+  role         String   @default("viewer")
+  token        String   @unique @default(uuid())
+  status       String   @default("pending")
+  invitedById  String?  @db.Uuid
+  acceptedById String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([email])
+  @@index([projectId])
+}
+
 // ─── Content: Tracker (today's model) ───────────────────
 
 model Task {
@@ -105,6 +141,7 @@ model Task {
   board          Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
   number         Int
   project        String      @default("")
+  projectId      String?     // C2 — FK to Project.id (server-resolved from name)
   epic           String      @default("")
   title          String      @default("") // the "task" text
   description    String      @default("")
@@ -125,6 +162,7 @@ model Task {
   timeEntries    TimeEntry[]
 
   @@index([boardId])
+  @@index([projectId])
 }
 
 // ─── Cross-cutting ──────────────────────────────────────
@@ -174,6 +212,9 @@ model Note {
   folderId    String? // null = root
   title       String   @default("")
   body        String   @default("") // markdown
+  project     String? // A1 — note belongs to a project (string)
+  projectId   String? // C2 — FK to Project.id (server-resolved from name)
+  taskId      String? // A1 — "Story text" link to a task (soft ref; UI handles dangling)
   createdById String?  @db.Uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -188,6 +229,82 @@ model Note {
   listed      Boolean  @default(false)
 
   @@unique([boardId, topic, slug])
+  @@index([boardId])
+  @@index([projectId])
+}
+
+// ─── Projects (registry) — Phase C1 ─────────────────────
+/// A project as a first-class entity with a stable id. Persists the client
+/// registry (A3); the id is what project membership/sharing references (Phase C).
+/// Hangs off the tracker board today; entities still reference it by name until
+/// the projectId backfill (C2).
+model Project {
+  id        String   @id @default(uuid())
+  boardId   String
+  name      String
+  color     String?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+}
+
+// ─── Calendar (board kind='calendar') — Phase B ─────────
+/// A calendar event. Hangs off the tracker board today; may move to its own
+/// calendar board later. `taskId`/`project` are soft string refs (the UI
+/// handles a dangling link), mirroring the client CalendarEvent.
+model Event {
+  id         String    @id @default(uuid())
+  boardId    String
+  title      String    @default("")
+  start      DateTime
+  end        DateTime?
+  allDay     Boolean   @default(false)
+  note       String?
+  project    String?
+  projectId  String? // C2 — FK to Project.id (server-resolved from name)
+  taskId     String?
+  recurrence String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+  @@index([projectId])
+}
+
+// ─── Scheduler (board kind='sport') — Phase 2 ───────────
+/// A reusable schedule template (fitness programme, workshop). Sections + their
+/// steps are stored as nested JSON (`sections`), matching the client Schedule —
+/// they're only ever read/written as a whole, so no per-step table. Hangs off the
+/// tracker board today. `project` is a soft string ref (projectId later, Phase C).
+model Schedule {
+  id        String   @id @default(uuid())
+  boardId   String
+  name      String   @default("")
+  project   String?
+  sections  Json?    // [{ id, name, order, steps: [{ id, name, description?, durationSeconds, order }] }]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
+  @@index([boardId])
+}
+
+/// One played run of a Schedule ("Saved activity") — the recorded time goes here,
+/// under the schedule's project. Flat; soft `scheduleId`/`project` refs.
+model Activity {
+  id              String   @id @default(uuid())
+  boardId         String
+  scheduleId      String
+  scheduleName    String   @default("")
+  project         String?
+  startedAt       DateTime
+  recordedSeconds Int      @default(0)
+  completed       Boolean  @default(false)
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
+
   @@index([boardId])
 }
 

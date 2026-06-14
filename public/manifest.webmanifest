@@ -4,8 +4,8 @@
   "description": "CNSL — task tracker, time tracking & quick logger.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#18171e",
-  "theme_color": "#18171e",
+  "background_color": "#0b0a0c",
+  "theme_color": "#161519",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },

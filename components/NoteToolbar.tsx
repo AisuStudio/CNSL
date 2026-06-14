@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { copyText, downloadFile } from "@/lib/export";
+import { htmlToRtf } from "@/lib/rtf";
 
 // Formatting toolbar for the NotePad editor (Phase A).
 // - Inline marks: B / I / U / S + Link
@@ -90,9 +92,16 @@ const TYPE_STYLES: StyleItem[] = [
   },
 ];
 
-export default function NoteToolbar({ editor }: { editor: Editor | null }) {
+export default function NoteToolbar({
+  editor,
+  title,
+}: {
+  editor: Editor | null;
+  title?: string;
+}) {
   const [styleOpen, setStyleOpen] = useState(false);
   const [, force] = useState(0);
+  const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Re-render on selection/transaction so active states stay in sync.
@@ -135,6 +144,21 @@ export default function NoteToolbar({ editor }: { editor: Editor | null }) {
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
+
+  // ── Exports (Copy MD · Save MD · Save RTF) ──
+  const getMarkdown = () => editor.storage.markdown.getMarkdown() as string;
+  const baseName = () =>
+    (title || "").trim().replace(/[^a-z0-9\-]+/gi, "_").replace(/^_+|_+$/g, "").slice(0, 60) ||
+    "note";
+  const copyMD = () => {
+    copyText(getMarkdown());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+  // "Save MD" hidden per user — restore this with its button to re-enable.
+  // const saveMD = () => downloadFile(`${baseName()}.md`, getMarkdown(), "text/markdown");
+  const saveRTF = () =>
+    downloadFile(`${baseName()}.rtf`, htmlToRtf(editor.getHTML()), "application/rtf");
 
   const activeStyle = TYPE_STYLES.find((s) => s.isActive(editor));
 
@@ -237,11 +261,25 @@ export default function NoteToolbar({ editor }: { editor: Editor | null }) {
         </button>
       ))}
 
-      {activeStyle && (
-        <span className="cnsl-tb-current" title="Current style">
-          {activeStyle.label}
-        </span>
-      )}
+      {/* Right end: current style label + export buttons (12px from the edge) */}
+      <div className="cnsl-tb-right">
+        {activeStyle && (
+          <span className="cnsl-tb-current" title="Current style">
+            {activeStyle.label}
+          </span>
+        )}
+        <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
+          {copied ? "Copied" : "Copy MD"}
+        </button>
+        {/* "Save MD" hidden per user — restore this button + the saveMD handler to bring it back.
+        <button type="button" className="cnsl-tb-out" onClick={saveMD} title="Save as Markdown">
+          Save MD
+        </button>
+        */}
+        <button type="button" className="cnsl-tb-out" onClick={saveRTF} title="Save as RTF">
+          Save RTF
+        </button>
+      </div>
     </div>
   );
 }

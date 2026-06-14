@@ -34,6 +34,9 @@ function FilterToggle({
             key={o.value}
             type="button"
             onClick={() => onChange(o.value)}
+            // #210: on the mono lavender canvas, plain text-primary was
+            // lavender-on-lavender. .cnsl-on-canvas(-active) gives dark text.
+            className={active ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
             style={{
               height: "26px",
               padding: "0 12px",

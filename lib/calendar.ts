@@ -13,11 +13,16 @@ export interface CalendarEvent {
   end?: string; // ISO datetime; omitted = a point in time
   allDay?: boolean;
   note?: string;
+  // Sharing-foundation A2: an event belongs to a project (string for now →
+  // projectId in A3). Inherited from a linked task when empty.
+  project?: string;
   taskId?: string; // optional link to a task (+ Task-Verknüpfung)
   // RRULE-style recurrence string (e.g. "FREQ=WEEKLY"). Stored only here for now;
   // expansion into concrete occurrences happens client-side later (+ Wiederholung).
   recurrence?: string;
   createdAt?: string;
+  // Phase B — server @updatedAt; the base version for per-event newer-wins sync.
+  updatedAt?: string;
 }
 
 // Does an event overlap the half-open range [startMs, endMs)? Uses `end` when
@@ -80,4 +85,95 @@ export function groupByDay(events: CalendarEvent[]): Record<string, CalendarEven
   }
   for (const k of Object.keys(out)) out[k].sort(compareEvents);
   return out;
+}
+
+// ─── Month-grid helpers (Phase 1 UI) ──────────────────────────────────────
+
+export const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+] as const;
+
+// Monday-first weekday headers (European default — the user is Berlin-based).
+export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+// Local midnight of the Monday on or before `d`.
+function startOfWeekMonday(d: Date): Date {
+  const dow = (d.getDay() + 6) % 7; // 0 = Monday … 6 = Sunday
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow);
+}
+
+// 6×7 matrix of local Dates covering the month that contains (year, month),
+// Monday-first, padded with leading/trailing days so every row is full. Always
+// 6 rows so the grid height stays stable across months.
+export function monthMatrix(year: number, month: number): Date[][] {
+  const start = startOfWeekMonday(new Date(year, month, 1));
+  const weeks: Date[][] = [];
+  for (let w = 0; w < 6; w++) {
+    const week: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      const offset = w * 7 + d;
+      week.push(
+        new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset)
+      );
+    }
+    weeks.push(week);
+  }
+  return weeks;
+}
+
+// `count` Monday-first week-rows starting from the week that contains `anchor`.
+// Powers the Week (count=1) and Two Weeks (count=2) calendar views.
+export function weekMatrix(anchor: Date, count = 1): Date[][] {
+  const start = startOfWeekMonday(anchor);
+  const rows: Date[][] = [];
+  for (let w = 0; w < count; w++) {
+    const row: Date[] = [];
+    for (let d = 0; d < 7; d++) {
+      const offset = w * 7 + d;
+      row.push(
+        new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset)
+      );
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Step the (year, month) cursor by `delta` months, normalising overflow.
+export function addMonths(
+  year: number,
+  month: number,
+  delta: number
+): { year: number; month: number } {
+  const base = new Date(year, month + delta, 1);
+  return { year: base.getFullYear(), month: base.getMonth() };
+}
+
+export function sameDay(a: Date, b: Date): boolean {
+  return dayKey(a) === dayKey(b);
+}
+
+// Build an ISO string from local date + optional "HH:MM" time. For all-day or a
+// missing time we anchor at local midnight. Stored via toISOString() so it
+// round-trips back to the correct local day in groupByDay/dayKey.
+export function toEventISO(dateKey: string, time?: string): string {
+  const [y, m, d] = dateKey.split("-").map((n) => parseInt(n, 10));
+  let hh = 0;
+  let mm = 0;
+  if (time && time.includes(":")) {
+    const [h, min] = time.split(":");
+    hh = parseInt(h, 10) || 0;
+    mm = parseInt(min, 10) || 0;
+  }
+  return new Date(y, (m || 1) - 1, d || 1, hh, mm).toISOString();
+}
+
+// ISO → local "HH:MM" (for the event modal's time inputs); "" if invalid.
+export function isoToTimeInput(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
 }

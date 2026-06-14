@@ -274,7 +274,10 @@ body {
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 2px;
+  /* wrap so the export buttons drop to a 2nd row on narrow screens instead of
+     being clipped off the right edge (mobile). */
+  flex-wrap: wrap;
+  gap: 4px 2px;
   padding: 4px 8px;
   background: var(--color-bg-deep);
   border-radius: 4px;
@@ -310,6 +313,39 @@ body {
   padding-right: 4px;
   color: var(--color-text-muted);
   font-size: var(--text-modal);
+}
+/* Right-aligned group at the end of the format bar: current-style label +
+   the export buttons. 12px from the bar's right edge (toolbar pads 8px + 4px). */
+.cnsl-tb-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+}
+.cnsl-tb-right .cnsl-tb-current { margin-left: 0; padding-right: 0; }
+/* Export buttons: inverted = lavender (accent) outline + text, transparent fill.
+   Size class matches the Backlog "Untouched" filter pill (26px · 0 12px · r6 · text-sm). */
+.cnsl-tb-out {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cnsl-tb-out:hover {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 /* Type-style menu (the aA dropdown) */
@@ -394,8 +430,6 @@ a:focus-visible {
   18%      { fill: var(--color-text-muted); }
 }
 
-/* #156 — hover highlight: keep the name beige, outline the whole card (lime, 1px) */
-.cnsl-proj-bar:hover { outline: 0.5px solid var(--color-lime); outline-offset: -0.5px; }
 /* #156 — inset row divider: 12px gap left/right (fluid), not full-bleed */
 .cnsl-row-line { position: relative; }
 .cnsl-row-line::after {
@@ -406,6 +440,12 @@ a:focus-visible {
   bottom: 0;
   height: 1px;
   background: var(--color-border);
+}
+/* No trailing divider on the LAST row of a project group — otherwise that last
+   task's line floats in the 2px gap just above the next project bar. Scoped to
+   the last row of the last topic group so inter-topic dividers stay intact. */
+.cnsl-projectview > div > div:last-child > .cnsl-row-line:last-child::after {
+  display: none;
 }
 
 /* ─── Mono theme: lavender content surface (per the old mockup) ──
@@ -425,6 +465,40 @@ a:focus-visible {
   --color-accent:       color-mix(in srgb, var(--mono) 22%, #000); /* in-progress status */
   --color-border:       color-mix(in srgb, var(--mono) 32%, #000); /* dividers + idle play frame */
 }
+/* Labels/buttons that sit directly on the content canvas (main). In classic the
+   canvas is dark → light text (default token); in mono the canvas is lavender →
+   default text-primary would be lavender-on-lavender (unreadable). #210: the
+   Backlog filter toggle + the search-results header were exactly this case.
+   `-active` = a pill on an accent fill (lavender in mono) → dark ink. */
+:root[data-theme="mono"] .cnsl-on-canvas,
+:root[data-theme="mono"] .cnsl-on-canvas-active {
+  /* Redefine the text vars (like .cnsl-row-line) so inline `color: var(--…)`
+     in the components resolves to dark on the lavender canvas. The -active pill
+     keeps the bright --color-accent fill (not overridden) → dark ink on it. */
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 16%, #000);
+}
+/* Calendar month grid sits on the lavender canvas → same trick as .cnsl-row-line:
+   flip text + border + accent vars to dark so day numbers, dividers and the
+   today/event-chip accents read on the lavender (chips use --color-accent as a
+   fill with --color-card-bg = lavender text → dark chip, light text). */
+:root[data-theme="mono"] .cnsl-calendar {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 38%, #000);
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
+}
+/* Scheduler editor sits on the lavender canvas → same dark-on-lavender flip as
+   the calendar so labels, inputs, dividers and tinted cards stay legible. The
+   Player is a separate full-screen dark overlay (NOT in main) and keeps the
+   global light tokens, so this rule never touches it. */
+:root[data-theme="mono"] .cnsl-scheduler {
+  --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000);
+  --color-text-muted:   color-mix(in srgb, var(--mono) 38%, #000);
+  --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
+  --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
+}
+
 /* Footer over the lavender: make it a black container with a lavender
    border (matching the project bars) so it doesn't blend in. The footer's
    inline styles reuse --color-text-primary as both a bg and a fg, so a
@@ -503,7 +577,10 @@ a:focus-visible {
     position: fixed;
     top: var(--header-row1-height);
     left: 0;
-    bottom: 0;
+    /* dvh (not bottom:0) so the rail tracks the *dynamic* viewport on iOS Safari
+       when the URL bar shows/hides; safe-area keeps it off the home indicator. (#208) */
+    height: calc(100dvh - var(--header-row1-height));
+    padding-bottom: env(safe-area-inset-bottom);
     z-index: 46;
     width: 60px !important;
     transform: translateX(-100%);
@@ -586,6 +663,9 @@ a:focus-visible {
    links can sit bottom-right per the monochrome design; left also keeps them
    clear of the right-side sign-in column). */
 .start-aisu {
+  /* Hidden for now (was bottom-left, overlapping the tools card). Keep the
+     element + positioning so it can be re-enabled later. */
+  display: none;
   position: absolute;
   bottom: clamp(24px, 4vh, 44px);
   left: clamp(60px, 4.7vw, 200px);

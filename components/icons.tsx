@@ -45,6 +45,18 @@ export function InfoIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function ShareIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL_Icon_Share.svg — arrow out of a box.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fill={color}
+        d="M20,0v9h-3.5v-2l-2,2h0s0,0,0,0l-5.5,5.5h-3.5v-3.5l7.5-7.5h-2V0h9ZM20,11h-3.5v5.5H3.5V3.5h5.5V0H0v20h20v-9Z"
+      />
+    </svg>
+  );
+}
+
 export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
   // Pixel-grid gear — CNSL_Icon_Settings.svg.
   return (
@@ -132,15 +144,13 @@ export function TrackToggleIcon({
           <rect x="11" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
         </>
       ) : (
-        <rect
-          x="1.75"
-          y="1.75"
-          width="16.5"
-          height="16.5"
-          rx="4"
-          fill="none"
-          stroke="var(--color-border)"
-          strokeWidth="3.5"
+        // Play state (#206): boxed triangle from CNSL_Icon_Play.svg — replaces the
+        // old empty rounded square that read like a radio button.
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M5.5 14.5V5.5l9 4.5-9 4.5ZM20 0v20H0V0h20ZM16.5 3.5H3.5v13h13V3.5Z"
+          fill="var(--color-border-subtle)"
         />
       )}
     </svg>
@@ -226,6 +236,71 @@ export function TodayIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function ArrowLeftIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowLeft.svg): left triangle in a frame.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill={color}
+        d="M5.5,10l9-4.5v9s-9-4.5-9-4.5ZM20,0v20H0V0h20ZM3.5,16.5h13s0-13,0-13H3.5s0,13,0,13Z"
+      />
+    </svg>
+  );
+}
+
+export function ArrowRightIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowRight.svg): right triangle in a frame.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill={color}
+        d="M5.5,14.5V5.5l9,4.5-9,4.5ZM20,0v20H0V0h20ZM16.5,3.5H3.5v13h13V3.5Z"
+      />
+    </svg>
+  );
+}
+
+export function CalIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom calendar glyph (CNSL_Icon_Cal.svg): top bar + framed grid body.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <rect width="20" height="3.5" />
+        <path d="M0,5.5v14.5h20V5.5H0ZM16.5,16.5H3.5v-7.5h13v7.5Z" />
+      </g>
+    </svg>
+  );
+}
+
+export function SchedulerIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom scheduler glyph (CNSL_Icon_Scheduler3.svg): a "play through
+  // sections" mark — left bracket with a notch + a solid right block.
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M9,20H0V0h9v3.5H3.5v13h2v-5.5h3.5v9ZM11,20V0h9v20h-9ZM16.5,3.5h-2v13h2V3.5Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 export function SidebarIcon({ color = "currentColor" }: { color?: string }) {
   // Panel glyph: left rail + content grid (CNSL_Icon_Sidebar.svg).
   const cols = [5.5, 11, 16.5];
@@ -268,6 +343,49 @@ export function TrashIcon({
         <rect x="0" y="3.5" width="20" height="2.5" />
         <polygon points="2.5 7 3.6 20 16.4 20 17.5 7 15 7 14.1 17.5 5.9 17.5 5 7 2.5 7" />
         <rect x="8.75" y="9" width="2.5" height="7" />
+      </g>
+    </svg>
+  );
+}
+
+export function SubtaskRadioIcon({
+  checked,
+  color = "currentColor",
+  size = 18,
+}: {
+  checked: boolean;
+  color?: string;
+  size?: number;
+}) {
+  // CNSL square radio (CNSL_Icon_Radio_Off/On.svg): hollow frame = off,
+  // frame + filled centre = on. Replaces the native checkbox for subtasks (#213).
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        fill={color}
+        d={
+          checked
+            ? "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13ZM5.5,5.5h9v9H5.5V5.5Z"
+            : "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13Z"
+        }
+      />
+    </svg>
+  );
+}
+
+export function SearchIcon({
+  color = "currentColor",
+  size = 18,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // Magnifier in the CNSL pixel style: square lens-frame + diagonal handle.
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <path d="M0,0v13h13V0H0ZM10,10H3V3h7v7Z" />
+        <polygon points="11.2,13.7 13.7,11.2 20,17.5 17.5,20" />
       </g>
     </svg>
   );

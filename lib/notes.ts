@@ -1,9 +1,14 @@
 // Note Pad model (board kind='doc'). Body is Markdown (no images).
 export interface Note {
   id: string;
-  folderId?: string | null; // null = root (folders are flat in v1)
+  folderId?: string | null; // null = root (folders are flat in v1; superseded by `project`)
   title: string;
   body: string; // markdown
+  // Sharing-foundation A1: a note belongs to a project and may be linked to a
+  // task (the "Story text" case). `project` is a string for now → projectId in A3.
+  // The reverse (task → its notes) is DERIVED from taskId (single source of truth).
+  project?: string;
+  taskId?: string;
   createdAt?: string;
   updatedAt?: string;
   // Public publishing state (server-managed via /api/publish, surfaced read-only
