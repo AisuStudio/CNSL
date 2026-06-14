@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Note } from "@/lib/notes";
+import { slugify, isValidHandle } from "@/lib/slug";
 import SidePanel from "./SidePanel";
 
 // Publish a single note as a public page. On the user's FIRST publish they must
@@ -25,37 +26,74 @@ export default function PublishModal({
   ) => void;
 }) {
   const handleLocked = !!initialHandle;
+  // `handle` is the raw text the user types; the actual handle is its slug, so a
+  // natural name like "Aisu Studio" becomes the valid "aisu-studio" automatically.
   const [handle, setHandle] = useState(initialHandle ?? "");
+  const normHandle = handleLocked ? initialHandle ?? "" : slugify(handle);
   const [topic, setTopic] = useState(note.topic ?? "");
-  const [check, setCheck] = useState<{ valid: boolean; available: boolean } | null>(
-    null
-  );
+  const [check, setCheck] = useState<{ available: boolean } | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Debounced availability check while choosing a brand-new handle.
+  // Debounced availability check while choosing a brand-new handle. Failures are
+  // surfaced (checkFailed) instead of swallowed, so the button never sits disabled
+  // for an unexplained reason.
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (handleLocked) return;
-    const h = handle.trim().toLowerCase();
     setCheck(null);
-    if (!h) return;
+    setCheckFailed(false);
+    setChecking(false);
+    if (!isValidHandle(normHandle)) return; // local rule first → message below
+    setChecking(true);
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => {
-      fetch(`/api/publish?check=${encodeURIComponent(h)}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => d && setCheck({ valid: !!d.valid, available: !!d.available }))
-        .catch(() => {});
+      fetch(`/api/publish?check=${encodeURIComponent(normHandle)}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d) => {
+          setCheck({ available: !!d.valid && !!d.available });
+          setChecking(false);
+        })
+        .catch(() => {
+          setCheckFailed(true);
+          setChecking(false);
+        });
     }, 400);
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };
-  }, [handle, handleLocked]);
+  }, [normHandle, handleLocked]);
 
-  const handleOk = handleLocked || (!!check && check.valid && check.available);
+  const handleOk =
+    handleLocked || (isValidHandle(normHandle) && !!check && check.available);
   const canPublish = !busy && !!topic.trim() && handleOk;
+
+  // Inline status under the name field (only shown while choosing a new handle).
+  const muted = "var(--color-card-muted)";
+  const handleStatus: { text: string; tone: string } = !isValidHandle(normHandle)
+    ? { text: `Will publish as “${normHandle}” — use at least 3 letters/numbers.`, tone: muted }
+    : checking
+      ? { text: `Checking “${normHandle}”…`, tone: muted }
+      : checkFailed
+        ? { text: "Couldn’t check availability — try again.", tone: "#d66" }
+        : check && !check.available
+          ? { text: `“${normHandle}” is already taken.`, tone: "#d66" }
+          : check && check.available
+            ? { text: `Available ✓ — /note/${normHandle}/…`, tone: "var(--color-accent)" }
+            : { text: `Will publish as “${normHandle}”.`, tone: muted };
+
+  // Why the button is disabled (so it's never an unexplained dead end).
+  const disabledReason = busy
+    ? null
+    : !topic.trim()
+      ? "Add a topic to publish."
+      : !handleOk
+        ? "Choose an available publisher name above."
+        : null;
 
   async function publish() {
     setBusy(true);
@@ -66,8 +104,11 @@ export default function PublishModal({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           noteId: note.id,
-          handle: handleLocked ? undefined : handle.trim().toLowerCase(),
+          handle: handleLocked ? undefined : normHandle,
           topic: topic.trim(),
+          // Sent so the server can upsert a note that hasn't been auto-saved yet.
+          title: note.title ?? "",
+          body: note.body ?? "",
         }),
       });
       const d = await res.json().catch(() => ({}));
@@ -107,6 +148,24 @@ export default function PublishModal({
     height: "34px",
     outline: "none",
   };
+  // Primary action style that stays readable in BOTH themes (mirrors EditTaskModal's
+  // Save): dark surface fill + accent text. cnsl-btn-primary can't be used here —
+  // in the mono theme its accent bg and card-bg text both resolve to lavender
+  // (light-on-light / "white on white"). Disabled = visible outlined/muted state.
+  const primaryBtn = (enabled: boolean): React.CSSProperties => ({
+    height: "45.5px",
+    minWidth: "87px",
+    padding: "0 var(--space-5)",
+    borderRadius: "var(--radius-button)",
+    border: "none",
+    fontWeight: 700,
+    fontSize: "var(--text-base)",
+    fontFamily: "var(--font-family)",
+    cursor: enabled ? "pointer" : "not-allowed",
+    background: enabled ? "var(--color-surface)" : "transparent",
+    color: enabled ? "var(--color-accent)" : "var(--color-card-muted)",
+    boxShadow: enabled ? "none" : "inset 0 0 0 1px var(--color-card-border)",
+  });
 
   const fullUrl =
     resultUrl && typeof window !== "undefined"
@@ -136,7 +195,7 @@ export default function PublishModal({
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="button"
-              className="cnsl-btn-primary"
+              style={primaryBtn(true)}
               onClick={() => {
                 navigator.clipboard?.writeText(fullUrl);
                 setCopied(true);
@@ -165,10 +224,10 @@ export default function PublishModal({
           <div>
             <label style={labelStyle}>Publisher name</label>
             <input
-              value={handle}
+              value={handleLocked ? normHandle : handle}
               onChange={(e) => setHandle(e.target.value)}
               disabled={handleLocked}
-              placeholder="e.g. dom"
+              placeholder="e.g. aisu-studio"
               autoCapitalize="none"
               autoCorrect="off"
               style={{ ...inputStyle, opacity: handleLocked ? 0.7 : 1 }}
@@ -178,24 +237,15 @@ export default function PublishModal({
                 Set once — can&apos;t be changed.
               </p>
             ) : (
-              handle.trim() &&
-              check && (
+              handle.trim() && (
                 <p
                   style={{
                     margin: "6px 0 0",
                     fontSize: "var(--text-sm)",
-                    color: !check.valid
-                      ? "var(--color-card-muted)"
-                      : check.available
-                        ? "var(--color-accent)"
-                        : "#d66",
+                    color: handleStatus.tone,
                   }}
                 >
-                  {!check.valid
-                    ? "3–32 chars: lowercase letters, numbers, hyphens."
-                    : check.available
-                      ? "Available ✓"
-                      : "Already taken."}
+                  {handleStatus.text}
                 </p>
               )
             )}
@@ -231,16 +281,27 @@ export default function PublishModal({
           )}
 
           <div className="cnsl-divider" />
+          {!canPublish && disabledReason && (
+            <p
+              style={{
+                margin: "0 0 -4px",
+                textAlign: "right",
+                fontSize: "var(--text-sm)",
+                color: "var(--color-card-muted)",
+              }}
+            >
+              {disabledReason}
+            </p>
+          )}
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
             <button type="button" className="cnsl-btn-ghost" onClick={onClose}>
               Cancel
             </button>
             <button
               type="button"
-              className="cnsl-btn-primary"
+              style={primaryBtn(canPublish)}
               onClick={publish}
               disabled={!canPublish}
-              style={{ opacity: canPublish ? 1 : 0.5 }}
             >
               {busy ? "Publishing…" : "Publish"}
             </button>
