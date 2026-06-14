@@ -25,7 +25,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Strip server-only files (the static export can't include them)
-        run: rm -rf app/api app/auth app/login middleware.ts
+        run: rm -rf app/api app/auth app/login app/note middleware.ts
       - name: Build static demo
         env:
           GHPAGES: "true"
