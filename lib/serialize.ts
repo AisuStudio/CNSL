@@ -5,6 +5,7 @@ import type { Note } from "./notes";
 import type { CalendarEvent } from "./calendar";
 import type { Project } from "./projects";
 import type { Schedule, Section, Activity } from "./scheduler";
+import type { Message } from "./chat";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
@@ -14,6 +15,7 @@ import type {
   Project as DbProject,
   Schedule as DbSchedule,
   Activity as DbActivity,
+  Message as DbMessage,
   Prisma,
 } from "@prisma/client";
 
@@ -261,5 +263,19 @@ export function activityToDb(a: Activity, boardId: string) {
     note: a.note ?? null,
     createdAt: a.createdAt ? new Date(a.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
+  };
+}
+
+// ─── Chat (Phase 2) ─────────────────────────────────────────────────────────
+// DB row → app Message. senderId is the real user id (uuid); the client decides
+// which messages are "mine" by comparing senderId to meUserId from the API
+// (the Phase-1 mock used the "me" sentinel instead).
+export function messageFromDb(row: DbMessage): Message {
+  return {
+    id: row.id,
+    conversationId: row.conversationId,
+    senderId: row.senderId,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
   };
 }
