@@ -38,6 +38,14 @@ function cellBg(isToday: boolean, inMonth: boolean): string {
   return `color-mix(in srgb, var(--color-accent) ${pct}%, transparent)`;
 }
 
+// #236 — emphasise the current week: its day numbers are bold, other weeks
+// regular. Monday-anchored week key (week starts Monday, like the grid).
+function weekKey(d: Date): number {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // back to Monday
+  return x.getTime();
+}
+
 // Move the anchor by one unit of the current view.
 function stepAnchor(anchor: Date, view: CalView, dir: number): Date {
   const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
@@ -90,6 +98,7 @@ function DayCell({
 }) {
   const inMonth = refMonth === null ? true : day.getMonth() === refMonth;
   const isToday = sameDay(day, today);
+  const currentWeek = weekKey(day) === weekKey(today); // #236
   return (
     <button
       type="button"
@@ -113,7 +122,7 @@ function DayCell({
       <span
         style={{
           fontSize: "12px",
-          fontWeight: inMonth ? 700 : 400,
+          fontWeight: currentWeek ? 700 : 400, // #236 — current week bold
           color: "var(--color-text-primary)",
           flexShrink: 0,
         }}
@@ -430,10 +439,13 @@ function ViewMenu({ view, onPick }: { view: CalView; onPick: (v: CalView) => voi
                   padding: "0 10px",
                   borderRadius: "6px",
                   border: "none",
+                  // #261: this popover sits on the dark --color-surface, but
+                  // .cnsl-calendar overrides --color-text-primary to near-black
+                  // (dark-on-dark). Use the light mono directly so it's legible.
                   background: active
-                    ? "color-mix(in srgb, var(--color-text-primary) 12%, transparent)"
+                    ? "color-mix(in srgb, var(--mono) 14%, transparent)"
                     : "transparent",
-                  color: "var(--color-text-primary)",
+                  color: "var(--mono)",
                   fontFamily: "var(--font-family)",
                   fontSize: "var(--text-sm)",
                   fontWeight: active ? 700 : 400,
