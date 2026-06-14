@@ -347,7 +347,7 @@ export default function NotePad({
                   href={publicUrl}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: "var(--color-accent)" }}
+                  style={{ color: "inherit", textDecoration: "underline" }}
                 >
                   {publicUrl}
                 </a>
