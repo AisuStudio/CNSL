@@ -572,7 +572,10 @@ export default function Home() {
     if (params.get("theme") !== "classic") {
       root.setAttribute("data-theme", "mono");
       const hue = params.get("hue");
-      if (hue) root.style.setProperty("--mono", hue);
+      // Only accept a plain #rrggbb / #rgb hex (S5 — don't inject arbitrary CSS).
+      if (hue && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hue)) {
+        root.style.setProperty("--mono", hue);
+      }
     }
     return () => {
       root.removeAttribute("data-theme");

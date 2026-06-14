@@ -76,13 +76,13 @@ export default function DatenschutzPage() {
       <LegalSection
         title="10. Speicherdauer"
         paras={[
-          "Kontodaten werden bis zur Löschung deines Kontos bzw. bis zum Ende der Beta gespeichert. Server-Logs werden nur kurzfristig vorgehalten. Hinweis: Während der Beta können Daten jederzeit zurückgesetzt oder gelöscht werden – bitte sichere wichtige Inhalte über die Exportfunktion.",
+          "Kontodaten werden gespeichert, bis du dein Konto löschst (jederzeit selbst über Einstellungen → „Delete account“) oder die Beta endet. Bei einer Löschung werden alle deine Inhalte sofort aus der Live-Datenbank entfernt; aus unseren verschlüsselten Sicherungskopien werden sie im Zuge der regelmäßigen Backup-Rotation spätestens innerhalb von 30 Tagen entfernt. Server-Logs werden nur kurzfristig vorgehalten. Hinweis: Während der Beta können Daten zurückgesetzt oder gelöscht werden – bitte sichere wichtige Inhalte über die Exportfunktion (Einstellungen → „Download my data“).",
         ]}
       />
       <LegalSection
         title="11. Deine Rechte"
         paras={[
-          "Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO). Wende dich dafür an CNSL@aisu.studio.",
+          "Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO). Löschung und Datenexport kannst du jederzeit selbst in den Einstellungen auslösen („Delete account“ bzw. „Download my data“); für alle weiteren Anliegen wende dich an CNSL@aisu.studio.",
         ]}
       />
       <LegalSection
@@ -155,13 +155,13 @@ export default function DatenschutzPage() {
       <LegalSection
         title="10. Retention"
         paras={[
-          "Account data is stored until you delete your account or until the beta ends. Server logs are kept only for a short period. Note: during the beta, data may be reset or deleted at any time — please back up important content via the export function.",
+          "Account data is stored until you delete your account (anytime yourself via Settings → “Delete account”) or until the beta ends. On deletion, all your content is removed from the live database immediately; it is purged from our encrypted backups as part of regular backup rotation, at the latest within 30 days. Server logs are kept only for a short period. Note: during the beta, data may be reset or deleted at any time — please back up important content via the export function (Settings → “Download my data”).",
         ]}
       />
       <LegalSection
         title="11. Your rights"
         paras={[
-          "You have the right to access (Art. 15), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20), and objection (Art. 21 GDPR). To exercise them, contact CNSL@aisu.studio.",
+          "You have the right to access (Art. 15), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20), and objection (Art. 21 GDPR). You can trigger erasure and data export yourself anytime in Settings (“Delete account” / “Download my data”); for anything else, contact CNSL@aisu.studio.",
         ]}
       />
       <LegalSection

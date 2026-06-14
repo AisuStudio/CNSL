@@ -71,7 +71,7 @@ export default function RootLayout({
             optional ?hue. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);var mono=p==="/"||p.indexOf("/app")===0||p.indexOf("/note")===0||p==="/impressum"||p==="/datenschutz"||p==="/terms"||p==="/story";if(mono&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h)r.style.setProperty("--mono",h);}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);var mono=p==="/"||p.indexOf("/app")===0||p.indexOf("/note")===0||p==="/impressum"||p==="/datenschutz"||p==="/terms"||p==="/story";if(mono&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h&&/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(h))r.style.setProperty("--mono",h);}}catch(e){}})();`,
           }}
         />
         {children}

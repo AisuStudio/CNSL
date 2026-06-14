@@ -15,6 +15,8 @@ function AccountSection() {
   const [email, setEmail] = useState<string | null>(null);
   const [pw, setPw] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth
@@ -37,11 +39,61 @@ function AccountSection() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+  // GDPR Art. 20 — download everything we hold about this account as JSON.
+  async function downloadMyData() {
+    setMsg(null);
+    try {
+      const res = await fetch("/api/account");
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cnsl-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setMsg("Export failed — please try again.");
+    }
+  }
+  // GDPR Art. 17 — permanently erase the account and all its data.
+  async function deleteAccount() {
+    setDeleting(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      window.location.href = "/"; // account gone — leave the app
+    } catch {
+      setDeleting(false);
+      setMsg("Deletion failed — please contact CNSL@aisu.studio.");
+    }
+  }
   const btn: React.CSSProperties = {
     height: "30px",
     padding: "0 12px",
     fontSize: "var(--text-modal)",
     flexShrink: 0,
+  };
+  const dangerOutline: React.CSSProperties = {
+    ...btn,
+    color: "#e0709a",
+    background: "transparent",
+    border: "1px solid #e0709a",
+    borderRadius: "6px",
+    cursor: "pointer",
+    alignSelf: "flex-start",
+  };
+  const dangerSolid: React.CSSProperties = {
+    ...btn,
+    color: "#fff",
+    background: "#b3261e",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: 700,
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -68,6 +120,42 @@ function AccountSection() {
           Set
         </button>
       </div>
+
+      {/* Your data (GDPR) */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <button type="button" onClick={downloadMyData} className="cnsl-btn-ghost" style={btn}>
+          Download my data
+        </button>
+      </div>
+
+      {/* Danger zone — permanent account deletion */}
+      {!confirmDelete ? (
+        <button type="button" onClick={() => setConfirmDelete(true)} style={dangerOutline}>
+          Delete account…
+        </button>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <span style={{ fontSize: "11px", color: "var(--color-card-muted)", lineHeight: 1.5 }}>
+            This permanently deletes your account and all tasks, notes, events and
+            logs. This cannot be undone.
+          </span>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button type="button" disabled={deleting} onClick={deleteAccount} style={dangerSolid}>
+              {deleting ? "Deleting…" : "Yes, delete everything"}
+            </button>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => setConfirmDelete(false)}
+              className="cnsl-btn-ghost"
+              style={btn}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {msg && (
         <span style={{ fontSize: "11px", color: "var(--color-card-muted)" }}>{msg}</span>
       )}
