@@ -172,15 +172,38 @@ export default function NotePad({
             >
               <span
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                   color: active ? "var(--color-text-primary)" : "var(--color-surface)",
                   fontSize: "var(--text-base)",
                   fontWeight: 500,
-                  whiteSpace: "nowrap",
                   overflow: "hidden",
-                  textOverflow: "ellipsis",
                 }}
               >
-                {n.title || "Untitled"}
+                <span
+                  style={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {n.title || "Untitled"}
+                </span>
+                {n.published && (
+                  <span
+                    title="Live — published"
+                    aria-label="Published"
+                    style={{
+                      flexShrink: 0,
+                      fontSize: "9px",
+                      lineHeight: 1,
+                      color: "var(--color-accent)",
+                    }}
+                  >
+                    ●
+                  </span>
+                )}
               </span>
               <span
                 style={{

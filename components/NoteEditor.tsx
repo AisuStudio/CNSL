@@ -8,6 +8,8 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { Markdown } from "tiptap-markdown";
+import type { MarkdownSerializerState } from "@tiptap/pm/markdown";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import NoteToolbar from "./NoteToolbar";
 
 // Paragraph that carries an optional `class` (used by the "Caption" type style).
@@ -21,6 +23,27 @@ const ClassParagraph = Paragraph.extend({
         default: null,
         parseHTML: (el) => el.getAttribute("class"),
         renderHTML: (attrs) => (attrs.class ? { class: attrs.class } : {}),
+      },
+    };
+  },
+  // Preserve blank paragraphs (the user presses Enter to create vertical spacing).
+  // Markdown has no representation for "empty paragraph", so the default serializer
+  // drops them on the round-trip (getMarkdown → setContent) and the spacing is lost
+  // after leaving the note. Emit a `&nbsp;` paragraph instead so it survives the
+  // reparse (markdown-it → a paragraph holding a non-breaking space, which still
+  // counts as empty here → re-emits `&nbsp;`) and renders as a gap on the public page.
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: MarkdownSerializerState, node: ProseMirrorNode) {
+          if (node.textContent.trim() === "") {
+            state.write("&nbsp;");
+            state.closeBlock(node);
+            return;
+          }
+          state.renderInline(node);
+          state.closeBlock(node);
+        },
       },
     };
   },
