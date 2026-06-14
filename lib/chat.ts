@@ -235,6 +235,40 @@ export function newInvitedContact(email: string, name?: string): Contact {
   };
 }
 
+// ─── API mapping (Phase 2 — real server path) ────────────────────────────────
+export interface ApiContact {
+  userId: string;
+  name: string;
+  email: string | null;
+}
+export interface ApiPendingInvite {
+  id: string;
+  email: string;
+  role: string;
+}
+
+// GET /api/chat contacts + my pending invites → client Contact[]. Real contacts
+// key by userId; pending invites render with the "Invited" badge (id = inviteId).
+export function contactsFromApi(
+  contacts: ApiContact[],
+  pending: ApiPendingInvite[]
+): Contact[] {
+  return [
+    ...contacts.map((c) => ({
+      id: c.userId,
+      userId: c.userId,
+      name: c.name,
+      email: c.email ?? undefined,
+    })),
+    ...pending.map((i) => ({
+      id: i.id,
+      name: i.email,
+      email: i.email,
+      pending: true,
+    })),
+  ];
+}
+
 // ─── Persistence (own key, isolated from the board store) ─────────────────────
 const KEY = "cnsl.chat.v1";
 

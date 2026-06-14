@@ -43,6 +43,7 @@ export default function ChatView({
   conversations,
   messages,
   projects = [],
+  meId = ME,
   onSend,
   onStartConversation,
   onDeleteConversation,
@@ -52,9 +53,10 @@ export default function ChatView({
   conversations: Conversation[];
   messages: Message[];
   projects?: string[];
+  meId?: string; // which messages are "mine" (demo: ME sentinel; real: my user id)
   onSend: (conversationId: string, body: string) => void;
-  onStartConversation: (contactId: string) => string; // returns conversation id
-  onDeleteConversation: (id: string) => void;
+  onStartConversation: (contactId: string) => string | Promise<string>; // conv id
+  onDeleteConversation?: (id: string) => void; // demo only (no server delete yet)
   onInvite: (data: {
     email: string;
     name: string;
@@ -101,9 +103,9 @@ export default function ChatView({
   const showList = !isMobile || !selected;
   const showThread = !isMobile || !!selected;
 
-  function openContact(contactId: string) {
-    const id = onStartConversation(contactId);
-    setSelectedId(id);
+  async function openContact(contactId: string) {
+    const id = await onStartConversation(contactId);
+    if (id) setSelectedId(id);
   }
 
   function send(e: React.FormEvent) {
@@ -174,7 +176,7 @@ export default function ChatView({
                   </div>
                   <div style={rowSnippet}>
                     {last
-                      ? `${last.senderId === ME ? "You: " : ""}${last.body}`
+                      ? `${last.senderId === meId ? "You: " : ""}${last.body}`
                       : "No messages yet"}
                   </div>
                 </div>
@@ -285,6 +287,7 @@ export default function ChatView({
                 >
                   {conversationTitle(selected, contacts)}
                 </span>
+                {onDeleteConversation && (
                 <button
                   type="button"
                   onClick={() => {
@@ -305,6 +308,7 @@ export default function ChatView({
                 >
                   Delete
                 </button>
+                )}
               </div>
 
               {/* Messages */}
@@ -326,7 +330,7 @@ export default function ChatView({
                   </div>
                 )}
                 {threadMessages.map((m) => {
-                  const mine = m.senderId === ME;
+                  const mine = m.senderId === meId;
                   return (
                     <div
                       key={m.id}

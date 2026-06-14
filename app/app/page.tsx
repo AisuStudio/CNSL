@@ -55,6 +55,8 @@ import {
   newMessage,
   newInvitedContact,
   dmWith,
+  ME,
+  contactsFromApi,
 } from "@/lib/chat";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { diffChangedTasks, mergeResync, reconcileSave } from "@/lib/boardSync";
@@ -115,11 +117,18 @@ export default function Home() {
   const [playerSchedule, setPlayerSchedule] = useState<Schedule | null>(null);
   // Chat tool — Phase 1: UI shell on a device-local localStorage key (own store,
   // isolated from the board save path). Real messaging backend = Phase 2.
-  const [contacts, setContacts] = useState<Contact[]>(CHAT_SEED.contacts);
-  const [conversations, setConversations] = useState<Conversation[]>(
-    CHAT_SEED.conversations
+  // Demo seeds the mock; the real app starts empty and loads from /api/chat.
+  const [contacts, setContacts] = useState<Contact[]>(
+    DEMO ? CHAT_SEED.contacts : []
   );
-  const [messages, setMessages] = useState<Message[]>(CHAT_SEED.messages);
+  const [conversations, setConversations] = useState<Conversation[]>(
+    DEMO ? CHAT_SEED.conversations : []
+  );
+  const [messages, setMessages] = useState<Message[]>(
+    DEMO ? CHAT_SEED.messages : []
+  );
+  // Which messages are "mine": the ME sentinel in demo, my real user id otherwise.
+  const [meUserId, setMeUserId] = useState<string>(ME);
   const [chatHydrated, setChatHydrated] = useState(false);
   // A1 — open a specific note from outside the NotePad (e.g. a task's NOTES list).
   const [focusNoteId, setFocusNoteId] = useState<string | null>(null);
@@ -548,21 +557,46 @@ export default function Home() {
     setProjectList((prev) => ensureProjects(prev, names));
   }, [tasks, notes, events, schedules, activities, hydrated]);
 
-  // Chat (Phase 1) — own localStorage store, deliberately separate from the
-  // board PersistedState / server save path (chat is client-only mock data, so
-  // it must never touch the task save/sync machinery). Hydration gate is STATE
-  // (not a ref) so the save effect can't fire with the stale seed before load.
-  useEffect(() => {
-    const c = loadChat();
-    if (c && c.contacts.length) {
-      setContacts(c.contacts);
-      setConversations(c.conversations);
-      setMessages(c.messages);
+  // Chat load. Demo → localStorage mock. Real → GET /api/chat (server-backed:
+  // conversations, messages, contacts-from-membership, pending invites, meUserId).
+  const loadChatFromServer = useCallback(async () => {
+    try {
+      const res = await fetch("/api/chat");
+      if (!res.ok) return;
+      const d = await res.json();
+      setMeUserId(typeof d.meUserId === "string" ? d.meUserId : ME);
+      setContacts(contactsFromApi(d.contacts ?? [], d.pendingInvites ?? []));
+      setConversations(d.conversations ?? []);
+      setMessages(d.messages ?? []);
+    } catch {
+      /* keep whatever we have */
     }
-    setChatHydrated(true);
   }, []);
   useEffect(() => {
-    if (!chatHydrated) return;
+    if (DEMO) {
+      // Own localStorage store, separate from the board save path (mock data).
+      // Hydration gate is STATE so the save effect can't fire with a stale seed.
+      const c = loadChat();
+      if (c && c.contacts.length) {
+        setContacts(c.contacts);
+        setConversations(c.conversations);
+        setMessages(c.messages);
+      }
+      setChatHydrated(true);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      await loadChatFromServer();
+      if (!cancelled) setChatHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadChatFromServer]);
+  // Demo only: persist the mock to localStorage. The real app is server-backed.
+  useEffect(() => {
+    if (!DEMO || !chatHydrated) return;
     saveChat({ contacts, conversations, messages });
   }, [contacts, conversations, messages, chatHydrated]);
 
@@ -797,6 +831,59 @@ export default function Home() {
       supabase.removeChannel(channel);
     };
   }, [hydrated, resyncFromServer]);
+
+  // Chat realtime: deliver new messages live to participants (RLS-scoped by
+  // data/phase-chat.sql). The sender's own echo dedupes against the optimistic
+  // append by id; a message for an unknown conversation (someone DM'd me first)
+  // triggers a reload to pick up the new conversation.
+  useEffect(() => {
+    if (DEMO || !chatHydrated) return;
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel("chat-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "Message" },
+        (payload) => {
+          const r = payload.new as {
+            id: string;
+            conversationId: string;
+            senderId: string;
+            body: string;
+            createdAt: string;
+          };
+          setMessages((prev) =>
+            prev.some((m) => m.id === r.id)
+              ? prev
+              : [
+                  ...prev,
+                  {
+                    id: r.id,
+                    conversationId: r.conversationId,
+                    senderId: r.senderId,
+                    body: r.body,
+                    createdAt: r.createdAt,
+                  },
+                ]
+          );
+          setConversations((prev) => {
+            if (!prev.some((c) => c.id === r.conversationId)) {
+              void loadChatFromServer(); // new conversation → reload
+              return prev;
+            }
+            return prev.map((c) =>
+              c.id === r.conversationId
+                ? { ...c, updatedAt: r.createdAt }
+                : c
+            );
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatHydrated, loadChatFromServer]);
 
   // Quick-adjust: patch a single field of one task.
   // When status flips to/from "done", maintain completedAt (#123) and, on
@@ -1121,24 +1208,61 @@ export default function Home() {
     setEventModal(null);
   }
 
-  // ─── Chat (Phase 1 — 1:1 DMs; scales to project channels later) ──
-  function startConversation(contactId: string): string {
+  // ─── Chat (demo: localStorage mock · real: /api/chat server path) ──
+  // Returns a conversation id. Demo + reusing an existing DM are synchronous;
+  // creating a real DM hits the server, so the real-new case returns a Promise.
+  function startConversation(contactId: string): string | Promise<string> {
     const existing = dmWith(conversations, contactId);
     if (existing) return existing.id; // never open a duplicate DM
-    const conv = newConversationWith(contactId);
-    setConversations((prev) => [...prev, conv]);
-    return conv.id;
+    if (DEMO) {
+      const conv = newConversationWith(contactId);
+      setConversations((prev) => [...prev, conv]);
+      return conv.id;
+    }
+    return (async () => {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "start", contactUserId: contactId }),
+        });
+        if (!res.ok) {
+          if (res.status === 403)
+            window.alert(
+              "You can only chat with people you share a project with."
+            );
+          return "";
+        }
+        const d = await res.json();
+        const conv = d.conversation as Conversation;
+        setConversations((prev) =>
+          prev.some((c) => c.id === conv.id) ? prev : [...prev, conv]
+        );
+        return conv.id;
+      } catch {
+        return "";
+      }
+    })();
   }
   function sendMessage(conversationId: string, body: string) {
     const msg = newMessage(conversationId, body);
+    if (!DEMO) msg.senderId = meUserId; // real: sender is the logged-in user
     setMessages((prev) => [...prev, msg]);
     setConversations((prev) =>
       prev.map((c) =>
         c.id === conversationId ? { ...c, updatedAt: msg.createdAt } : c
       )
     );
+    if (DEMO) return;
+    // Persist; the Realtime echo (same id) dedupes against this optimistic append.
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "send", id: msg.id, conversationId, body }),
+    }).catch(() => {});
   }
   function deleteConversation(id: string) {
+    // Demo only (no server delete in the MVP); wired to ChatView only in demo.
     setConversations((prev) => prev.filter((c) => c.id !== id));
     setMessages((prev) => prev.filter((m) => m.conversationId !== id));
   }
@@ -1148,9 +1272,28 @@ export default function Home() {
     role: string;
     project: string;
   }) {
-    // Mock: add a pending contact so the invite UX is reviewable. Phase 2 hooks
-    // this to the real project Invite (projectId, email, role) + accept-on-login.
-    setContacts((prev) => [...prev, newInvitedContact(data.email, data.name)]);
+    if (DEMO) {
+      // Mock: add a pending contact so the invite UX is reviewable.
+      setContacts((prev) => [...prev, newInvitedContact(data.email, data.name)]);
+      return;
+    }
+    // Real: reuse the project Invite API (/api/share). Resolve the project name
+    // to its id via the registry; the invitee becomes a contact on accept-on-login.
+    const projectId = projectList.find((p) => p.name === data.project)?.id;
+    if (!projectId) {
+      window.alert("Pick a project to invite into.");
+      return;
+    }
+    fetch("/api/share", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ projectId, email: data.email, role: data.role }),
+    })
+      .then((res) => {
+        if (res.ok) void loadChatFromServer();
+        else window.alert("Invite failed.");
+      })
+      .catch(() => {});
   }
 
   // ─── Scheduler (Editor + Player) ────────────────────────────
@@ -1721,9 +1864,10 @@ export default function Home() {
             conversations={conversations}
             messages={messages}
             projects={projects}
+            meId={meUserId}
             onSend={sendMessage}
             onStartConversation={startConversation}
-            onDeleteConversation={deleteConversation}
+            onDeleteConversation={DEMO ? deleteConversation : undefined}
             onInvite={inviteContact}
           />
         )}
