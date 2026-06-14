@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
-import { LogIcon, TaskTrackerIcon, NotePadIcon, TodayIcon, StatsIcon, DragDotsIcon } from "@/components/icons";
+import { LogIcon, TaskTrackerIcon, NotePadIcon, CalIcon, SchedulerIcon, ChatIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BETA_CODE } from "@/lib/auth-config";
 
@@ -15,16 +15,14 @@ import { BETA_CODE } from "@/lib/auth-config";
    (CNSL Design/Homepage/Start). The app itself lives at /app.
    ─────────────────────────────────────────────────────────── */
 
+// All tools are live now → one feature box, no "Coming Soon" / "More".
 const TOOLS = [
-  { icon: LogIcon, label: "Blurp Logger" },
   { icon: TaskTrackerIcon, label: "Tracker" },
   { icon: NotePadIcon, label: "Note Pad" },
-];
-
-const SOON = [
-  { icon: TodayIcon, label: "Calendar" },
-  { icon: StatsIcon, label: "Scheduler" },
-  { icon: DragDotsIcon, label: "More" },
+  { icon: CalIcon, label: "Calendar" },
+  { icon: SchedulerIcon, label: "Scheduler" },
+  { icon: ChatIcon, label: "Chat" },
+  { icon: LogIcon, label: "Blurp Logger" },
 ];
 
 export default function StartPage() {
@@ -281,13 +279,6 @@ function ToolsPanel() {
       <SectionLabel>Tools</SectionLabel>
       <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
         {TOOLS.map((t) => row(t.icon, t.label))}
-      </ul>
-
-      <div style={{ height: "1px", background: "var(--color-border)", margin: "12px 0" }} />
-
-      <SectionLabel>Coming Soon</SectionLabel>
-      <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
-        {SOON.map((t) => row(t.icon, t.label, true))}
       </ul>
     </div>
   );
