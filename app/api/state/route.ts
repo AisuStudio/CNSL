@@ -44,48 +44,51 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { trackerId, notesId } = await ensureUserBoards(user.id, user.email);
-  const [tasks, log, board, notes, events, projects, schedules, activities] = await Promise.all([
-    prisma.task.findMany({
+
+  // S4 — read as `authenticated` so RLS scopes the reads at the DB level too
+  // (defence-in-depth; GET is already app-scoped). Queries run SEQUENTIALLY:
+  // Prisma interactive transactions don't allow concurrent queries on one tx.
+  const loaded = await withUser(user.id, async (tx) => {
+    const tasks = await tx.task.findMany({
       where: { boardId: trackerId },
       include: { timeEntries: true },
-    }),
-    prisma.logEntry.findMany({ where: { userId: user.id }, orderBy: { ts: "asc" } }),
-    prisma.board.findUnique({ where: { id: trackerId } }),
-    prisma.note.findMany({ where: { boardId: notesId }, orderBy: { updatedAt: "desc" } }),
+    });
+    const log = await tx.logEntry.findMany({ where: { userId: user.id }, orderBy: { ts: "asc" } });
+    const board = await tx.board.findUnique({ where: { id: trackerId } });
+    const notes = await tx.note.findMany({ where: { boardId: notesId }, orderBy: { updatedAt: "desc" } });
     // Calendar events hang off the tracker board (Phase B).
-    prisma.event.findMany({ where: { boardId: trackerId }, orderBy: { start: "asc" } }),
+    const events = await tx.event.findMany({ where: { boardId: trackerId }, orderBy: { start: "asc" } });
     // Project registry hangs off the tracker board (Phase C1).
-    prisma.project.findMany({ where: { boardId: trackerId }, orderBy: { name: "asc" } }),
+    const projects = await tx.project.findMany({ where: { boardId: trackerId }, orderBy: { name: "asc" } });
     // Scheduler schedules + activities hang off the tracker board (Phase 2).
-    prisma.schedule.findMany({ where: { boardId: trackerId }, orderBy: { createdAt: "asc" } }),
-    prisma.activity.findMany({ where: { boardId: trackerId }, orderBy: { startedAt: "desc" } }),
-  ]);
+    const schedules = await tx.schedule.findMany({ where: { boardId: trackerId }, orderBy: { createdAt: "asc" } });
+    const activities = await tx.activity.findMany({ where: { boardId: trackerId }, orderBy: { startedAt: "desc" } });
 
-  // C4 — project sharing: also load rows from projects shared WITH this user
-  // (their `projectId` is in one of the user's ProjectMember rows). These live
-  // in OTHER owners' boards. Merge them in (dedupe by id) so the client renders
-  // the shared project alongside the user's own — read-only if role = viewer.
-  const memberships = await prisma.projectMember.findMany({
-    where: { userId: user.id },
-    select: { projectId: true, role: true },
+    // C4 — project sharing: also load rows from projects shared WITH this user
+    // (their `projectId` is in one of the user's ProjectMember rows). These live
+    // in OTHER owners' boards. Merge them in (dedupe by id) so the client renders
+    // the shared project alongside the user's own — read-only if role = viewer.
+    const memberships = await tx.projectMember.findMany({
+      where: { userId: user.id },
+      select: { projectId: true, role: true },
+    });
+    const memberProjectIds = memberships.map((m) => m.projectId);
+    let sharedTaskRows: typeof tasks = [];
+    let sharedNoteRows: typeof notes = [];
+    let sharedEventRows: typeof events = [];
+    let sharedProjectRows: typeof projects = [];
+    if (memberProjectIds.length) {
+      sharedTaskRows = await tx.task.findMany({
+        where: { projectId: { in: memberProjectIds } },
+        include: { timeEntries: true },
+      });
+      sharedNoteRows = await tx.note.findMany({ where: { projectId: { in: memberProjectIds } } });
+      sharedEventRows = await tx.event.findMany({ where: { projectId: { in: memberProjectIds } } });
+      sharedProjectRows = await tx.project.findMany({ where: { id: { in: memberProjectIds } } });
+    }
+    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows };
   });
-  const memberProjectIds = memberships.map((m) => m.projectId);
-  let sharedTaskRows: typeof tasks = [];
-  let sharedNoteRows: typeof notes = [];
-  let sharedEventRows: typeof events = [];
-  let sharedProjectRows: typeof projects = [];
-  if (memberProjectIds.length) {
-    [sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows] =
-      await Promise.all([
-        prisma.task.findMany({
-          where: { projectId: { in: memberProjectIds } },
-          include: { timeEntries: true },
-        }),
-        prisma.note.findMany({ where: { projectId: { in: memberProjectIds } } }),
-        prisma.event.findMany({ where: { projectId: { in: memberProjectIds } } }),
-        prisma.project.findMany({ where: { id: { in: memberProjectIds } } }),
-      ]);
-  }
+  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows } = loaded;
   const dedupe = <T extends { id: string }>(own: T[], shared: T[]): T[] => {
     const seen = new Set(own.map((r) => r.id));
     return [...own, ...shared.filter((r) => !seen.has(r.id))];
