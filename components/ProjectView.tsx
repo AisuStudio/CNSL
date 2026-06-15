@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
 import { PlusIcon, ShareIcon } from "./icons";
 import TaskLine from "./TaskLine";
@@ -75,6 +75,29 @@ export default function ProjectView({
     setCollapsed(read(COLLAPSE_KEY));
     setExpandedTopics(read("cnsl.expandedTopics"));
   }, []);
+
+  // #295 — a project with a RUNNING task must never start collapsed after
+  // login/reload (a hidden running timer is too easy to forget). Once tasks have
+  // loaded, drop any running-task project from the collapsed set. In-memory only:
+  // the saved collapse preference is kept for when nothing is running, and a ref
+  // guard makes this a one-shot so the user can still manually re-collapse it.
+  const didAutoExpandRunning = useRef(false);
+  useEffect(() => {
+    if (didAutoExpandRunning.current) return;
+    const runningProjects = new Set(
+      tasks.filter((t) => t.isTracking).map((t) => t.project || "—")
+    );
+    // Don't burn the one-shot guard before the real (async-loaded) tasks arrive:
+    // only trip it once there's actually a running project to expand. (The first
+    // render may carry an SSR/seed snapshot with nothing running yet.)
+    if (!runningProjects.size) return;
+    didAutoExpandRunning.current = true;
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      for (const p of runningProjects) next.delete(p);
+      return next;
+    });
+  }, [tasks]);
 
   const topicKey = (p: string, t: string) => `${p}\0${t}`;
   function toggleTopic(p: string, t: string) {
