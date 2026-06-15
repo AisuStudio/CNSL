@@ -106,6 +106,7 @@ export async function DELETE() {
   });
   const boardIds = boards.map((b) => b.id);
 
+  try {
   await prisma.$transaction(
     async (tx) => {
       // Project ids owned by the user (their projects live on their boards).
@@ -172,7 +173,10 @@ export async function DELETE() {
         await tx.project.deleteMany(byBoard);
         await tx.schedule.deleteMany(byBoard);
         await tx.activity.deleteMany(byBoard);
-        await tx.folder.deleteMany(byBoard);
+        // NB: Folder is handled best-effort OUTSIDE this tx — the table may not
+        // exist in every environment (notepad folders were deferred and never
+        // pushed to prod), and a missing relation here would abort the whole
+        // deletion. It has no FK, so order/atomicity don't matter for it.
         // Any members the user had invited to their own boards.
         await tx.boardMember.deleteMany({ where: { boardId: { in: boardIds } } });
       }
@@ -182,6 +186,28 @@ export async function DELETE() {
     },
     { timeout: 20_000 }
   );
+  } catch (e) {
+    // The data deletion is atomic — on any error nothing was deleted, so the
+    // account is intact. Surface the real reason (the user is deleting their own
+    // account; this also makes "contact support" actionable) instead of a blind
+    // 500.
+    console.error("[account DELETE] data deletion failed:", e);
+    return NextResponse.json(
+      { error: "deletion_failed", detail: (e as Error).message },
+      { status: 500 }
+    );
+  }
+
+  // Best-effort folder cleanup OUTSIDE the atomic tx: the Folder table may not
+  // exist in this environment (deferred feature). A failure here must not undo
+  // the successful account deletion — folders are unused and have no FK.
+  try {
+    if (boardIds.length) {
+      await prisma.folder.deleteMany({ where: { boardId: { in: boardIds } } });
+    }
+  } catch (e) {
+    console.warn("[account DELETE] folder cleanup skipped:", (e as Error).message);
+  }
 
   // Delete the auth identity last. Content is already gone (the GDPR goal); if
   // this step fails, an orphaned auth row can be retried/cleaned, not user data.
