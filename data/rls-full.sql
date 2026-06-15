@@ -18,14 +18,14 @@
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── Helfer (SECURITY DEFINER → umgehen RLS intern, verhindern Rekursion) ──
+-- Board-Zugriff = nur Owner. Board-Level-Sharing (BoardMember) ist NICHT live
+-- (die App nutzt ausschließlich ProjectMember) → bewusst nicht referenziert,
+-- damit das Skript nicht von einer evtl. fehlenden BoardMember-Tabelle abhängt.
 create or replace function public.app_board_role(bid text) returns text
   language sql stable security definer set search_path = public as $$
-  select case
-    when exists (select 1 from "Board" b where b.id = bid and b."ownerId" = auth.uid())
-      then 'owner'
-    else (select m.role::text from "BoardMember" m
-          where m."boardId" = bid and m."userId" = auth.uid() limit 1)
-  end;
+  select case when exists (
+    select 1 from "Board" b where b.id = bid and b."ownerId" = auth.uid()
+  ) then 'owner' end;
 $$;
 
 create or replace function public.app_project_role(pid text) returns text
@@ -55,7 +55,7 @@ $$;
 -- ── Grants: authenticated darf die Content-Tabellen anfassen; RLS filtert darüber. ──
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on
-  "Board","Task","Note","Event","Project","Schedule","Activity","Folder","TimeEntry","LogEntry"
+  "Board","Task","Note","Event","Project","Schedule","Activity","TimeEntry","LogEntry"
   to authenticated;
 
 -- ── Board ──
@@ -122,7 +122,8 @@ create policy project_update on "Project" for update
 drop policy if exists project_delete on "Project";
 create policy project_delete on "Project" for delete using (public.app_project_role(id) = 'owner');
 
--- ── Schedule / Activity / Folder (board-scoped only) ──
+-- ── Schedule / Activity (board-scoped only) — Folder omitted: not on prod
+--    (the app never persists folders; #220 deferred). Add when folders ship. ──
 alter table "Schedule" enable row level security;
 drop policy if exists schedule_select on "Schedule";
 create policy schedule_select on "Schedule" for select using (public.app_board_role("boardId") is not null);
@@ -136,14 +137,6 @@ drop policy if exists activity_select on "Activity";
 create policy activity_select on "Activity" for select using (public.app_board_role("boardId") is not null);
 drop policy if exists activity_write on "Activity";
 create policy activity_write on "Activity" for all
-  using (public.app_board_role("boardId") in ('owner','editor'))
-  with check (public.app_board_role("boardId") in ('owner','editor'));
-
-alter table "Folder" enable row level security;
-drop policy if exists folder_select on "Folder";
-create policy folder_select on "Folder" for select using (public.app_board_role("boardId") is not null);
-drop policy if exists folder_write on "Folder";
-create policy folder_write on "Folder" for all
   using (public.app_board_role("boardId") in ('owner','editor'))
   with check (public.app_board_role("boardId") in ('owner','editor'));
 
