@@ -241,7 +241,7 @@ export default function NoteToolbar({
         onClick={setLink}
         title="Link"
       >
-        🔗
+        <LinkIcon />
       </button>
 
       <span className="cnsl-tb-sep" aria-hidden />
@@ -281,6 +281,23 @@ export default function NoteToolbar({
         </button>
       </div>
     </div>
+  );
+}
+
+function LinkIcon() {
+  // CNSL_Icon_Link.svg — two interlocking rectangles. currentColor so it tracks
+  // the button's hover/active state (the source SVG hardcodes #93928e).
+  return (
+    <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
+      <polygon
+        points="16.5 11 5.5 11 5.5 14.5 20 14.5 20 0 5.5 0 5.5 3.5 16.5 3.5 16.5 11"
+        fill="currentColor"
+      />
+      <polygon
+        points="3.5 16.5 3.5 9 14.5 9 14.5 5.5 0 5.5 0 20 14.5 20 14.5 16.5 3.5 16.5"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
