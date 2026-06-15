@@ -419,7 +419,16 @@ export async function POST(req: NextRequest) {
         // scope writes to THIS board: never touch another board's row.
         if (existing && existing.boardId !== trackerId) continue;
         if (!existing) {
-          await tx.project.create({ data: { id: p.id, ...data } });
+          // createMany (NOT create) on purpose: Prisma's create() does
+          // INSERT ... RETURNING *, and the RETURNING re-checks the SELECT policy
+          // on the brand-new row. `project_select` is self-referential
+          // (app_project_role(id)), which can't see the row mid-insert → returns
+          // null → RLS rejects with 42501, failing the whole save. createMany
+          // emits a plain INSERT (no RETURNING), so only the board-based INSERT
+          // WITH CHECK runs (still IDOR-safe). The fresh row is re-read for the
+          // response via the privileged `prisma` below. (Task/Note/etc. don't hit
+          // this — their SELECT policy is board-based, satisfied during RETURNING.)
+          await tx.project.createMany({ data: [{ id: p.id, ...data }] });
         } else {
           const baseMs = p.updatedAt ? new Date(p.updatedAt).getTime() : null;
           if (baseMs !== null && existing.updatedAt.getTime() > baseMs) {

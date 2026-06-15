@@ -101,6 +101,46 @@ describe("reconcileSave", () => {
   });
 });
 
+// Sync-indicator quirk: after a successful save, the reconcile must leave the
+// board diff-clean against the updated baseline. Otherwise the auto-save effect
+// sees a "change" and flips the indicator back to "Nicht gespeichert" right
+// after going green (and re-POSTs an empty save). This models the page.tsx cycle
+// (reconcileSave → write savedEntries into the baseline → re-diff).
+describe("reconcileSave — board is diff-clean after a normal save", () => {
+  function applyBaseline(saved: Map<string, string>, entries: [string, string][]) {
+    const next = new Map(saved);
+    for (const [id, json] of entries) next.set(id, json);
+    return next;
+  }
+
+  it("no pending diff once the save settled (breaks the unsynced flip / empty-POST loop)", () => {
+    const base = mk({ id: "T1", description: "x", updatedAt: V1 });
+    const saved = new Map([["T1", JSON.stringify(base)]]);
+    const local = [mk({ id: "T1", description: "x", updatedAt: V1 })];
+    const sent = [mk({ id: "T1", description: "x", updatedAt: V1 })];
+    const returned = [mk({ id: "T1", description: "x", updatedAt: V2 })]; // server bumped updatedAt
+
+    const { tasks, savedEntries } = reconcileSave(local, sent, returned);
+    const nextSaved = applyBaseline(saved, savedEntries);
+
+    // The crux: post-save state diffs CLEAN → pendingChanges() would be false.
+    expect(diffChangedTasks(tasks, nextSaved)).toHaveLength(0);
+  });
+
+  it("an edit typed DURING the save is still dirty afterwards (so it re-saves)", () => {
+    const saved = new Map([["T1", JSON.stringify(mk({ id: "T1", description: "x", updatedAt: V1 }))]]);
+    const sent = [mk({ id: "T1", description: "sent", updatedAt: V1 })];
+    const local = [mk({ id: "T1", description: "typed during save", updatedAt: V1 })];
+    const returned = [mk({ id: "T1", description: "sent", updatedAt: V2 })];
+
+    const { tasks, savedEntries } = reconcileSave(local, sent, returned);
+    const nextSaved = applyBaseline(saved, savedEntries);
+
+    // Still pending → the next tick saves the in-flight edit (no lost keystroke).
+    expect(diffChangedTasks(tasks, nextSaved).map((t) => t.id)).toContain("T1");
+  });
+});
+
 // The same generic helpers now protect notes (the disappear/reappear fix).
 describe("mergeResync — notes", () => {
   it("keeps a local unsaved note edit made against the current server version", () => {

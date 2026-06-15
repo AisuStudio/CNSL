@@ -178,6 +178,11 @@ export default function Home() {
   // the Scheduler (Phase 2).
   const schedulesSavedRef = useRef<Map<string, string>>(new Map());
   const activitiesSavedRef = useRef<Map<string, string>>(new Map());
+  // log + projectColors are sent in FULL each save (not per-id diffed), so their
+  // baseline is a single JSON string. Lets the dirty-check below tell a genuine
+  // change apart from the post-save reconcile's fresh-but-identical state.
+  const logSavedRef = useRef<string>("[]");
+  const projectColorsSavedRef = useRef<string>("{}");
   // Board ids (from GET) so the live-sync effect can scope its subscription.
   const boardIds = useRef<{ trackerId?: string; notesId?: string }>({});
   // didLoad: ref guard so the load runs exactly once (Strict-Mode safe).
@@ -218,7 +223,9 @@ export default function Home() {
             (renumbered ? caught : loaded).map((t) => [t.id, JSON.stringify(t)])
           );
           setLog(data.log ?? []);
+          logSavedRef.current = JSON.stringify(data.log ?? []);
           if (data.projectColors) setProjectColors(data.projectColors);
+          projectColorsSavedRef.current = JSON.stringify(data.projectColors ?? {});
           const loadedNotes: Note[] = data.notes ?? [];
           setNotes(loadedNotes);
           // seed the notes diff baseline so the first save sends only real changes
@@ -363,6 +370,42 @@ export default function Home() {
     setHydrated(true);
   }, []);
 
+  // True iff the given snapshot has anything not yet persisted to the server:
+  // a per-id diff for tasks/notes/events/projects/schedules/activities, a full
+  // diff for log/projectColors, or a pending explicit deletion. This is the
+  // single dirty-check used by the auto-save effect, pushState and the on-hide
+  // flush — so the post-save reconcile (which replaces state with fresh-but-
+  // identical snapshots) no longer looks like a new change and can't flip the
+  // sync indicator back to "unsynced" right after a successful save.
+  const pendingChanges = useCallback(
+    (s: {
+      tasks: Task[];
+      notes: Note[];
+      events: CalendarEvent[];
+      projectList: Project[];
+      schedules: Schedule[];
+      activities: Activity[];
+      log: LogEntry[];
+      projectColors: ProjectColors;
+    }): boolean =>
+      diffChangedTasks(s.tasks, savedRef.current).length > 0 ||
+      diffChangedTasks(s.notes, notesSavedRef.current).length > 0 ||
+      diffChangedTasks(s.events, eventsSavedRef.current).length > 0 ||
+      diffChangedTasks(s.projectList, projectsSavedRef.current).length > 0 ||
+      diffChangedTasks(s.schedules, schedulesSavedRef.current).length > 0 ||
+      diffChangedTasks(s.activities, activitiesSavedRef.current).length > 0 ||
+      JSON.stringify(s.log) !== logSavedRef.current ||
+      JSON.stringify(s.projectColors) !== projectColorsSavedRef.current ||
+      deletedTaskIds.current.size > 0 ||
+      deletedNoteIds.current.size > 0 ||
+      deletedEventIds.current.size > 0 ||
+      deletedProjectIds.current.size > 0 ||
+      deletedScheduleIds.current.size > 0 ||
+      deletedActivityIds.current.size > 0 ||
+      deletedLogIds.current.size > 0,
+    []
+  );
+
   // Persist on change (post-hydration). Demo → localStorage; real → debounced
   // snapshot POST to the API.
   // Write the current board to the store. Used by the debounced auto-save AND
@@ -375,6 +418,13 @@ export default function Home() {
     }
     // After a conflict we stop saving — a stale tab must not keep writing.
     if (conflict) return;
+    // Nothing genuinely unsaved (e.g. this run came from the post-save reconcile's
+    // fresh-but-identical snapshot) → mark synced and skip the POST, so an empty
+    // save can't reconcile-and-loop.
+    if (!pendingChanges({ tasks, notes, events, projectList, schedules, activities, log, projectColors })) {
+      setSyncState("synced");
+      return;
+    }
     // Diff-save: only send tasks whose JSON changed since the last save. Each
     // carries its `updatedAt` base so the server can apply newer-wins per task.
     const changed = diffChangedTasks(tasks, savedRef.current);
@@ -500,11 +550,15 @@ export default function Home() {
       deletedScheduleIds.current.clear();
       deletedActivityIds.current.clear();
       deletedLogIds.current.clear();
+      // log + projectColors are sent in full and have no per-row reconcile, so
+      // re-base their dirty-check baseline to exactly what we just persisted.
+      logSavedRef.current = JSON.stringify(log);
+      projectColorsSavedRef.current = JSON.stringify(projectColors);
       setSyncState("synced");
     } catch {
       setSyncState("unsynced");
     }
-  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, rev, conflict]);
+  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, rev, conflict, pendingChanges]);
 
   // Auto-save: debounce 1.5s after any change.
   // ── Monochrome theme — now the DEFAULT (the "radical cut") ──
@@ -534,12 +588,17 @@ export default function Home() {
       return;
     }
     if (conflict) return;
+    // Only react to genuine unsaved changes. The post-save reconcile (and the
+    // resync paths) replace state with fresh-but-identical snapshots; without
+    // this guard that would flip the indicator back to "unsynced" right after a
+    // successful save (the stuck-on-"Nicht gespeichert" quirk).
+    if (!pendingChanges({ tasks, notes, events, projectList, schedules, activities, log, projectColors })) return;
     setSyncState("unsynced"); // pending change, not yet written
     const id = setTimeout(() => {
       pushState();
     }, 800);
     return () => clearTimeout(id);
-  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, hydrated, conflict, pushState]);
+  }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, hydrated, conflict, pushState, pendingChanges]);
 
   // A3 — keep the Project registry in sync: ensure a Project (stable id) exists
   // for every project name used by a task/note/event. Purely ADDITIVE and
@@ -614,28 +673,13 @@ export default function Home() {
       if (document.visibilityState !== "hidden") return;
       if (!hydrated || conflict) return;
       const l = latest.current;
+      if (!pendingChanges(l)) return; // nothing pending → don't fire on every tab switch
       const changed = diffChangedTasks(l.tasks, savedRef.current);
       const changedNotes = diffChangedTasks(l.notes, notesSavedRef.current);
       const changedEvents = diffChangedTasks(l.events, eventsSavedRef.current);
       const changedProjects = diffChangedTasks(l.projectList, projectsSavedRef.current);
       const changedSchedules = diffChangedTasks(l.schedules, schedulesSavedRef.current);
       const changedActivities = diffChangedTasks(l.activities, activitiesSavedRef.current);
-      if (
-        changed.length === 0 &&
-        changedNotes.length === 0 &&
-        changedEvents.length === 0 &&
-        changedProjects.length === 0 &&
-        changedSchedules.length === 0 &&
-        changedActivities.length === 0 &&
-        deletedTaskIds.current.size === 0 &&
-        deletedNoteIds.current.size === 0 &&
-        deletedEventIds.current.size === 0 &&
-        deletedProjectIds.current.size === 0 &&
-        deletedScheduleIds.current.size === 0 &&
-        deletedActivityIds.current.size === 0 &&
-        deletedLogIds.current.size === 0
-      )
-        return; // nothing pending → don't fire on every tab switch
       try {
         fetch("/api/state", {
           method: "POST",
@@ -670,7 +714,7 @@ export default function Home() {
       document.removeEventListener("visibilitychange", flush);
       window.removeEventListener("pagehide", flush);
     };
-  }, [hydrated, conflict]);
+  }, [hydrated, conflict, pendingChanges]);
 
   // Re-sync from the server when the app becomes visible again. The on-hide
   // flush bumps the server rev but the client can't read that response, so its
@@ -700,6 +744,7 @@ export default function Home() {
         setTasks(dedupeTaskNumbers(merged));
         savedRef.current = nextSaved;
         setLog(data.log ?? []);
+        logSavedRef.current = JSON.stringify(data.log ?? []);
         // Same newer-wins merge for notes (keeps an unsaved local edit/new note,
         // adopts server truth otherwise), then drop any note whose delete is still
         // pending so a resync that races ahead of the delete-save can't resurrect it.
@@ -747,7 +792,10 @@ export default function Home() {
         );
         setActivities(mergedActivities.filter((a) => !deletedActivityIds.current.has(a.id)));
         activitiesSavedRef.current = nextActivitiesSaved;
-        if (data.projectColors) setProjectColors(data.projectColors);
+        if (data.projectColors) {
+          setProjectColors(data.projectColors);
+          projectColorsSavedRef.current = JSON.stringify(data.projectColors);
+        }
         setRev(typeof data.rev === "number" ? data.rev : 0);
         setSyncState("synced");
       })

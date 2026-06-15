@@ -111,7 +111,16 @@ create policy event_delete on "Event" for delete using (public.app_can_write("bo
 -- ── Project (id == project; app_project_role deckt Board-Owner mit ab) ──
 alter table "Project" enable row level security;
 drop policy if exists project_select on "Project";
-create policy project_select on "Project" for select using (public.app_project_role(id) is not null);
+-- SELECT must ALSO accept the board owner via the row's own "boardId" column.
+-- app_project_role(id) joins back to the Project row, which is NOT visible during
+-- an INSERT ... RETURNING * (Prisma create()), so a freshly-inserted project
+-- would fail the RETURNING's SELECT check (42501) and break the whole save.
+-- "boardId" is available on the new tuple → app_board_role("boardId") resolves
+-- immediately. Security-equivalent: board-owner was already covered by the owner
+-- branch of app_project_role; this only changes WHEN it can be evaluated.
+create policy project_select on "Project" for select
+  using (public.app_board_role("boardId") is not null
+      or public.app_project_role(id) is not null);
 drop policy if exists project_insert on "Project";
 create policy project_insert on "Project" for insert
   with check (public.app_board_role("boardId") in ('owner','editor'));
