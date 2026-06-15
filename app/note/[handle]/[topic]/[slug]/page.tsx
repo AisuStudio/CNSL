@@ -62,7 +62,14 @@ export default async function PublicNotePage({
   const found = await findPublished(await params);
   if (!found) notFound();
   const { note, profile } = found;
-  const author = profile.publisherHandle ?? profile.displayName ?? "anonymous";
+  // S8 — never expose an email as the public author. Existing profiles seeded
+  // displayName with the address; ignore any "@"-shaped displayName so the
+  // byline falls back to the handle or "anonymous".
+  const safeName =
+    profile.displayName && !profile.displayName.includes("@")
+      ? profile.displayName
+      : null;
+  const author = profile.publisherHandle ?? safeName ?? "anonymous";
 
   return (
     <div

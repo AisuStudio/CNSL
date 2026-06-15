@@ -37,7 +37,11 @@ export async function ensureUserBoards(
   await prisma.profile.upsert({
     where: { id: userId },
     update: email ? { email } : {},
-    create: { id: userId, email: email ?? null, displayName: email ?? null },
+    // S8 — do NOT seed displayName with the email. email has its own column; a
+    // displayName defaulted to the address leaks it as the public author on
+    // published notes (publisherHandle ?? displayName ?? "anonymous"). Left null
+    // until the user sets a real name → notes fall back to "anonymous".
+    create: { id: userId, email: email ?? null, displayName: null },
   });
 
   // C3 — accept-on-login: turn any pending project invites for this email into
