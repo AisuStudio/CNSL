@@ -61,6 +61,12 @@ export default function SchedulerPlayer({
   const current = flat[idx];
   const next = flat[idx + 1];
 
+  // Hero-time weight: per step, full → empty maps to bold(700) → thin(200) on the
+  // New Title variable axis. frac is 1 at the step's start, 0 as it runs out.
+  const stepDur = current?.step.durationSeconds || 1;
+  const frac = Math.max(0, Math.min(1, remaining / stepDur));
+  const timeWeight = Math.round(200 + frac * 500);
+
   function setIdxBoth(i: number) {
     idxRef.current = i;
     setIdx(i);
@@ -202,6 +208,17 @@ export default function SchedulerPlayer({
   const text = "var(--color-text-primary)";
   const muted = "var(--color-text-muted)";
 
+  // Hairline divider that brackets the central stage (SVG: lines at x=12→375.3).
+  // The overlay pads 16px horizontally, so the rule is pulled 4px wider on each
+  // side to land at the standard 12px device-edge gutter.
+  const hr: React.CSSProperties = {
+    alignSelf: "stretch",
+    marginInline: "-4px",
+    height: 0,
+    border: 0,
+    borderTop: "1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)",
+  };
+
   const ctrlBtn: React.CSSProperties = {
     height: "44px",
     minWidth: "44px",
@@ -326,6 +343,9 @@ export default function SchedulerPlayer({
             <div style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               {current?.sectionName || "—"} · step {Math.min(idx + 1, flat.length)}/{flat.length}
             </div>
+
+            <div style={hr} />
+
             <div style={{ fontSize: "var(--text-logo)", fontWeight: 700, color: text }}>
               {current?.step.name || "(unnamed step)"}
             </div>
@@ -335,28 +355,35 @@ export default function SchedulerPlayer({
               </div>
             )}
 
-            {/* Big countdown */}
+            {/* Big countdown — New Title variable. Its weight rides the step's
+                remaining fraction: 700 (bold) at the step's start → 200 (thin) as
+                it runs out. We derive the weight from the raw float `remaining`
+                (not the ceil'd display value) and let a short linear transition
+                bridge the 200ms tick gap, so the thinning looks continuous. */}
             <div
               style={{
-                fontFamily: "var(--font-family-mono)",
-                fontWeight: 700,
+                fontFamily: "var(--font-new-title)",
                 color: accent,
-                fontSize: "clamp(64px, 22vw, 140px)",
-                lineHeight: 1.05,
-                letterSpacing: "0.02em",
+                fontSize: "clamp(96px, 30vw, 220px)",
+                lineHeight: 1,
+                fontVariantNumeric: "tabular-nums",
+                fontVariationSettings: `'wght' ${timeWeight}`,
+                transition: "font-variation-settings 220ms linear",
               }}
             >
               {formatDuration(Math.ceil(remaining))}
             </div>
 
-            {/* Real running time */}
-            <div style={{ fontSize: "var(--text-base)", fontWeight: 700, color: text }}>
-              {formatDuration(recorded)} elapsed
-            </div>
-
             {/* Following step */}
             <div style={{ fontSize: "var(--text-base)", color: muted }}>
               {next ? `Next: ${next.step.name || "(unnamed)"}` : "Last step"}
+            </div>
+
+            <div style={hr} />
+
+            {/* Real running time — below the lower rule, per the SVG */}
+            <div style={{ fontSize: "var(--text-base)", fontWeight: 700, color: text }}>
+              {formatDuration(recorded)} elapsed
             </div>
 
             {/* PRIMARY controls — directly under the countdown, centered (thumb

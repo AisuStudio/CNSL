@@ -26,6 +26,15 @@ const iaMono = localFont({
   display: "swap",
 });
 
+// New Title (Indian Type Foundry) — a single variable file carrying the whole
+// 200–700 weight axis. Used only for the Scheduler player's hero countdown,
+// whose weight animates 700→200 as the step runs out (font-variation-settings).
+const newTitle = localFont({
+  src: [{ path: "../public/fonts/new-title/NewTitle-Variable.woff2", weight: "200 700", style: "normal" }],
+  variable: "--font-new-title",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "CNSL",
   description: "CNSL — task management",
@@ -57,7 +66,7 @@ export default function RootLayout({
     // data-theme before hydration, which the server HTML doesn't carry.
     <html
       lang="en"
-      className={`${publicSans.variable} ${iaMono.variable}`}
+      className={`${publicSans.variable} ${iaMono.variable} ${newTitle.variable}`}
       suppressHydrationWarning
     >
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla adds
