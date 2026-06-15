@@ -364,7 +364,11 @@ export default function SchedulerPlayer({
               style={{
                 fontFamily: "var(--font-new-title)",
                 color: accent,
-                fontSize: "clamp(96px, 30vw, 220px)",
+                // Glanceable from a few metres during training, ~2× the original.
+                // Designer-validated target is 220px (caps there so it never gets
+                // too heavy); 60vw lands at 220 on a 375px phone (iPhone 11 Pro)
+                // and scales down gently on narrower screens.
+                fontSize: "clamp(150px, 60vw, 220px)",
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
                 fontVariationSettings: `'wght' ${timeWeight}`,
