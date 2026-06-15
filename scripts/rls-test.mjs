@@ -12,8 +12,11 @@ async function asUser(uid, fn, { rollback = false } = {}) {
   let out;
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`set local role authenticated`);
-      await tx.$executeRawUnsafe(`set local request.jwt.claims = '{"sub":"${uid}"}'`);
+      // mirror lib/rls.ts withUser() exactly: SET LOCAL ROLE + set_config()
+      await tx.$executeRawUnsafe(`SET LOCAL ROLE authenticated`);
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('request.jwt.claims', '${JSON.stringify({ sub: uid })}', true)`
+      );
       out = await fn(tx);
       if (rollback) throw new Error(SENTINEL);
     });

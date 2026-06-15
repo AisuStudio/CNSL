@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { withUser } from "@/lib/rls";
 import { ensureUserBoards } from "@/lib/board";
 import {
   taskFromDb,
@@ -196,7 +197,10 @@ export async function POST(req: NextRequest) {
   // Same for schedules + activities (Phase 2).
   const touchedScheduleIds: string[] = [];
   const touchedActivityIds: string[] = [];
-  await prisma.$transaction(
+  // S4 — run the whole save as `authenticated` (RLS enforced). The app-level
+  // scoping below stays as defence-in-depth; RLS is now the DB-level backstop.
+  await withUser(
+      user.id,
       async (tx) => {
         // C2 — resolve each entity's projectId from its project NAME. Map = the
         // board's persisted projects PLUS any in this payload (new/renamed ones

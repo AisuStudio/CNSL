@@ -157,3 +157,11 @@ alter table "LogEntry" enable row level security;
 drop policy if exists logentry_all on "LogEntry";
 create policy logentry_all on "LogEntry" for all
   using ("userId" = auth.uid()) with check ("userId" = auth.uid());
+
+-- ── ProjectMember: authenticated may read only its OWN memberships (GET/POST
+--    need this to resolve shared projects). Writes stay server-only (privileged
+--    connection in /api/share). ──
+grant select on "ProjectMember" to authenticated;
+alter table "ProjectMember" enable row level security;
+drop policy if exists projectmember_self on "ProjectMember";
+create policy projectmember_self on "ProjectMember" for select using ("userId" = auth.uid());
