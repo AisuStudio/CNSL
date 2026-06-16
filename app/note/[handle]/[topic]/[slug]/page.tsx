@@ -3,8 +3,24 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { prisma } from "@/lib/prisma";
+
+// Bodies are HTML (editor.getHTML()); legacy notes may still be Markdown. We
+// render both: remark parses Markdown, rehype-raw turns embedded raw HTML into
+// real nodes, and rehype-sanitize strips anything dangerous (scripts, event
+// handlers, javascript: URLs) afterwards. The default (GitHub) schema drops
+// `style` and `class`, which would lose text-alignment and the caption style,
+// so we re-allow those two attributes — they can't execute code. The author
+// only ever publishes their own content, so a wider style surface is acceptable.
+const noteSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": [...(defaultSchema.attributes?.["*"] ?? []), "className", "style"],
+  },
+};
 import CnslLogo from "@/components/CnslLogo";
 import MonoTheme from "@/components/MonoTheme";
 
@@ -123,7 +139,10 @@ export default async function PublicNotePage({
           @{author} · {note.topic}
         </p>
 
-        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, noteSchema]]}
+        >
           {note.body}
         </ReactMarkdown>
       </article>

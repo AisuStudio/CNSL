@@ -151,7 +151,14 @@ export default function NotePad({
         )}
         {sorted.map((n) => {
           const active = n.id === selectedId;
-          const snippet = (n.body || "").replace(/[#*`>_\-]/g, "").trim();
+          // Body is HTML (legacy notes may still be Markdown): strip tags +
+          // &nbsp; and any leftover Markdown punctuation for a plain snippet.
+          const snippet = (n.body || "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/&nbsp;/g, " ")
+            .replace(/[#*`>_~\-]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
           return (
             <button
               key={n.id}

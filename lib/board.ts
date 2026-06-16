@@ -96,7 +96,7 @@ export async function ensureUserBoards(
       data: {
         boardId: notes.id,
         title: "Welcome",
-        body: "# Welcome to your notes\n\nThis is your Note Pad — write in **Markdown**, organise later.",
+        body: "<h1>Welcome to your notes</h1><p>This is your Note Pad — write, format with the toolbar, and organise later.</p>",
         createdById: userId,
       },
     });
