@@ -132,6 +132,7 @@ export default function NotePad({
           onClick={newNote}
           style={{
             margin: "12px",
+            flexShrink: 0,
             height: "36px",
             borderRadius: "8px",
             border: "none",
@@ -167,6 +168,7 @@ export default function NotePad({
               style={{
                 textAlign: "left",
                 padding: "10px 14px",
+                flexShrink: 0,
                 border: "none",
                 cursor: "pointer",
                 background: active ? "var(--color-surface)" : "transparent",
