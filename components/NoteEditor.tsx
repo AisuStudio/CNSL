@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Paragraph from "@tiptap/extension-paragraph";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import { Markdown } from "tiptap-markdown";
 import type { MarkdownSerializerState } from "@tiptap/pm/markdown";
@@ -49,8 +50,10 @@ const ClassParagraph = Paragraph.extend({
   },
 });
 
-// WYSIWYG editor. Body is stored as Markdown (no images). Switching notes
-// resets the content; typing serialises back to Markdown via tiptap-markdown.
+// WYSIWYG editor. Body is stored as Markdown. Images are by reference only —
+// the user supplies a URL (the image lives elsewhere); it serialises as
+// `![alt](src)` and round-trips via tiptap-markdown. No upload/storage. Switching
+// notes resets the content; typing serialises back to Markdown via tiptap-markdown.
 export default function NoteEditor({
   value,
   onChange,
@@ -66,6 +69,9 @@ export default function NoteEditor({
       ClassParagraph,
       Underline,
       Link.configure({ openOnClick: false, autolink: true, linkOnPaste: true }),
+      // Images by URL only (no upload). allowBase64 off so inline data: blobs
+      // never bloat the markdown body / the /api/state sync payload.
+      Image.configure({ inline: false, allowBase64: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Markdown,
     ],

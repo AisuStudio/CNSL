@@ -145,6 +145,17 @@ export default function NoteToolbar({
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  // Insert an image by URL (the image lives elsewhere — no upload). Optional alt
+  // text for accessibility / the published page.
+  const insertImage = () => {
+    const url = window.prompt("Image URL (https://…)");
+    if (url === null) return; // cancelled
+    const src = url.trim();
+    if (!src) return;
+    const alt = window.prompt("Alt text (optional, for accessibility)") ?? "";
+    editor.chain().focus().setImage({ src, alt: alt.trim() || undefined }).run();
+  };
+
   // ── Exports (Copy MD · Save MD · Save RTF) ──
   const getMarkdown = () => editor.storage.markdown.getMarkdown() as string;
   const baseName = () =>
@@ -243,6 +254,14 @@ export default function NoteToolbar({
       >
         <LinkIcon />
       </button>
+      <button
+        type="button"
+        className="cnsl-tb-btn"
+        onClick={insertImage}
+        title="Insert image by URL"
+      >
+        <ImageIcon />
+      </button>
 
       <span className="cnsl-tb-sep" aria-hidden />
 
@@ -295,6 +314,30 @@ function LinkIcon() {
       />
       <polygon
         points="3.5 16.5 3.5 9 14.5 9 14.5 5.5 0 5.5 0 20 14.5 20 14.5 16.5 3.5 16.5"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  // Simple framed-picture glyph: frame + sun + mountain. currentColor so it
+  // tracks the button's hover/active state like the other toolbar icons.
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <rect
+        x="1"
+        y="2.5"
+        width="14"
+        height="11"
+        rx="1.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <circle cx="5" cy="6" r="1.3" fill="currentColor" />
+      <path
+        d="M2.5 12 L6 8 L8.5 10.5 L11 7 L13.5 10.5 L13.5 12 Z"
         fill="currentColor"
       />
     </svg>

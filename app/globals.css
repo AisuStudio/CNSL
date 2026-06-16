@@ -53,6 +53,14 @@ body {
   text-decoration: underline;
 }
 
+/* Images embedded by URL: never overflow the editor column or the published
+   article; keep the aspect ratio. */
+.cnsl-prose img,
+.note-md img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 .cnsl-scroll {
   scrollbar-width: thin;
