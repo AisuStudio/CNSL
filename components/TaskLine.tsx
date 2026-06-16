@@ -7,7 +7,7 @@ import {
   formatHM,
 } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { TrackToggleIcon, ArchiveIcon } from "./icons";
+import { TrackToggleIcon, ArchiveActionIcon } from "./icons";
 
 /* Flat task line (#156): [play] task · nr · urgency · status … time.
    Uniformly mid-grey so rows recede; "running" is signalled only by the green
@@ -59,7 +59,7 @@ export default function TaskLine({
         padding: 0,
       }}
     >
-      <ArchiveIcon color="var(--color-text-muted)" size={20} />
+      <ArchiveActionIcon color="var(--color-text-muted)" size={20} />
     </button>
   ) : (
     <button

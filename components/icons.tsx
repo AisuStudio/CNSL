@@ -1,4 +1,30 @@
 // Icons reproduced from the CNSL SVG reference (simple rect-based glyphs).
+//
+// Split by role:
+//  • TOOL / BRAND icons (sidebar nav + header) keep the custom CNSL glyphs below
+//    — they are intentionally chunky/"our own".
+//  • FUNCTION icons used inside content (actions, toggles, arrows) render from
+//    Lucide (lucide-react) for a lighter, established look. Their component names
+//    + (color / size / state) APIs are unchanged, so consumers don't change.
+//    Where a glyph doubles as a nav icon (Plus, Archive), the content gets its
+//    own Lucide variant (AddIcon, ArchiveActionIcon) and the nav keeps the custom.
+import {
+  Share2,
+  Play,
+  Pause,
+  CirclePlay,
+  CirclePause,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Square,
+  SquareCheckBig,
+  GripVertical,
+  Plus,
+  Archive,
+} from "lucide-react";
+
+const FN_STROKE = 1.75; // lighter than Lucide's default 2
 
 export function ListIcon({ color = "currentColor" }: { color?: string }) {
   // Four stacked bars — the "Backlog" list glyph (CNSL_Icon_Backlog.svg).
@@ -45,16 +71,14 @@ export function InfoIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-export function ShareIcon({ color = "currentColor" }: { color?: string }) {
-  // CNSL_Icon_Share.svg — arrow out of a box.
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        fill={color}
-        d="M20,0v9h-3.5v-2l-2,2h0s0,0,0,0l-5.5,5.5h-3.5v-3.5l7.5-7.5h-2V0h9ZM20,11h-3.5v5.5H3.5V3.5h5.5V0H0v20h20v-9Z"
-      />
-    </svg>
-  );
+export function ShareIcon({
+  color = "currentColor",
+  size = 18,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Share2 color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
 export function SettingsIcon({ color = "currentColor" }: { color?: string }) {
@@ -107,21 +131,24 @@ export function StatsIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
-export function PlayIcon({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <polygon points="3,1.5 12.5,7 3,12.5" fill={color} />
-    </svg>
-  );
+export function PlayIcon({
+  color = "currentColor",
+  size = 14,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Play color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
-export function PauseIcon({ color = "currentColor" }: { color?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <rect x="2.5" y="1.5" width="3.5" height="11" fill={color} />
-      <rect x="8" y="1.5" width="3.5" height="11" fill={color} />
-    </svg>
-  );
+export function PauseIcon({
+  color = "currentColor",
+  size = 14,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Pause color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
 /* Timer toggle for the #156 task line — exact geometry from
@@ -135,25 +162,21 @@ export function TrackToggleIcon({
   running: boolean;
   size?: number;
 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      {running ? (
-        <>
-          <rect width="20" height="20" rx="4" fill="var(--color-running)" />
-          <rect x="5.5" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
-          <rect x="11" y="5.5" width="3.5" height="9" rx="0.5" fill="var(--color-text-primary)" />
-        </>
-      ) : (
-        // Play state (#206): boxed triangle from CNSL_Icon_Play.svg — replaces the
-        // old empty rounded square that read like a radio button.
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M5.5 14.5V5.5l9 4.5-9 4.5ZM20 0v20H0V0h20ZM16.5 3.5H3.5v13h13V3.5Z"
-          fill="var(--color-border-subtle)"
-        />
-      )}
-    </svg>
+  // running = pause-in-circle tinted with the running colour; idle = play-in-circle.
+  return running ? (
+    <CirclePause
+      size={size}
+      color="var(--color-running)"
+      strokeWidth={FN_STROKE}
+      aria-hidden
+    />
+  ) : (
+    <CirclePlay
+      size={size}
+      color="var(--color-border-subtle)"
+      strokeWidth={FN_STROKE}
+      aria-hidden
+    />
   );
 }
 
@@ -243,17 +266,7 @@ export function ArrowLeftIcon({
   color?: string;
   size?: number;
 }) {
-  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowLeft.svg): left triangle in a frame.
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        fill={color}
-        d="M5.5,10l9-4.5v9s-9-4.5-9-4.5ZM20,0v20H0V0h20ZM3.5,16.5h13s0-13,0-13H3.5s0,13,0,13Z"
-      />
-    </svg>
-  );
+  return <ChevronLeft color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
 export function ArrowRightIcon({
@@ -263,17 +276,7 @@ export function ArrowRightIcon({
   color?: string;
   size?: number;
 }) {
-  // CNSL boxed-triangle arrow (CNSL_Icon_ArrowRight.svg): right triangle in a frame.
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        fill={color}
-        d="M5.5,14.5V5.5l9,4.5-9,4.5ZM20,0v20H0V0h20ZM16.5,3.5H3.5v13h13V3.5Z"
-      />
-    </svg>
-  );
+  return <ChevronRight color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
 export function CalIcon({ color = "currentColor" }: { color?: string }) {
@@ -348,35 +351,7 @@ export function TrashIcon({
   color?: string;
   size?: number;
 }) {
-  // CNSL_Icon_Trash.svg — lid bar + bin body with slats. color prop drives fill
-  // (the source SVG hardcodes #93928e).
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <g fill={color}>
-        <rect width="20" height="3.5" />
-        <polygon points="16.5 16.5 14.5 16.5 14.5 5.5 11 5.5 11 16.5 9 16.5 9 5.5 5.5 5.5 5.5 16.5 3.5 16.5 3.5 5.5 0 5.5 0 20 20 20 20 5.5 16.5 5.5 16.5 16.5" />
-      </g>
-    </svg>
-  );
-}
-
-export function CopyIcon({
-  color = "currentColor",
-  size = 20,
-}: {
-  color?: string;
-  size?: number;
-}) {
-  // CNSL_Icon_Copy.svg — two overlapping sheets. color prop drives fill (the
-  // source SVG hardcodes #93928e).
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <g fill={color}>
-        <polygon points="16.5 5.5 16.5 16.5 5.5 16.5 5.5 20 20 20 20 5.5 16.5 5.5" />
-        <path d="M14.5,0H0v14.5h14.5V0ZM11,11H3.5V3.5h7.5v7.5Z" />
-      </g>
-    </svg>
-  );
+  return <Trash2 color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }
 
 export function SubtaskRadioIcon({
@@ -388,19 +363,11 @@ export function SubtaskRadioIcon({
   color?: string;
   size?: number;
 }) {
-  // CNSL square radio (CNSL_Icon_Radio_Off/On.svg): hollow frame = off,
-  // frame + filled centre = on. Replaces the native checkbox for subtasks (#213).
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        fill={color}
-        d={
-          checked
-            ? "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13ZM5.5,5.5h9v9H5.5V5.5Z"
-            : "M0,0v20h20V0H0ZM16.5,3.5v13H3.5V3.5h13Z"
-        }
-      />
-    </svg>
+  // Subtask toggle (#213): checked = filled-check square, off = empty square.
+  return checked ? (
+    <SquareCheckBig color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />
+  ) : (
+    <Square color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />
   );
 }
 
@@ -422,23 +389,34 @@ export function SearchIcon({
   );
 }
 
-export function DragDotsIcon({ color = "currentColor" }: { color?: string }) {
-  // 3×3 dot grid — the draggable-field pull handle.
-  const dots = [0, 1, 2];
-  return (
-    <svg width="21" height="21" viewBox="0 0 21 21" aria-hidden="true">
-      {dots.map((r) =>
-        dots.map((c) => (
-          <rect
-            key={`${r}-${c}`}
-            x={c * 7.4}
-            y={r * 7.4}
-            width="5.3"
-            height="5.3"
-            fill={color}
-          />
-        ))
-      )}
-    </svg>
-  );
+export function DragDotsIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <GripVertical color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
+}
+
+// ── Content variants of glyphs that double as sidebar/nav icons ──
+// The nav keeps the custom CNSL PlusIcon / ArchiveIcon; content uses these.
+export function AddIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Plus color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
+}
+
+export function ArchiveActionIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Archive color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }

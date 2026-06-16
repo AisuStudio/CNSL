@@ -101,7 +101,9 @@
    --color-lime, urgency colours in lib/mock-data.ts) are intentionally
    NOT overridden — they stay as signal colours.
    ─────────────────────────────────────────────────────────── */
-:root[data-theme="mono"] {
+/* Not scoped to :root — also applies when set on a nested element (e.g. the
+   NotePad editing surface), so a subtree can adopt the mono ramp locally. */
+[data-theme="mono"] {
   /* App surfaces — black side of the ramp */
   --color-bg:            color-mix(in srgb, var(--mono)  5%, #000);
   --color-bg-deep:       #000;

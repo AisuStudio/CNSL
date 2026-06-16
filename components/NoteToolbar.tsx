@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import {
+  Link as LinkGlyph,
+  Image as ImageGlyph,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+} from "lucide-react";
 import { copyText, downloadFile } from "@/lib/export";
 import { htmlToRtf } from "@/lib/rtf";
 
@@ -145,6 +152,17 @@ export default function NoteToolbar({
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
+  // Insert an image by URL (the image lives elsewhere — no upload). Optional alt
+  // text for accessibility / the published page.
+  const insertImage = () => {
+    const url = window.prompt("Image URL (https://…)");
+    if (url === null) return; // cancelled
+    const src = url.trim();
+    if (!src) return;
+    const alt = window.prompt("Alt text (optional, for accessibility)") ?? "";
+    editor.chain().focus().setImage({ src, alt: alt.trim() || undefined }).run();
+  };
+
   // ── Exports (Copy MD · Save MD · Save RTF) ──
   const getMarkdown = () => editor.storage.markdown.getMarkdown() as string;
   const baseName = () =>
@@ -243,6 +261,14 @@ export default function NoteToolbar({
       >
         <LinkIcon />
       </button>
+      <button
+        type="button"
+        className="cnsl-tb-btn"
+        onClick={insertImage}
+        title="Insert image by URL"
+      >
+        <ImageIcon />
+      </button>
 
       <span className="cnsl-tb-sep" aria-hidden />
 
@@ -261,13 +287,15 @@ export default function NoteToolbar({
         </button>
       ))}
 
-      {/* Right end: current style label + export buttons (12px from the edge) */}
+      {/* Current block style — sits right after the alignment controls. */}
+      {activeStyle && (
+        <span className="cnsl-tb-current" title="Current style">
+          {activeStyle.label}
+        </span>
+      )}
+
+      {/* Right end: export buttons (12px from the edge) */}
       <div className="cnsl-tb-right">
-        {activeStyle && (
-          <span className="cnsl-tb-current" title="Current style">
-            {activeStyle.label}
-          </span>
-        )}
         <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
           {copied ? "Copied" : "Copy MD"}
         </button>
@@ -284,46 +312,21 @@ export default function NoteToolbar({
   );
 }
 
+// Toolbar action icons render from Lucide (lighter than the custom CNSL glyphs);
+// currentColor tracks the button's hover/active state. A heavier stroke + size
+// keeps them legible on the dark toolbar next to the bold B/I/U/S letters.
+const TB_ICON = 17;
+const TB_STROKE = 2.5;
 function LinkIcon() {
-  // CNSL_Icon_Link.svg — two interlocking rectangles. currentColor so it tracks
-  // the button's hover/active state (the source SVG hardcodes #93928e).
-  return (
-    <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
-      <polygon
-        points="16.5 11 5.5 11 5.5 14.5 20 14.5 20 0 5.5 0 5.5 3.5 16.5 3.5 16.5 11"
-        fill="currentColor"
-      />
-      <polygon
-        points="3.5 16.5 3.5 9 14.5 9 14.5 5.5 0 5.5 0 20 14.5 20 14.5 16.5 3.5 16.5"
-        fill="currentColor"
-      />
-    </svg>
-  );
+  return <LinkGlyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
+}
+
+function ImageIcon() {
+  return <ImageGlyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }
 
 function AlignIcon({ align }: { align: "left" | "center" | "right" }) {
-  // 4 horizontal lines; the short ones shift per alignment.
-  const rows =
-    align === "left"
-      ? [14, 8, 12, 8]
-      : align === "center"
-      ? [14, 10, 14, 10]
-      : [14, 8, 12, 8];
-  const x = (w: number) =>
-    align === "left" ? 1 : align === "center" ? (14 - w) / 2 + 1 : 14 - w + 1;
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      {rows.map((w, i) => (
-        <rect
-          key={i}
-          x={x(w)}
-          y={3 + i * 3}
-          width={w}
-          height={1.6}
-          rx={0.8}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
+  const Glyph =
+    align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+  return <Glyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
-import { PlusIcon, ShareIcon } from "./icons";
+import { AddIcon, ShareIcon } from "./icons";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -221,7 +221,7 @@ export default function ProjectView({
                     className="flex items-center justify-center"
                     style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
                   >
-                    <PlusIcon color={nameColor} />
+                    <AddIcon color={nameColor} />
                   </button>
 
                   {/* Copy as Markdown (#157) */}
@@ -317,7 +317,7 @@ export default function ProjectView({
                             className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             style={{ width: "24px", height: "24px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
                           >
-                            <PlusIcon color={tColor} />
+                            <AddIcon color={tColor} />
                           </button>
                         )}
                         <span

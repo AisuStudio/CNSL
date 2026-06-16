@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { stateToSlug, slugToState } from "@/components/viewDefs";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
@@ -101,8 +103,37 @@ function dedupeTaskNumbers(arr: Task[]): Task[] {
 }
 
 export default function Home() {
-  const [tool, setTool] = useState<Tool>("tracker");
-  const [view, setView] = useState<View>("project");
+  // Route-driven view: /app/<slug> (optional catch-all). The slug is the single
+  // source of truth for which tool/sub-view is open, so reloads/deep-links stay
+  // put and the browser back button works.
+  const router = useRouter();
+  const params = useParams();
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : undefined;
+
+  const initial = slugToState(slug, { tool: "tracker", view: "project" });
+  const [tool, setTool] = useState<Tool>(initial.tool);
+  const [view, setView] = useState<View>(initial.view);
+
+  // tool/view → URL. Compare the route's slug param (basePath/trailingSlash
+  // safe), not the raw pathname. Landing on /app (slug undefined) canonicalises
+  // to /app/<default>. The resulting slug change re-runs the sync-back effect,
+  // which is a no-op since state already matches.
+  useEffect(() => {
+    const targetSlug = stateToSlug(tool, view);
+    if (slug !== targetSlug) {
+      router.replace(`/app/${targetSlug}`, { scroll: false });
+    }
+  }, [tool, view, slug, router]);
+
+  // URL → tool/view (browser back/forward, or landing on /app or a deep link).
+  useEffect(() => {
+    const next = slugToState(slug, { tool, view });
+    setTool((t) => (t !== next.tool ? next.tool : t));
+    if (next.tool === "tracker") {
+      setView((v) => (v !== next.view ? next.view : v));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
   const [searchQuery, setSearchQuery] = useState(""); // #42 task search
   const [tasks, setTasks] = useState<Task[]>(DEMO ? initialTasks : []);
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -1882,6 +1913,9 @@ export default function Home() {
             onDelete={deleteNote}
             onPublishChange={publishChangeNote}
             projects={projects}
+            onCreateProject={(name) =>
+              setProjectList((prev) => ensureProjects(prev, [name]))
+            }
             tasks={activeTasks}
             onOpenTask={openTaskById}
             focusNoteId={focusNoteId}

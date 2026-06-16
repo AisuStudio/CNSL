@@ -41,3 +41,30 @@ export const VIEW_DEFS: {
   { key: "archive", label: "Archive", Icon: ArchiveIcon },
   { key: "stats", label: "Stats", Icon: StatsIcon },
 ];
+
+// ─── URL slug ↔ (tool, view) mapping (/app/<slug>) ──────────
+// Every tool + tracker sub-view key is unique, so a single path segment is
+// enough: a non-tracker tool maps to its own key; a tracker sub-view maps to
+// the sub-view key (tool stays "tracker").
+const TOOL_KEYS = TOOL_DEFS.map((t) => t.key) as string[];
+const VIEW_KEYS = VIEW_DEFS.map((v) => v.key) as string[];
+export const DEFAULT_SLUG = "project"; // tracker + project
+
+export function stateToSlug(tool: Tool, view: View): string {
+  return tool === "tracker" ? view : tool;
+}
+
+export function slugToState(
+  slug: string | undefined,
+  current: { tool: Tool; view: View }
+): { tool: Tool; view: View } {
+  if (slug && VIEW_KEYS.includes(slug)) {
+    return { tool: "tracker", view: slug as View };
+  }
+  if (slug === "tracker") return { tool: "tracker", view: "project" };
+  if (slug && TOOL_KEYS.includes(slug)) {
+    return { tool: slug as Tool, view: current.view };
+  }
+  // no slug / unknown → default landing
+  return { tool: "tracker", view: "project" };
+}
