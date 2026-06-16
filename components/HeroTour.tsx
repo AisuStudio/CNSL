@@ -9,6 +9,9 @@ import SchedulerView from "./SchedulerView";
 import NotePad from "./NotePad";
 import ChatView from "./ChatView";
 import TrackingLogView from "./TrackingLogView";
+import BacklogView, { type BacklogFilter } from "./BacklogView";
+import StatsView from "./StatsView";
+import ArchiveView from "./ArchiveView";
 import Footer from "./Footer";
 import type { Task, LogEntry } from "@/lib/mock-data";
 import type { CalendarEvent } from "@/lib/calendar";
@@ -44,6 +47,8 @@ function makeTasks(): Task[] {
     { ...base, id: "ht_2", number: 9, project: "Studio", epic: "", task: "Export the press kit", urgency: "this_week", status: "open", trackedMinutes: 42 },
     { ...base, id: "ht_3", number: 7, project: "Website", epic: "", task: "Publish the changelog", urgency: "this_week", status: "open", trackedMinutes: 63 },
     { ...base, id: "ht_4", number: 5, project: "Website", epic: "", task: "Ship calendar reminders", urgency: "later", status: "open", trackedMinutes: 0 },
+    { ...base, id: "ht_a1", number: 3, project: "Studio", epic: "", task: "Old landing copy", urgency: "later", status: "done", trackedMinutes: 55, archived: true },
+    { ...base, id: "ht_a2", number: 2, project: "Website", epic: "", task: "Migrate analytics", urgency: "later", status: "done", trackedMinutes: 120, archived: true },
   ];
 }
 
@@ -166,6 +171,17 @@ export default function HeroTour() {
   const [notes, setNotes] = useState<Note[]>(makeNotes);
   const [chat, setChat] = useState(makeChat);
   const [log, setLog] = useState<LogEntry[]>(makeLog);
+  const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
+
+  // Tracker sub-view task lists (mirror the app): active vs archived.
+  const activeTasks = tasks.filter((t) => !t.archived);
+  const archivedTasks = tasks.filter((t) => t.archived);
+  const todayTasks = activeTasks.filter((t) => t.urgency === "today");
+  const backlogTasks =
+    backlogFilter === "open"
+      ? activeTasks.filter((t) => t.status !== "done" && t.status !== "canceled")
+      : activeTasks;
+  const doneCount = activeTasks.filter((t) => t.status === "done").length;
 
   const hostRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -375,20 +391,27 @@ export default function HeroTour() {
                 <Sidebar
                   view={view}
                   tool={tool}
-                  onViewChange={setView}
+                  onViewChange={(v) => {
+                    setTool("tracker");
+                    setView(v);
+                  }}
                   onToolChange={setTool}
                   open
                 />
                 <div className="cnsl-content">
                   <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: showBlurp ? "104px" : "24px" }}>
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
-                      <ProjectView
-                        tasks={tasks}
-                        onToggleTimer={noop}
-                        onEditTask={noop}
-                        onNewInProject={noop}
-                        onExportProject={noop}
-                      />
+                      {view === "today" ? (
+                        <BacklogView tasks={todayTasks} onToggleTimer={noop} onEditTask={noop} onArchive={noop} showUrgency={false} />
+                      ) : view === "backlog" ? (
+                        <BacklogView tasks={backlogTasks} onToggleTimer={noop} onEditTask={noop} onArchive={noop} filter={backlogFilter} onFilterChange={setBacklogFilter} />
+                      ) : view === "stats" ? (
+                        <StatsView tasks={tasks} />
+                      ) : view === "archive" ? (
+                        <ArchiveView archived={archivedTasks} doneCount={doneCount} onToggleTimer={noop} onEditTask={noop} onArchiveAllDone={noop} />
+                      ) : (
+                        <ProjectView tasks={activeTasks} onToggleTimer={noop} onEditTask={noop} onNewInProject={noop} onExportProject={noop} />
+                      )}
                     </div>
                     <div style={{ display: tool === "calendar" ? "block" : "none", height: "100%" }}>
                       <CalendarView events={events} onCreateOnDay={noop} onEditEvent={noop} />
