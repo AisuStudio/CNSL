@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Note } from "@/lib/notes";
+import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
 import NoteEditor from "./NoteEditor";
@@ -26,6 +27,7 @@ export default function NotePad({
   onDelete,
   onPublishChange,
   projects = [],
+  onCreateProject,
   tasks = [],
   onOpenTask,
   focusNoteId,
@@ -38,6 +40,7 @@ export default function NotePad({
   onPublishChange: (id: string, patch: Partial<Note>) => void;
   // A1 — project assignment + task link (+ task→note navigation).
   projects?: string[];
+  onCreateProject?: (name: string) => void;
   tasks?: Task[];
   onOpenTask?: (taskId: string) => void;
   focusNoteId?: string | null; // open a specific note from outside (e.g. a task)
@@ -49,9 +52,48 @@ export default function NotePad({
   const [selectedId, setSelectedId] = useState<string | null>(
     sorted[0]?.id ?? null
   );
+  // Project filter for the left column: null = All notes, "" = No project,
+  // else a project name. `enteredProject` drives the mobile drill-down.
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [enteredProject, setEnteredProject] = useState(false);
   const [taskQuery, setTaskQuery] = useState("");
   const selected = notes.find((n) => n.id === selectedId) ?? null;
   const isMobile = useIsMobile();
+
+  // Project column: every known project (incl. task-only ones from the registry)
+  // with its note + task counts, plus the count of unassigned notes.
+  const sameProject = (a: string | null | undefined, name: string) =>
+    (a ?? "").trim().toLowerCase() === name.trim().toLowerCase();
+  const projectEntries = [...projects]
+    .filter((p) => isAssignedName(p))
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({
+      name,
+      noteCount: notes.filter((n) => sameProject(n.project, name)).length,
+      taskCount: tasks.filter((t) => sameProject(t.project, name)).length,
+    }));
+  const unassignedCount = notes.filter(
+    (n) => !isAssignedName(n.project ?? undefined)
+  ).length;
+
+  // Notes shown in the middle column, filtered by the selected project.
+  const visibleNotes =
+    selectedProject === null
+      ? sorted
+      : selectedProject === ""
+      ? sorted.filter((n) => !isAssignedName(n.project ?? undefined))
+      : sorted.filter((n) => sameProject(n.project, selectedProject));
+
+  function pickProject(p: string | null) {
+    setSelectedProject(p);
+    if (isMobile) setEnteredProject(true);
+  }
+  function createProject() {
+    const name = window.prompt("Project name")?.trim();
+    if (!name || !isAssignedName(name)) return;
+    onCreateProject?.(name);
+    pickProject(name);
+  }
 
   // External focus (task modal "Open note" / "+ New note"): select that note,
   // then clear the focus so re-opening the same note works next time.
@@ -69,8 +111,10 @@ export default function NotePad({
   const linkedTask = selected?.taskId
     ? tasks.find((t) => t.id === selected.taskId)
     : undefined;
-  // Mobile = single pane: list OR editor (with a back button).
-  const showList = !isMobile || !selected;
+  // Desktop = three panes side by side. Mobile = one pane at a time, drilling
+  // projects → notes → editor (back buttons step back up).
+  const showProjects = !isMobile || (!enteredProject && !selected);
+  const showList = !isMobile || (enteredProject && !selected);
   const showEditor = !isMobile || !!selected;
 
   // Publishing: the user's handle (set once) + their used topics, fetched lazily
@@ -93,7 +137,12 @@ export default function NotePad({
   }, [canPublishNotes]);
 
   function newNote() {
-    setSelectedId(onCreate());
+    const id = onCreate();
+    setSelectedId(id);
+    // Drop the new note into the project the user is currently filtered to.
+    if (selectedProject && isAssignedName(selectedProject)) {
+      onUpdate(id, { project: selectedProject });
+    }
   }
 
   async function unpublish(id: string) {
@@ -114,6 +163,71 @@ export default function NotePad({
 
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
+      {/* Project column */}
+      {showProjects && (
+      <div
+        className="cnsl-scroll"
+        style={{
+          width: isMobile ? "100%" : "240px",
+          flexShrink: 0,
+          borderRight: isMobile ? "none" : "1px solid var(--color-border)",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <button
+          type="button"
+          onClick={createProject}
+          style={{
+            margin: "12px",
+            flexShrink: 0,
+            height: "36px",
+            borderRadius: "8px",
+            border: "none",
+            background: "var(--color-accent)",
+            color: "var(--color-card-ink)",
+            fontWeight: 700,
+            fontSize: "var(--text-base)",
+            cursor: "pointer",
+          }}
+        >
+          + Project
+        </button>
+        <button
+          type="button"
+          onClick={() => pickProject(null)}
+          className={`cnsl-proj${selectedProject === null ? " is-active" : ""}`}
+        >
+          <span className="cnsl-proj-name">All notes</span>
+          <span className="cnsl-proj-meta">{notes.length} notes</span>
+        </button>
+        {projectEntries.map((p) => (
+          <button
+            key={p.name}
+            type="button"
+            onClick={() => pickProject(p.name)}
+            className={`cnsl-proj${selectedProject === p.name ? " is-active" : ""}`}
+          >
+            <span className="cnsl-proj-name">{p.name}</span>
+            <span className="cnsl-proj-meta">
+              {p.noteCount} notes · {p.taskCount} tasks
+            </span>
+          </button>
+        ))}
+        {unassignedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => pickProject("")}
+            className={`cnsl-proj${selectedProject === "" ? " is-active" : ""}`}
+          >
+            <span className="cnsl-proj-name">No project</span>
+            <span className="cnsl-proj-meta">{unassignedCount} notes</span>
+          </button>
+        )}
+      </div>
+      )}
+
       {/* Note list */}
       {showList && (
       <div
@@ -127,6 +241,24 @@ export default function NotePad({
           flexDirection: "column",
         }}
       >
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setEnteredProject(false)}
+            style={{
+              margin: "12px 12px 0",
+              flexShrink: 0,
+              alignSelf: "flex-start",
+              background: "transparent",
+              border: "none",
+              color: "var(--color-text-muted)",
+              fontSize: "var(--text-sm)",
+              cursor: "pointer",
+            }}
+          >
+            ← Projects
+          </button>
+        )}
         <button
           type="button"
           onClick={newNote}
@@ -145,12 +277,12 @@ export default function NotePad({
         >
           + New note
         </button>
-        {sorted.length === 0 && (
+        {visibleNotes.length === 0 && (
           <div style={{ padding: "0 14px", color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
-            No notes yet.
+            No notes here yet.
           </div>
         )}
-        {sorted.map((n) => {
+        {visibleNotes.map((n) => {
           const active = n.id === selectedId;
           // Body is HTML (legacy notes may still be Markdown): strip tags +
           // &nbsp; and any leftover Markdown punctuation for a plain snippet.

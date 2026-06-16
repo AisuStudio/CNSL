@@ -1882,6 +1882,9 @@ export default function Home() {
             onDelete={deleteNote}
             onPublishChange={publishChangeNote}
             projects={projects}
+            onCreateProject={(name) =>
+              setProjectList((prev) => ensureProjects(prev, [name]))
+            }
             tasks={activeTasks}
             onOpenTask={openTaskById}
             focusNoteId={focusNoteId}
