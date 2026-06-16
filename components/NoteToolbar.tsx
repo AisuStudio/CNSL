@@ -311,17 +311,20 @@ export default function NoteToolbar({
 }
 
 // Toolbar action icons render from Lucide (lighter than the custom CNSL glyphs);
-// currentColor tracks the button's hover/active state.
+// currentColor tracks the button's hover/active state. A heavier stroke + size
+// keeps them legible on the dark toolbar next to the bold B/I/U/S letters.
+const TB_ICON = 17;
+const TB_STROKE = 2.25;
 function LinkIcon() {
-  return <LinkGlyph size={16} strokeWidth={1.75} aria-hidden />;
+  return <LinkGlyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }
 
 function ImageIcon() {
-  return <ImageGlyph size={16} strokeWidth={1.75} aria-hidden />;
+  return <ImageGlyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }
 
 function AlignIcon({ align }: { align: "left" | "center" | "right" }) {
   const Glyph =
     align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
-  return <Glyph size={16} strokeWidth={1.75} aria-hidden />;
+  return <Glyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }
