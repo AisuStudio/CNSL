@@ -10,14 +10,16 @@ import {
   scheduleTotalSeconds,
   stepCount,
   formatDuration,
+  formatClock,
   parseDuration,
   blankSection,
   blankStep,
+  DEFAULT_PAUSE_SECONDS,
 } from "@/lib/scheduler";
 import { formatDate } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { PlayIcon, AddIcon, TrashIcon } from "./icons";
+import { PlayIcon, AddIcon, TrashIcon, CopyIcon } from "./icons";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
    peace on the desktop, then hit Play to open the mobile Player.
@@ -58,9 +60,9 @@ function DurationInput({
   onCommit: (secs: number) => void;
   style?: React.CSSProperties;
 }) {
-  const [text, setText] = useState(formatDuration(seconds));
+  const [text, setText] = useState(formatClock(seconds));
   // Re-sync if the value changes from elsewhere (e.g. copy/import).
-  useEffect(() => setText(formatDuration(seconds)), [seconds]);
+  useEffect(() => setText(formatClock(seconds)), [seconds]);
   return (
     <input
       value={text}
@@ -74,6 +76,59 @@ function DurationInput({
       title="Duration — mm:ss"
       style={style}
     />
+  );
+}
+
+// Small on/off switch (auto-pause). `on` fills the track with the accent and
+// slides the knob right. currentColor/explicit colours are passed in by callers.
+function Toggle({
+  on,
+  onChange,
+  accent,
+  track,
+  knob,
+  title,
+}: {
+  on: boolean;
+  onChange: (next: boolean) => void;
+  accent: string;
+  track: string;
+  knob: string;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      title={title}
+      onClick={() => onChange(!on)}
+      style={{
+        width: "40px",
+        height: "22px",
+        borderRadius: "999px",
+        border: "none",
+        padding: 0,
+        background: on ? accent : track,
+        cursor: "pointer",
+        position: "relative",
+        flexShrink: 0,
+        transition: "background 0.15s",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: "3px",
+          left: on ? "21px" : "3px",
+          width: "16px",
+          height: "16px",
+          borderRadius: "50%",
+          background: knob,
+          transition: "left 0.15s",
+        }}
+      />
+    </button>
   );
 }
 
@@ -103,12 +158,7 @@ export default function SchedulerView({
   const isMobile = useIsMobile();
   // Start with everything collapsed; the user expands the one they're editing.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [savedFlashId, setSavedFlashId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (flashTimer.current) clearTimeout(flashTimer.current);
-  }, []);
 
   // Auto-expand a newly created/imported schedule so its details (Project,
   // Sections, Steps) are immediately editable — a fresh card is otherwise
@@ -121,37 +171,81 @@ export default function SchedulerView({
     knownIds.current = new Set(schedules.map((s) => s.id));
   }, [schedules]);
 
-  const text = "var(--color-text-primary)";
-  const muted = "var(--color-text-muted)";
-  const border = "var(--color-border)";
+  // Dark-card palette (mockup): solid charcoal panels with light text on the
+  // lavender canvas. We build these straight off --mono (which still cascades
+  // here) instead of the .cnsl-scheduler-flipped --color-* tokens, which are
+  // tuned for dark-text-on-lavender.
+  const text = "var(--mono)";
+  const muted = "color-mix(in srgb, var(--mono) 55%, #000)";
+  const faint = "color-mix(in srgb, var(--mono) 40%, #000)";
+  const border = "color-mix(in srgb, var(--mono) 26%, #000)";
+  const cardBg = "color-mix(in srgb, var(--mono) 13%, #000)";
+  const fieldBg = "color-mix(in srgb, var(--mono) 7%, #000)";
+  const accent = "var(--mono)";
+  const onAccent = "color-mix(in srgb, var(--mono) 14%, #000)"; // ink on a lavender fill
 
+  // Shared column widths so the duration fields line up vertically across the
+  // auto-pause / section / step rows, and the trailing action slot is reserved
+  // in every row (so the duration column lands at the same x).
+  const DUR_W = "108px"; // wide enough for "00:00:00"
+  const ACT_W = "62px"; // two 30px icon buttons + gap
+
+  // Filled dark input field — no outline (the darker fill reads as the field).
   const inputStyle: React.CSSProperties = {
-    border: `1px solid ${border}`,
-    borderRadius: "6px",
-    background: "transparent",
+    border: "none",
+    borderRadius: "8px",
+    background: fieldBg,
     color: text,
     fontFamily: "var(--font-family)",
     fontSize: "var(--text-base)",
-    padding: "0 10px",
-    height: isMobile ? "44px" : "32px",
+    padding: "0 12px",
+    height: isMobile ? "44px" : "36px",
     outline: "none",
     minWidth: 0,
   };
 
+  // Outline pill (Play, Export JSON, Add …).
   const ghostBtn: React.CSSProperties = {
-    height: isMobile ? "40px" : "30px",
-    padding: "0 12px",
+    height: isMobile ? "40px" : "32px",
+    padding: "0 14px",
     background: "transparent",
     color: text,
     border: `1px solid ${border}`,
-    borderRadius: "6px",
+    borderRadius: "8px",
     fontSize: "var(--text-sm)",
+    fontWeight: 600,
     fontFamily: "var(--font-family)",
     cursor: "pointer",
     flexShrink: 0,
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: "6px",
+  };
+
+  // Filled accent (Save).
+  const accentBtn: React.CSSProperties = {
+    ...ghostBtn,
+    border: "none",
+    background: accent,
+    color: onAccent,
+    fontWeight: 700,
+  };
+
+  // Icon-only action (copy / trash); revealed on row hover via .sched-actions.
+  const iconBtn: React.CSSProperties = {
+    height: "30px",
+    width: "30px",
+    padding: 0,
+    background: "transparent",
+    color: muted,
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    flexShrink: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   function openCard(id: string) {
@@ -163,13 +257,6 @@ export default function SchedulerView({
       next.delete(id);
       return next;
     });
-  }
-  // "Save" persists (edits are already live-saved) and KEEPS the card open — it
-  // only flashes a confirmation. Collapsing is the separate Close button.
-  function flashSaved(id: string) {
-    setSavedFlashId(id);
-    if (flashTimer.current) clearTimeout(flashTimer.current);
-    flashTimer.current = setTimeout(() => setSavedFlashId(null), 1200);
   }
 
   // ── section / step mutations ──
@@ -268,8 +355,8 @@ export default function SchedulerView({
           <div
             key={s.id}
             style={{
-              borderRadius: "10px",
-              background: "color-mix(in srgb, var(--color-accent) 7%, transparent)",
+              borderRadius: "12px",
+              background: cardBg,
               border: `1px solid ${border}`,
               overflow: "hidden",
             }}
@@ -280,84 +367,85 @@ export default function SchedulerView({
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: isMobile ? "10px" : "10px 12px",
+                padding: isMobile ? "10px" : "12px",
                 flexWrap: isMobile ? "wrap" : "nowrap",
               }}
             >
-              {isOpen ? (
-                <input
-                  value={s.name}
-                  onChange={(e) => onUpdateSchedule({ ...s, name: e.target.value, updatedAt: now() })}
-                  placeholder="Schedule name"
-                  autoFocus
-                  style={{ ...inputStyle, flex: 1, fontWeight: 700 }}
-                />
-              ) : (
-                <span
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontWeight: 700,
-                    fontSize: "var(--text-base)",
-                    color: s.name ? text : muted,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {s.name || "Untitled schedule"}
-                </span>
-              )}
-              {/* Edit ↔ Save: opens the card into edit mode; Save commits (edits are
-                  already live-saved) and collapses it back to a tidy display row. */}
-              <button
-                type="button"
-                onClick={() => (isOpen ? flashSaved(s.id) : openCard(s.id))}
-                aria-label={isOpen ? "Save schedule" : "Edit schedule"}
-                style={{
-                  ...ghostBtn,
-                  fontWeight: 700,
-                  color: text,
-                  borderColor: "var(--color-accent)",
-                  background: isOpen
-                    ? "color-mix(in srgb, var(--color-accent) 22%, transparent)"
-                    : "color-mix(in srgb, var(--color-accent) 10%, transparent)",
-                }}
-              >
-                {isOpen ? (savedFlashId === s.id ? "Saved ✓" : "Save") : "Edit"}
-              </button>
-              <span
-                style={{
-                  fontSize: "var(--text-sm)",
-                  color: muted,
-                  fontFamily: "var(--font-family-mono)",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {formatDuration(total)} · {stepCount(s)} steps
-              </span>
               <button
                 type="button"
                 onClick={() => onPlay(s)}
                 disabled={stepCount(s) === 0}
                 title="Play"
-                style={{
-                  ...ghostBtn,
-                  fontWeight: 700,
-                  color: text,
-                  borderColor: "var(--color-accent)",
-                  background: "color-mix(in srgb, var(--color-accent) 14%, transparent)",
-                  opacity: stepCount(s) === 0 ? 0.4 : 1,
-                }}
+                style={{ ...ghostBtn, opacity: stepCount(s) === 0 ? 0.4 : 1 }}
               >
                 <PlayIcon color={text} /> Play
               </button>
-              <button type="button" style={ghostBtn} onClick={() => onCopySchedule(s.id)}>
-                Copy
-              </button>
-              <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
-                Export
+
+              {isOpen ? (
+                <input
+                  value={s.name}
+                  onChange={(e) => onUpdateSchedule({ ...s, name: e.target.value, updatedAt: now() })}
+                  placeholder="Routine Name"
+                  autoFocus
+                  style={{ ...inputStyle, flex: 1, fontWeight: 700, fontSize: "18px" }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openCard(s.id)}
+                  title="Edit"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    textAlign: "left",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0 2px",
+                    fontWeight: 700,
+                    fontSize: "18px",
+                    fontFamily: "var(--font-family)",
+                    color: s.name ? text : faint,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {s.name || "Routine Name"}
+                </button>
+              )}
+
+              {isOpen ? (
+                <>
+                  <button type="button" style={accentBtn} onClick={() => closeCard(s.id)}>
+                    Save
+                  </button>
+                  <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
+                    Export JSON
+                  </button>
+                </>
+              ) : (
+                <span
+                  style={{
+                    fontSize: "var(--text-sm)",
+                    color: muted,
+                    fontFamily: "var(--font-family-mono)",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  {formatDuration(total)} · {stepCount(s)} steps
+                </span>
+              )}
+
+              <button
+                type="button"
+                style={iconBtn}
+                onClick={() => onCopySchedule(s.id)}
+                aria-label="Duplicate schedule"
+                title="Duplicate"
+              >
+                <CopyIcon color={text} size={17} />
               </button>
               <button
                 type="button"
@@ -367,9 +455,9 @@ export default function SchedulerView({
                 }}
                 aria-label="Delete schedule"
                 title="Delete"
-                style={{ ...ghostBtn, padding: "0 10px" }}
+                style={iconBtn}
               >
-                <TrashIcon color={text} size={16} />
+                <TrashIcon color={text} size={17} />
               </button>
             </div>
 
@@ -377,172 +465,169 @@ export default function SchedulerView({
             {isOpen && (
               <div
                 style={{
-                  padding: isMobile ? "0 10px 12px" : "0 12px 14px",
+                  padding: isMobile ? "0 10px 14px" : "0 12px 16px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "12px",
                 }}
               >
-                {/* Project assignment */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "10px", color: muted, width: "54px" }}>Project</span>
+                {/* Project + auto-pause (a rest inserted between every step) */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                   <input
                     value={s.project ?? ""}
                     onChange={(e) =>
-                      onUpdateSchedule({
-                        ...s,
-                        project: e.target.value || undefined,
-                        updatedAt: now(),
-                      })
+                      onUpdateSchedule({ ...s, project: e.target.value || undefined, updatedAt: now() })
                     }
-                    placeholder="—"
+                    placeholder="Project"
                     list="scheduler-projects"
-                    style={{ ...inputStyle, flex: 1, maxWidth: "280px" }}
+                    style={{ ...inputStyle, flex: 1, minWidth: "160px" }}
                   />
                   <datalist id="scheduler-projects">
                     {projects.map((p) => (
                       <option key={p} value={p} />
                     ))}
                   </datalist>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                    <span style={{ fontSize: "12px", color: muted, whiteSpace: "nowrap" }}>Auto-pause</span>
+                    <Toggle
+                      on={!!s.autoPause}
+                      onChange={(v) =>
+                        onUpdateSchedule({
+                          ...s,
+                          autoPause: v,
+                          pauseBetweenSteps: s.pauseBetweenSteps ?? DEFAULT_PAUSE_SECONDS,
+                          updatedAt: now(),
+                        })
+                      }
+                      accent={accent}
+                      track={fieldBg}
+                      knob={text}
+                      title="Insert a rest between every step"
+                    />
+                    <DurationInput
+                      seconds={s.pauseBetweenSteps ?? DEFAULT_PAUSE_SECONDS}
+                      onCommit={(secs) =>
+                        onUpdateSchedule({ ...s, pauseBetweenSteps: Math.max(0, secs), updatedAt: now() })
+                      }
+                      style={{
+                        ...inputStyle,
+                        width: DUR_W,
+                        textAlign: "center",
+                        fontFamily: "var(--font-family-mono)",
+                        opacity: s.autoPause ? 1 : 0.4,
+                      }}
+                    />
+                    {!isMobile && <div aria-hidden style={{ width: ACT_W, flexShrink: 0 }} />}
+                  </div>
                 </div>
 
-                {/* Sections */}
-                {s.sections.map((sec) => (
-                  <div
-                    key={sec.id}
-                    style={{
-                      borderRadius: "8px",
-                      border: `1px solid ${border}`,
-                      background: "color-mix(in srgb, var(--color-accent) 5%, transparent)",
-                      padding: isMobile ? "8px" : "10px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    {/* Section header */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <input
-                        value={sec.name}
-                        onChange={(e) =>
-                          onUpdateSchedule(mapSection(s, sec.id, (x) => ({ ...x, name: e.target.value })))
-                        }
-                        placeholder="Section (e.g. Warm up)"
-                        style={{ ...inputStyle, flex: 1, fontWeight: 700 }}
-                      />
-                      <span
-                        style={{
-                          fontSize: "var(--text-sm)",
-                          color: muted,
-                          fontFamily: "var(--font-family-mono)",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {formatDuration(sectionTotalSeconds(sec))}
-                      </span>
-                      <button type="button" style={ghostBtn} onClick={() => copySection(s, sec)}>
-                        Copy
-                      </button>
-                      <button
-                        type="button"
-                        style={{ ...ghostBtn, padding: "0 10px" }}
-                        aria-label="Remove section"
-                        title="Remove section"
-                        onClick={() => removeSection(s, sec.id)}
-                      >
-                        <TrashIcon color={text} size={15} />
-                      </button>
-                    </div>
-
-                    {/* Steps */}
-                    {sec.steps.map((st) => (
-                      <div
-                        key={st.id}
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          alignItems: isMobile ? "stretch" : "center",
-                          flexDirection: isMobile ? "column" : "row",
-                        }}
-                      >
+                {/* Sections (24px apart) */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  {s.sections.map((sec) => (
+                    <div key={sec.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {/* Section header */}
+                      <div className="sched-row" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <input
-                          value={st.name}
+                          value={sec.name}
                           onChange={(e) =>
-                            onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, name: e.target.value })))
+                            onUpdateSchedule(mapSection(s, sec.id, (x) => ({ ...x, name: e.target.value })))
                           }
-                          placeholder="Step (e.g. Jumping Jacks)"
-                          style={{ ...inputStyle, flex: isMobile ? undefined : "0 0 32%" }}
+                          placeholder="Section (e.g. Warm Up)"
+                          style={{ ...inputStyle, flex: 1, fontWeight: 700 }}
                         />
-                        <input
-                          value={st.description ?? ""}
-                          onChange={(e) =>
-                            onUpdateSchedule(
-                              mapStep(s, sec.id, st.id, (x) => ({
-                                ...x,
-                                description: e.target.value || undefined,
-                              }))
-                            )
-                          }
-                          placeholder="Description"
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                        <DurationInput
-                          seconds={st.durationSeconds}
-                          onCommit={(secs) =>
-                            onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
-                          }
+                        <span
                           style={{
-                            ...inputStyle,
-                            width: isMobile ? "100%" : "78px",
+                            width: DUR_W,
                             textAlign: "center",
+                            fontSize: "var(--text-base)",
+                            color: muted,
                             fontFamily: "var(--font-family-mono)",
+                            whiteSpace: "nowrap",
                             flexShrink: 0,
                           }}
-                        />
-                        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                          <button
-                            type="button"
-                            style={{ ...ghostBtn, padding: "0 10px" }}
-                            onClick={() => copyStep(s, sec, st)}
-                            title="Duplicate step"
-                          >
-                            Copy
+                        >
+                          {formatClock(sectionTotalSeconds(sec))}
+                        </span>
+                        <div
+                          className="sched-actions"
+                          style={{ display: "flex", gap: "2px", width: ACT_W, justifyContent: "flex-end", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
+                        >
+                          <button type="button" style={iconBtn} onClick={() => copySection(s, sec)} title="Duplicate section" aria-label="Duplicate section">
+                            <CopyIcon color={text} size={16} />
                           </button>
-                          <button
-                            type="button"
-                            style={{ ...ghostBtn, padding: "0 10px" }}
-                            aria-label="Remove step"
-                            title="Remove step"
-                            onClick={() => removeStep(s, sec.id, st.id)}
-                          >
-                            <TrashIcon color={text} size={15} />
+                          <button type="button" style={iconBtn} onClick={() => removeSection(s, sec.id)} title="Remove section" aria-label="Remove section">
+                            <TrashIcon color={text} size={16} />
                           </button>
                         </div>
                       </div>
-                    ))}
 
-                    <button
-                      type="button"
-                      style={{ ...ghostBtn, alignSelf: "flex-start" }}
-                      onClick={() => addStep(s, sec)}
-                    >
-                      <AddIcon color={text} /> Add step
-                    </button>
-                  </div>
-                ))}
+                      {/* Steps */}
+                      {sec.steps.map((st) => (
+                        <div
+                          key={st.id}
+                          className="sched-row"
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: isMobile ? "stretch" : "center",
+                            flexDirection: isMobile ? "column" : "row",
+                          }}
+                        >
+                          <input
+                            value={st.name}
+                            onChange={(e) =>
+                              onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, name: e.target.value })))
+                            }
+                            placeholder="Step (e.g. Jumping Jacks)"
+                            style={{ ...inputStyle, flex: 1 }}
+                          />
+                          <input
+                            value={st.description ?? ""}
+                            onChange={(e) =>
+                              onUpdateSchedule(
+                                mapStep(s, sec.id, st.id, (x) => ({ ...x, description: e.target.value || undefined }))
+                              )
+                            }
+                            placeholder="Description"
+                            style={{ ...inputStyle, flex: 1 }}
+                          />
+                          <DurationInput
+                            seconds={st.durationSeconds}
+                            onCommit={(secs) =>
+                              onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
+                            }
+                            style={{
+                              ...inputStyle,
+                              width: isMobile ? "100%" : DUR_W,
+                              textAlign: "center",
+                              fontFamily: "var(--font-family-mono)",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <div
+                            className="sched-actions"
+                            style={{ display: "flex", gap: "2px", width: isMobile ? undefined : ACT_W, justifyContent: "flex-end", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
+                          >
+                            <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
+                              <CopyIcon color={text} size={16} />
+                            </button>
+                            <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
+                              <TrashIcon color={text} size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
 
-                <div style={{ display: "flex", gap: "8px", alignSelf: "flex-start", flexWrap: "wrap" }}>
-                  <button type="button" style={ghostBtn} onClick={() => addSection(s)}>
-                    <AddIcon color={text} /> Add section
-                  </button>
-                  <button
-                    type="button"
-                    style={{ ...ghostBtn, fontWeight: 700, borderColor: "var(--color-accent)" }}
-                    onClick={() => closeCard(s.id)}
-                  >
-                    Close
-                  </button>
+                      <button type="button" style={{ ...ghostBtn, alignSelf: "flex-start" }} onClick={() => addStep(s, sec)}>
+                        <AddIcon color={text} /> Add step
+                      </button>
+                    </div>
+                  ))}
                 </div>
+
+                <button type="button" style={{ ...ghostBtn, alignSelf: "flex-start" }} onClick={() => addSection(s)}>
+                  <AddIcon color={text} /> Add section
+                </button>
               </div>
             )}
           </div>
