@@ -35,6 +35,11 @@ export interface Schedule {
   // A Schedule belongs to a project (string name for now → projectId in Phase C).
   project?: string;
   sections: Section[];
+  // Auto-pause (#scheduler): when on, the player inserts a fixed rest between
+  // every step (across section boundaries) so there's breathing room between
+  // exercises. `pauseBetweenSteps` is the rest length in seconds.
+  autoPause?: boolean;
+  pauseBetweenSteps?: number;
   createdAt: string;
   // Phase 2 — server @updatedAt; base version for per-row newer-wins sync.
   updatedAt?: string;
@@ -56,6 +61,13 @@ export interface Activity {
 
 // Sensible default when adding a fresh step in the editor.
 export const DEFAULT_STEP_SECONDS = 30;
+// Default rest inserted between steps when auto-pause is toggled on.
+export const DEFAULT_PAUSE_SECONDS = 10;
+
+// Effective auto-pause length (0 when off).
+export function effectivePauseSeconds(schedule: Schedule): number {
+  return schedule.autoPause ? Math.max(0, schedule.pauseBetweenSteps ?? DEFAULT_PAUSE_SECONDS) : 0;
+}
 
 // ─── Roll-ups ──────────────────────────────────────────────────────────────
 export function sectionTotalSeconds(section: Section): number {
@@ -81,6 +93,16 @@ export function formatDuration(totalSeconds: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
+// Always-padded clock "HH:MM:SS" for the editor's duration fields/labels.
+export function formatClock(totalSeconds: number): string {
+  const t = Math.max(0, Math.round(totalSeconds || 0));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
 // Parse an editor duration input → seconds. Accepts "ss", "mm:ss" or "h:mm:ss"
 // (also tolerates a bare minutes count when a single number is large-ish? no —
 // a single number is treated as SECONDS for predictability). Invalid → 0.
@@ -100,20 +122,39 @@ export interface FlatStep {
   sectionId: string;
   sectionName: string;
   indexInSchedule: number; // 0-based across the whole schedule
+  isPause?: boolean; // synthetic auto-pause rest between two steps
 }
 
 // All steps in play order, with their section context. Sections + steps are
-// sorted by `order` so the player follows the editor's arrangement.
+// sorted by `order` so the player follows the editor's arrangement. When
+// auto-pause is on, a synthetic "Rest" step is inserted between every pair of
+// real steps (across section boundaries too); the rest carries the *upcoming*
+// step's section so the player's context reads ahead.
 export function flattenSteps(schedule: Schedule): FlatStep[] {
-  const out: FlatStep[] = [];
   const sections = [...schedule.sections].sort((a, b) => a.order - b.order);
-  let i = 0;
+  const real: Omit<FlatStep, "indexInSchedule" | "isPause">[] = [];
   for (const sec of sections) {
     const steps = [...sec.steps].sort((a, b) => a.order - b.order);
     for (const step of steps) {
-      out.push({ step, sectionId: sec.id, sectionName: sec.name, indexInSchedule: i++ });
+      real.push({ step, sectionId: sec.id, sectionName: sec.name });
     }
   }
+
+  const pause = effectivePauseSeconds(schedule);
+  const out: FlatStep[] = [];
+  let i = 0;
+  real.forEach((r, ri) => {
+    out.push({ ...r, indexInSchedule: i++ });
+    if (pause > 0 && ri < real.length - 1) {
+      out.push({
+        step: { id: `pause-${r.step.id}`, name: "Rest", durationSeconds: pause, order: 0 },
+        sectionId: r.sectionId,
+        sectionName: real[ri + 1].sectionName,
+        indexInSchedule: i++,
+        isPause: true,
+      });
+    }
+  });
   return out;
 }
 

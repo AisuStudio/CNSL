@@ -22,6 +22,7 @@ import {
   GripVertical,
   Plus,
   Archive,
+  Copy,
 } from "lucide-react";
 
 const FN_STROKE = 1.75; // lighter than Lucide's default 2
@@ -419,4 +420,14 @@ export function ArchiveActionIcon({
   size?: number;
 }) {
   return <Archive color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
+}
+
+export function CopyIcon({
+  color = "currentColor",
+  size = 18,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  return <Copy color={color} size={size} strokeWidth={FN_STROKE} aria-hidden />;
 }

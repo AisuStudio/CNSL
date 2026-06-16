@@ -554,6 +554,10 @@ a:focus-visible {
   --color-accent:       color-mix(in srgb, var(--mono) 22%, #000);
   --color-border:       color-mix(in srgb, var(--mono) 32%, #000);
 }
+/* Editor rows reveal their copy/delete icons on hover (always shown on touch,
+   handled inline). focus-within keeps them up while a field in the row is active. */
+.cnsl-scheduler .sched-actions { transition: opacity 0.12s; }
+.cnsl-scheduler .sched-row:not(:hover):not(:focus-within) .sched-actions { opacity: 0; }
 /* Chat sits on the lavender canvas → same dark-on-lavender flip. "Me" bubbles
    use --color-accent as a fill with --color-card-bg (lavender) text → dark
    bubble, light text (like the calendar event chips); "their" bubbles are a

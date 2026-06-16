@@ -5,7 +5,6 @@ import {
   type Schedule,
   type Activity,
   flattenSteps,
-  scheduleTotalSeconds,
   formatDuration,
 } from "@/lib/scheduler";
 import { newId } from "@/lib/storage";
@@ -30,7 +29,12 @@ export default function SchedulerPlayer({
   onSaveActivity: (a: Activity) => void;
 }) {
   const flat = useMemo(() => flattenSteps(schedule), [schedule]);
-  const total = useMemo(() => scheduleTotalSeconds(schedule), [schedule]);
+  // Total includes the auto-pause rests (they're part of the played run).
+  const total = useMemo(
+    () => flat.reduce((sum, f) => sum + (f.step.durationSeconds || 0), 0),
+    [flat]
+  );
+  const realTotal = useMemo(() => flat.filter((f) => !f.isPause).length, [flat]);
 
   const [idx, setIdx] = useState(0);
   const [remaining, setRemaining] = useState(flat[0]?.step.durationSeconds ?? 0);
@@ -60,6 +64,12 @@ export default function SchedulerPlayer({
 
   const current = flat[idx];
   const next = flat[idx + 1];
+
+  // Step counter ignores the synthetic rests; during a rest it reads ahead.
+  const doneReal = flat.slice(0, idx + 1).filter((f) => !f.isPause).length;
+  const counterLabel = current?.isPause
+    ? `rest · next ${Math.min(doneReal + 1, realTotal)}/${realTotal}`
+    : `step ${doneReal}/${realTotal}`;
 
   // Hero-time weight: per step, full → empty maps to bold(700) → thin(200) on the
   // New Title variable axis. frac is 1 at the step's start, 0 as it runs out.
@@ -341,7 +351,7 @@ export default function SchedulerPlayer({
           <>
             {/* Section + current step */}
             <div style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {current?.sectionName || "—"} · step {Math.min(idx + 1, flat.length)}/{flat.length}
+              {current?.sectionName || "—"} · {counterLabel}
             </div>
 
             <div style={hr} />
