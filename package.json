@@ -17,7 +17,7 @@
     "@tiptap/extension-image": "^2.27.2",
     "@tiptap/extension-link": "^2.27.2",
     "@tiptap/extension-paragraph": "^2.27.2",
-    "@tiptap/extension-text-align": "^2.27.2",
+    "@tiptap/extension-text-align": "^3.26.1",
     "@tiptap/extension-underline": "^2.27.2",
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
