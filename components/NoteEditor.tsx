@@ -14,8 +14,8 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import NoteToolbar from "./NoteToolbar";
 
 // Paragraph that carries an optional `class` (used by the "Caption" type style).
-// Editor-only: the class is not preserved by the markdown serializer, so a
-// Caption reverts to a plain paragraph after reload (acceptable for Phase A).
+// Now that the body is stored as HTML, the class round-trips via getHTML/
+// setContent, so a Caption survives reload and reaches the published page.
 const ClassParagraph = Paragraph.extend({
   addAttributes() {
     return {
@@ -27,12 +27,10 @@ const ClassParagraph = Paragraph.extend({
       },
     };
   },
-  // Preserve blank paragraphs (the user presses Enter to create vertical spacing).
-  // Markdown has no representation for "empty paragraph", so the default serializer
-  // drops them on the round-trip (getMarkdown → setContent) and the spacing is lost
-  // after leaving the note. Emit a `&nbsp;` paragraph instead so it survives the
-  // reparse (markdown-it → a paragraph holding a non-breaking space, which still
-  // counts as empty here → re-emits `&nbsp;`) and renders as a gap on the public page.
+  // Markdown has no representation for an empty paragraph, so the markdown
+  // serializer used by the "Copy MD" export would drop blank lines. Emit a
+  // `&nbsp;` paragraph instead so vertical spacing survives that export.
+  // (HTML storage keeps blank `<p>` as-is, independent of this.)
   addStorage() {
     return {
       markdown: {
@@ -50,17 +48,20 @@ const ClassParagraph = Paragraph.extend({
   },
 });
 
-// WYSIWYG editor. Body is stored as Markdown. Images are by reference only —
-// the user supplies a URL (the image lives elsewhere); it serialises as
-// `![alt](src)` and round-trips via tiptap-markdown. No upload/storage. Switching
-// notes resets the content; typing serialises back to Markdown via tiptap-markdown.
+// WYSIWYG editor. Body is stored as HTML (editor.getHTML()), which round-trips
+// losslessly — alignment, captions, blank lines and underline all survive, unlike
+// the old Markdown storage. tiptap-markdown stays loaded only so "Copy MD" can
+// still emit Markdown. Loading is format-agnostic: the markdown parser runs with
+// html:true, so it parses legacy Markdown bodies AND passes new HTML through, which
+// migrates old notes to HTML on their first edit. Images are by reference (URL)
+// only — no upload. Switching notes reloads the content.
 export default function NoteEditor({
   value,
   onChange,
   title,
 }: {
   value: string;
-  onChange: (markdown: string) => void;
+  onChange: (html: string) => void;
   title?: string; // used for export filenames
 }) {
   const editor = useEditor({
@@ -79,21 +80,28 @@ export default function NoteEditor({
     immediatelyRender: false,
     editorProps: { attributes: { class: "cnsl-prose" } },
     onUpdate: ({ editor }) => {
-      onChange(editor.storage.markdown.getMarkdown());
+      onChange(editor.getHTML());
     },
   });
 
   // Load a different note's content when the selection changes (no echo loop:
-  // skip when the editor already holds this markdown).
+  // skip when the editor already holds this HTML). setContent routes through the
+  // markdown parser (html:true), so a legacy Markdown body is parsed and an HTML
+  // body passes through unchanged.
   useEffect(() => {
     if (!editor) return;
-    if (value !== editor.storage.markdown.getMarkdown()) {
+    if (value !== editor.getHTML()) {
       editor.commands.setContent(value, false);
     }
   }, [value, editor]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
+    // `cnsl-notepad` namespaces every editor + toolbar style so nothing the
+    // NotePad defines can leak into (or be affected by) the rest of the app UI.
+    <div
+      className="cnsl-notepad"
+      style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}
+    >
       <NoteToolbar editor={editor} title={title} />
       <EditorContent editor={editor} />
     </div>
