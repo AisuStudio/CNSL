@@ -17,7 +17,7 @@ import {
 import { formatDate } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { PlayIcon, PlusIcon, TrashIcon } from "./icons";
+import { PlayIcon, PlusIcon, TrashIcon, CopyIcon } from "./icons";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
    peace on the desktop, then hit Play to open the mobile Player.
@@ -353,8 +353,14 @@ export default function SchedulerView({
               >
                 <PlayIcon color={text} /> Play
               </button>
-              <button type="button" style={ghostBtn} onClick={() => onCopySchedule(s.id)}>
-                Copy
+              <button
+                type="button"
+                onClick={() => onCopySchedule(s.id)}
+                aria-label="Copy schedule"
+                title="Copy"
+                style={{ ...ghostBtn, padding: "0 10px" }}
+              >
+                <CopyIcon color={text} size={16} />
               </button>
               <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
                 Export

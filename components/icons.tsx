@@ -348,14 +348,32 @@ export function TrashIcon({
   color?: string;
   size?: number;
 }) {
-  // Simple rect-based trash glyph (lid + bin + bars) in the CNSL style.
+  // CNSL_Icon_Trash.svg — lid bar + bin body with slats. color prop drives fill
+  // (the source SVG hardcodes #93928e).
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
       <g fill={color}>
-        <rect x="7" y="0" width="6" height="2.5" />
-        <rect x="0" y="3.5" width="20" height="2.5" />
-        <polygon points="2.5 7 3.6 20 16.4 20 17.5 7 15 7 14.1 17.5 5.9 17.5 5 7 2.5 7" />
-        <rect x="8.75" y="9" width="2.5" height="7" />
+        <rect width="20" height="3.5" />
+        <polygon points="16.5 16.5 14.5 16.5 14.5 5.5 11 5.5 11 16.5 9 16.5 9 5.5 5.5 5.5 5.5 16.5 3.5 16.5 3.5 5.5 0 5.5 0 20 20 20 20 5.5 16.5 5.5 16.5 16.5" />
+      </g>
+    </svg>
+  );
+}
+
+export function CopyIcon({
+  color = "currentColor",
+  size = 20,
+}: {
+  color?: string;
+  size?: number;
+}) {
+  // CNSL_Icon_Copy.svg — two overlapping sheets. color prop drives fill (the
+  // source SVG hardcodes #93928e).
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <g fill={color}>
+        <polygon points="16.5 5.5 16.5 16.5 5.5 16.5 5.5 20 20 20 20 5.5 16.5 5.5" />
+        <path d="M14.5,0H0v14.5h14.5V0ZM11,11H3.5V3.5h7.5v7.5Z" />
       </g>
     </svg>
   );
