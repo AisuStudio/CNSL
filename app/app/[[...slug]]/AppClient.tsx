@@ -7,7 +7,7 @@ import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
 import Footer from "@/components/Footer";
-import BacklogView, { type BacklogFilter } from "@/components/BacklogView";
+import BacklogView, { type BacklogFilter, type BacklogSort } from "@/components/BacklogView";
 import KanbanView from "@/components/KanbanView";
 import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
@@ -175,6 +175,8 @@ export default function Home() {
   const [sort, setSort] = useState<Sort>(null);
   // Backlog filter: All ↔ Untouched (open only) — #53.
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
+  // Backlog-only sort (independent of the Tracker's column sort). null = default.
+  const [backlogSort, setBacklogSort] = useState<BacklogSort>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
@@ -1628,6 +1630,20 @@ export default function Home() {
     return arr;
   }
 
+  // Like applySort but with an explicit sort arg (for the Backlog's own sort).
+  function sortTasksBy(list: Task[], s: BacklogSort): Task[] {
+    if (!s) return list;
+    return [...list].sort((a, b) => {
+      const av = taskSortValue(a, s.key);
+      const bv = taskSortValue(b, s.key);
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv));
+      return s.dir === "asc" ? cmp : -cmp;
+    });
+  }
+
   // Active (non-archived) vs archived; active feeds Backlog/Kanban/Project.
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived), [tasks]);
   const archivedTasks = useMemo(() => tasks.filter((t) => t.archived), [tasks]);
@@ -1644,13 +1660,16 @@ export default function Home() {
     [activeTasks]
   );
   // Backlog list: optionally narrowed to untouched (open) tasks (#53).
-  const backlogTasks = useMemo(
-    () =>
-      backlogFilter === "open"
-        ? sortedTasks.filter((t) => t.status === "open")
-        : sortedTasks,
-    [sortedTasks, backlogFilter]
-  );
+  const backlogTasks = useMemo(() => {
+    // The backlog's own sort overrides the Tracker's global sort; null falls
+    // back to sortedTasks (the existing behaviour).
+    const base = backlogSort
+      ? sortTasksBy(activeTasks, backlogSort)
+      : sortedTasks;
+    return backlogFilter === "open"
+      ? base.filter((t) => t.status === "open")
+      : base;
+  }, [activeTasks, sortedTasks, backlogSort, backlogFilter]);
 
   // Today view: urgency=today, column-sort applies (shared), but done/canceled
   // are stably pushed to the bottom (#118 follow-up).
@@ -1859,6 +1878,10 @@ export default function Home() {
             onArchive={(id) => setArchived(id, true)}
             filter={backlogFilter}
             onFilterChange={setBacklogFilter}
+            sort={backlogSort}
+            onSortChange={setBacklogSort}
+            onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
+            onSetStatus={(id, status) => updateTask(id, "status", status)}
           />
         )}
         {view === "today" && (

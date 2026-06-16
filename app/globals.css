@@ -488,6 +488,30 @@ a:focus-visible {
 
 /* #156 — inset row divider: 12px gap left/right (fluid), not full-bleed */
 .cnsl-row-line { position: relative; }
+/* Inline row dropdowns (Backlog urgency/status edit). Reads like the static
+   label until hovered/focused; a small caret marks it as editable. */
+.cnsl-row-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2393928e'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px 16px 2px 6px;
+  color: var(--color-text-muted);
+  /* appearance:none selects render their text via -webkit-text-fill-color, which
+     overrides `color` in Chromium → without this the text stays lavender on the
+     mono canvas (invisible). Keep it in sync with `color`. */
+  -webkit-text-fill-color: var(--color-text-muted);
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.cnsl-row-select:hover { border-color: var(--color-border); }
+.cnsl-row-select:focus { outline: none; border-color: var(--color-accent); }
+.cnsl-row-select option { color: #1a1a1a; } /* readable in the native popup */
 .cnsl-row-line::after {
   content: "";
   position: absolute;

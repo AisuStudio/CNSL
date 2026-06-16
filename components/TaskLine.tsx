@@ -2,12 +2,50 @@
 
 import {
   type Task,
+  type Urgency,
+  type Status,
   STATUS_LABEL,
   URGENCY_LABEL,
+  URGENCY_OPTIONS,
+  STATUS_OPTIONS,
   formatHM,
 } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { TrackToggleIcon, ArchiveActionIcon } from "./icons";
+
+/* Inline row dropdown (Backlog #—): edit a structured field straight from the
+   row, without opening the task. stopPropagation so picking a value never also
+   triggers the row's open-on-click. Looks like the static label until hovered. */
+function RowSelect<T extends string>({
+  value,
+  options,
+  onChange,
+  title,
+  minWidth,
+}: {
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (v: T) => void;
+  title: string;
+  minWidth: string;
+}) {
+  return (
+    <select
+      value={value}
+      title={title}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => onChange(e.target.value as T)}
+      className="cnsl-row-select"
+      style={{ flexShrink: 0, minWidth, fontSize: "var(--text-sm)" }}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 /* Flat task line (#156): [play] task · nr · urgency · status … time.
    Uniformly mid-grey so rows recede; "running" is signalled only by the green
@@ -23,6 +61,8 @@ export default function TaskLine({
   onArchive,
   padLeft = "28px",
   showUrgency = true,
+  onSetUrgency,
+  onSetStatus,
 }: {
   task: Task;
   onToggleTimer: (id: string) => void;
@@ -30,6 +70,10 @@ export default function TaskLine({
   onArchive?: (id: string) => void;
   padLeft?: string;
   showUrgency?: boolean;
+  // When provided, urgency/status render as inline dropdowns (Backlog) instead
+  // of static labels — edit straight from the row.
+  onSetUrgency?: (id: string, urgency: Urgency) => void;
+  onSetStatus?: (id: string, status: Status) => void;
 }) {
   const isMobile = useIsMobile();
   const textColor = "var(--color-text-muted)";
@@ -124,18 +168,27 @@ export default function TaskLine({
         {leftButton}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
           {taskText}
-          {showUrgency && (
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 300,
-                lineHeight: 1,
-                color: "var(--color-text-muted)",
-              }}
-            >
-              {URGENCY_LABEL[t.urgency]}
-            </span>
-          )}
+          {showUrgency &&
+            (onSetUrgency ? (
+              <RowSelect
+                value={t.urgency}
+                options={URGENCY_OPTIONS}
+                onChange={(v) => onSetUrgency(t.id, v)}
+                title="Urgency"
+                minWidth="0"
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 300,
+                  lineHeight: 1,
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                {URGENCY_LABEL[t.urgency]}
+              </span>
+            ))}
         </div>
         {time}
       </div>
@@ -156,14 +209,33 @@ export default function TaskLine({
       <span style={{ color: "var(--color-text-muted)", fontWeight: 300, fontSize: "var(--text-sm)", flexShrink: 0 }}>
         {String(t.number).padStart(2, "0")}
       </span>
-      {showUrgency && (
-        <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "72px" }}>
-          {URGENCY_LABEL[t.urgency]}
+      {showUrgency &&
+        (onSetUrgency ? (
+          <RowSelect
+            value={t.urgency}
+            options={URGENCY_OPTIONS}
+            onChange={(v) => onSetUrgency(t.id, v)}
+            title="Urgency"
+            minWidth="72px"
+          />
+        ) : (
+          <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "72px" }}>
+            {URGENCY_LABEL[t.urgency]}
+          </span>
+        ))}
+      {onSetStatus ? (
+        <RowSelect
+          value={t.status}
+          options={STATUS_OPTIONS}
+          onChange={(v) => onSetStatus(t.id, v)}
+          title="Status"
+          minWidth="92px"
+        />
+      ) : (
+        <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "92px" }}>
+          {STATUS_LABEL[t.status]}
         </span>
       )}
-      <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", flexShrink: 0, minWidth: "92px" }}>
-        {STATUS_LABEL[t.status]}
-      </span>
       {time}
     </div>
   );
