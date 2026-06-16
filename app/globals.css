@@ -644,6 +644,49 @@ a:focus-visible {
   .cnsl-footer { margin-bottom: env(safe-area-inset-bottom); }
 }
 
+/* ─── Start page (/) self-playing app preview (HeroTour) ── */
+.cnsl-hero-tour {
+  width: 50vw; /* desktop: half the viewport */
+}
+@media (max-width: 768px) {
+  .cnsl-hero-tour {
+    /* Full width minus 12px gutters, breaking out of the hero's side padding
+       (50% - 50vw cancels the parent padding; +12px = left gutter). */
+    width: calc(100vw - 24px);
+    margin-left: calc(50% - 50vw + 12px);
+  }
+}
+
+/* New landing layout: hero (top), tools (left) + preview & tagline (right
+   column), all vertically centered. (#homepage-redesign · toolbox-66) */
+.start-hero { flex-shrink: 0; }
+.start-cols { display: flex; gap: clamp(24px, 3vw, 56px); align-items: flex-start; flex: 1 1 auto; min-height: 0; }
+/* The left column is a fixed-width SLOT (keeps the demo's left edge put); the
+   tool box itself only fills 66% of that slot, so shrinking it doesn't move the
+   demo left. */
+.start-left { width: clamp(248px, 22vw, 320px); flex-shrink: 0; display: flex; flex-direction: column; gap: clamp(20px, 3vh, 36px); }
+/* The demo block (window + tagline) is centered vertically as a whole; the left
+   column stays top-aligned (align-self below). */
+.start-right { width: 50vw; min-width: 0; display: flex; flex-direction: column; gap: clamp(16px, 2.5vh, 28px); align-self: center; }
+.start-tools { width: 66%; display: flex; flex-direction: column; gap: 14px; }
+.start-auth { display: flex; flex-direction: column; gap: 10px; }
+.start-btn { height: 44px; border-radius: var(--radius-input); font-weight: 700; font-size: var(--text-base); font-family: var(--font-family); cursor: pointer; transition: filter 120ms ease, background 120ms ease; }
+.start-btn-primary { background: var(--color-accent); color: var(--color-card-ink); border: none; }
+.start-btn-primary:hover { filter: brightness(1.08); }
+.start-btn-ghost { background: transparent; color: var(--color-text-primary); border: 1px solid var(--color-border); }
+.start-btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+/* Headline (left) + Info (right) as two equal columns under the demo, spanning
+   the demo width. */
+.start-tagline { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 2.5vw, 48px); width: 100%; align-items: start; }
+.start-tagline-lead { margin: 0; font-weight: 700; font-size: 18px; line-height: 1.3; color: var(--color-text-primary); }
+.start-tagline-body { margin: 0; font-size: 18px; line-height: 1.3; color: var(--color-text-primary); }
+.start-tagline-note { margin: 8px 0 0; font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-family-mono); }
+
+/* Footer page-links: linear row, top-right above the BETA badge; 90% lavender,
+   100% on hover. (overrides LegalFooter's inline styles) */
+.start-legal a { color: color-mix(in srgb, var(--color-text-primary) 90%, transparent) !important; transition: color 120ms ease; }
+.start-legal a:hover { color: var(--color-text-primary) !important; }
+
 /* ─── Start page (/) decorative artwork ─────────────────── */
 .start-squiggle,
 .start-squiggle-2 {
@@ -677,12 +720,13 @@ a:focus-visible {
   /* -180px baseline + 20vw = nudged right per the design */
   left: calc(-180px + 20vw);
 }
-/* Sign-in panel — centered horizontally + vertically in the viewport */
+/* Sign-in panel — right half, vertically centered (the 50vw HeroTour fills the
+   left half). On mobile this is overridden back to normal flow. */
 .start-login {
   position: absolute;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  right: clamp(60px, 4.7vw, 200px);
+  transform: translateY(-50%);
   z-index: 2;
 }
 /* Aisu Studio logo — bottom-LEFT (swapped with the legal links so the legal
@@ -704,7 +748,7 @@ a:focus-visible {
    the squiggle runs into the corner). Kept reachable: § 5 DDG. */
 .start-legal {
   position: absolute;
-  bottom: clamp(24px, 4vh, 44px);
+  top: 28px; /* top-right, above the BETA badge */
   right: clamp(60px, 4.7vw, 200px);
   z-index: 3;
 }

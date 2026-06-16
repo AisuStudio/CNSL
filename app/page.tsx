@@ -4,31 +4,32 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
+import HeroTour from "@/components/HeroTour";
 import { LogIcon, TaskTrackerIcon, NotePadIcon, CalIcon, SchedulerIcon, ChatIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { BETA_CODE } from "@/lib/auth-config";
 
 /* ───────────────────────────────────────────────────────────
    CNSL — Start / Landing page (public, lives at "/").
-   Marketing hero + tools overview + embedded sign-in.
-   Built responsive from the Figma export
-   (CNSL Design/Homepage/Start). The app itself lives at /app.
+   New design: hero + Tools list + Sign up/Log in (left), a
+   self-playing 1:1 app preview (right), tagline (bottom).
+   The app itself lives at /app. Mono theme (one hue + black).
    ─────────────────────────────────────────────────────────── */
 
-// All tools are live now → one feature box, no "Coming Soon" / "More".
 const TOOLS = [
+  { icon: LogIcon, label: "Blurp Logger" },
   { icon: TaskTrackerIcon, label: "Tracker" },
   { icon: NotePadIcon, label: "Note Pad" },
   { icon: CalIcon, label: "Calendar" },
   { icon: SchedulerIcon, label: "Scheduler" },
   { icon: ChatIcon, label: "Chat" },
-  { icon: LogIcon, label: "Blurp Logger" },
 ];
 
 export default function StartPage() {
-  // The landing adopts the mono theme (one colour + black). Set it on the
-  // document root while this page is mounted; remove on unmount so other routes
-  // aren't affected. Mirrors the app's /app?theme=mono effect.
+  const [authMode, setAuthMode] = useState<null | "signin" | "signup">(null);
+
+  // The landing adopts the mono theme; remove on unmount so other routes aren't
+  // affected. Mirrors the app's mono effect.
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", "mono");
@@ -42,7 +43,7 @@ export default function StartPage() {
         minHeight: "100dvh",
         width: "100%",
         overflow: "hidden",
-        background: "var(--color-surface)", // dark grey 3 — #212126
+        background: "var(--color-surface)",
         color: "var(--color-text-primary)",
         display: "flex",
         flexDirection: "column",
@@ -50,20 +51,11 @@ export default function StartPage() {
     >
       <BackdropArt />
 
-      {/* Top bar — overlaid top-right so the badge aligns with the hero (60px top) */}
-      <div
-        className="start-topbar"
-        style={{
-          position: "absolute",
-          zIndex: 3,
-          top: "60px",
-          right: "clamp(60px, 4.7vw, 200px)",
-        }}
-      >
+      {/* Beta badge — top-right */}
+      <div className="start-topbar" style={{ position: "absolute", zIndex: 3, top: "72px", right: "clamp(60px, 4.7vw, 200px)" }}>
         <BetaBadge />
       </div>
 
-      {/* Content — hero + cards grouped from the top, all within the fold */}
       <div
         className="start-main"
         style={{
@@ -71,79 +63,53 @@ export default function StartPage() {
           zIndex: 2,
           flex: 1,
           width: "100%",
-          margin: 0,
-          padding: "60px clamp(60px, 4.7vw, 200px) clamp(24px, 4vh, 44px)",
+          padding: "28px clamp(40px, 4.7vw, 120px) clamp(20px, 3vh, 36px)",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-start",
-          gap: "clamp(20px, 3vh, 36px)",
+          gap: "clamp(12px, 2vh, 28px)",
         }}
       >
-        {/* Hero */}
-        <header style={{ maxWidth: "640px" }}>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-family)",
-              fontWeight: 700,
-              lineHeight: 0.86, // 55 / 64
-              fontSize: "clamp(40px, 8vw, 64px)",
-              color: "var(--color-accent)",
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Welcome
-            <br />
-            to CNSL
-          </h1>
-          <p
-            style={{
-              margin: "20px 0 0",
-              fontSize: "clamp(15px, 2.2vw, 18px)",
-              lineHeight: 1.15,
-              color: "var(--color-text-primary)",
-              maxWidth: "30ch",
-            }}
-          >
-            Your new (free) console for blurps, tasks, notes.
-            <br />
-            Desktop and mobile <span style={{ color: "var(--color-accent)" }}>*</span>
-          </p>
-          <p
-            style={{
-              margin: "12px 0 0",
-              fontSize: "var(--text-xs)",
-              color: "var(--color-text-muted)",
-              fontFamily: "var(--font-family-mono)",
-            }}
-          >
-            *Just text – no images, yet.
-          </p>
-        </header>
+        {/* Hero — top-left */}
+        <h1
+          className="start-hero"
+          style={{
+            margin: 0,
+            fontFamily: "var(--font-family)",
+            fontWeight: 700,
+            lineHeight: 0.86,
+            fontSize: "clamp(40px, 7vw, 64px)",
+            color: "var(--color-accent)",
+            letterSpacing: "-0.04em",
+          }}
+        >
+          Welcome
+          <br />
+          to CNSL
+        </h1>
 
-        {/* Tools card (left) — login panel is centered separately */}
-        <ToolsPanel />
+        {/* Tools (left) + self-playing preview (right), vertically centered */}
+        <div className="start-cols">
+          <div className="start-left">
+            <ToolsPanel onSignUp={() => setAuthMode("signup")} onLogin={() => setAuthMode("signin")} />
+          </div>
+          <div className="start-right">
+            <HeroTour />
+            <Tagline />
+          </div>
+        </div>
       </div>
 
-      {/* Sign-in panel — centered in the viewport (h + v) on desktop */}
-      <div className="start-login">
-        <LoginCard />
-      </div>
-
-      {/* Aisu Studio logo — bottom-right, right-aligned like the BETA badge */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/homepage/aisu-studio-mono.svg" alt="Aisu Studio" className="start-aisu" />
-
-      {/* Legal links — bottom-left, so Impressum & Datenschutz stay reachable
-          from the public start page (§ 5 DDG: ständig verfügbar). */}
+      {/* Legal links — bottom-right (§ 5 DDG: reachable without login) */}
       <div className="start-legal">
         <LegalFooter showSignIn={false} />
       </div>
+
+      {authMode && <AuthModal initialMode={authMode} onClose={() => setAuthMode(null)} />}
     </div>
   );
 }
 
-/* ── "WE'RE STILL IN / BETA" banner badge (concave top & bottom edges) ── */
+/* ── "WE'RE STILL IN / BETA" badge (concave top & bottom edges) ── */
 function BetaBadge() {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
@@ -160,20 +126,8 @@ function BetaBadge() {
         We&rsquo;re still in
       </span>
       <div style={{ position: "relative", width: "132px", height: "56px" }}>
-        <svg
-          viewBox="0 0 132 56"
-          width="132"
-          height="56"
-          style={{ position: "absolute", inset: 0 }}
-          aria-hidden
-        >
-          {/* vertical sides straight; top & bottom edges curve inward (concave) */}
-          <path
-            d="M3 3 Q66 16 129 3 L129 53 Q66 40 3 53 Z"
-            fill="none"
-            stroke="var(--color-text-primary)"
-            strokeWidth="1.5"
-          />
+        <svg viewBox="0 0 132 56" width="132" height="56" style={{ position: "absolute", inset: 0 }} aria-hidden>
+          <path d="M3 3 Q66 16 129 3 L129 53 Q66 40 3 53 Z" fill="none" stroke="var(--color-text-primary)" strokeWidth="1.5" />
         </svg>
         <span
           style={{
@@ -196,55 +150,23 @@ function BetaBadge() {
   );
 }
 
-/* ── Decorative background: centered blurred logo + lime squiggle ── */
+/* ── Decorative background: lavender dashed squiggles ── */
 function BackdropArt() {
   return (
-    <div
-      aria-hidden
-      style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: "none",
-      }}
-    >
-      {/* Purple dashed squiggle 1 (dash 40 / gap 60, round caps) */}
-      <svg
-        viewBox="0 0 895 1069"
-        preserveAspectRatio="xMidYMid meet"
-        className="start-squiggle"
-      >
-        <path
-          d="M887.069 39.3696C571.389 96.0933 -452.104 759.514 324.765 1030.8"
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="99"
-          strokeDasharray="40 60"
-          strokeLinecap="round"
-        />
+    <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+      <svg viewBox="0 0 895 1069" preserveAspectRatio="xMidYMid meet" className="start-squiggle">
+        <path d="M887.069 39.3696C571.389 96.0933 -452.104 759.514 324.765 1030.8" fill="none" stroke="var(--color-accent)" strokeWidth="99" strokeDasharray="40 60" strokeLinecap="round" />
       </svg>
-      {/* Purple dashed squiggle 2 (wider sweep) */}
-      <svg
-        viewBox="0 0 1515 860"
-        preserveAspectRatio="xMidYMid meet"
-        className="start-squiggle-2"
-      >
-        <path
-          d="M1498.85 223.239C542.25 -170.274 -422.844 86.9738 282.014 832.314"
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth="80"
-          strokeDasharray="40 60"
-          strokeLinecap="round"
-        />
+      <svg viewBox="0 0 1515 860" preserveAspectRatio="xMidYMid meet" className="start-squiggle-2">
+        <path d="M1498.85 223.239C542.25 -170.274 -422.844 86.9738 282.014 832.314" fill="none" stroke="var(--color-accent)" strokeWidth="80" strokeDasharray="40 60" strokeLinecap="round" />
       </svg>
     </div>
   );
 }
 
-/* ── Tools overview panel ── */
-function ToolsPanel() {
-  const row = (Icon: typeof LogIcon, label: string, muted = false) => (
+/* ── Tools overview + auth buttons (left column) ── */
+function ToolsPanel({ onSignUp, onLogin }: { onSignUp: () => void; onLogin: () => void }) {
+  const row = (Icon: typeof LogIcon, label: string) => (
     <li
       key={label}
       style={{
@@ -252,34 +174,49 @@ function ToolsPanel() {
         alignItems: "center",
         gap: "12px",
         padding: "8px 0",
-        color: muted ? "var(--color-text-muted)" : "var(--color-text-primary)",
+        color: "var(--color-text-primary)",
         fontSize: "var(--text-sm)",
       }}
     >
-      <span style={{ display: "flex", width: 20, justifyContent: "center", color: muted ? "var(--color-text-muted)" : "var(--color-accent)" }}>
+      <span style={{ display: "flex", width: 20, justifyContent: "center", color: "var(--color-accent)" }}>
         <Icon color="currentColor" />
       </span>
       <span>{label}</span>
     </li>
   );
 
+  const isDemo = process.env.NEXT_PUBLIC_DEMO === "true";
+
   return (
-    <div
-      style={{
-        background: "rgba(15, 14, 20, 0.8)", // #0F0E14 @ 80%
-        backdropFilter: "blur(9px)",
-        WebkitBackdropFilter: "blur(9px)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "var(--radius-container)",
-        padding: "var(--space-5)",
-        maxWidth: "320px",
-        width: "100%",
-      }}
-    >
-      <SectionLabel>Tools</SectionLabel>
-      <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>
-        {TOOLS.map((t) => row(t.icon, t.label))}
-      </ul>
+    <div className="start-tools">
+      <div
+        style={{
+          background: "rgba(15, 14, 20, 0.8)",
+          backdropFilter: "blur(9px)",
+          WebkitBackdropFilter: "blur(9px)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-container)",
+          padding: "var(--space-5)",
+        }}
+      >
+        <SectionLabel>Tools</SectionLabel>
+        <ul style={{ listStyle: "none", margin: "6px 0 0", padding: 0 }}>{TOOLS.map((t) => row(t.icon, t.label))}</ul>
+
+        {isDemo ? (
+          <Link href="/app" className="start-btn start-btn-primary" style={{ marginTop: "var(--space-4)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            Enter the demo →
+          </Link>
+        ) : (
+          <div className="start-auth" style={{ marginTop: "var(--space-4)" }}>
+            <button type="button" onClick={onSignUp} className="start-btn start-btn-primary">
+              Sign up
+            </button>
+            <button type="button" onClick={onLogin} className="start-btn start-btn-ghost">
+              Log in
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -300,9 +237,51 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ── Embedded sign-in card ── */
-function LoginCard() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+/* ── Positioning tagline (bottom) ── */
+function Tagline() {
+  return (
+    <div className="start-tagline">
+      <p className="start-tagline-lead">CNSL is a collaborative multi-console — EU-hosted, your data stays yours:</p>
+      <div>
+        <p className="start-tagline-body">
+          time tracking, project &amp; routine planning, calendar, notes with micro-publishing, and chat, synced across devices and browsers.
+        </p>
+        <p className="start-tagline-note">*Just text – no images, yet.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Auth modal (opened by Sign up / Log in) ── */
+function AuthModal({ initialMode, onClose }: { initialMode: "signin" | "signup"; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        background: "var(--overlay-bg)",
+        backdropFilter: "blur(var(--overlay-blur))",
+        WebkitBackdropFilter: "blur(var(--overlay-blur))",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "360px" }}>
+        <LoginCard initialMode={initialMode} onClose={onClose} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Sign-in / sign-up card (Supabase) ── */
+function LoginCard({ initialMode = "signin", onClose }: { initialMode?: "signin" | "signup"; onClose?: () => void }) {
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [betaCode, setBetaCode] = useState("");
@@ -317,18 +296,12 @@ function LoginCard() {
     setError(null);
     setNote(null);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) setError(error.message);
     else window.location.href = "/app";
   }
 
-  // Create an account with email + password, gated by the beta code. With email
-  // confirmation off in Supabase, signUp returns a session immediately → straight
-  // into the app (no confirmation link, so no PKCE/cross-device breakage).
   async function register() {
     if (betaCode.trim() !== BETA_CODE) {
       setError("Wrong beta code. Ask the CNSL team for the current one.");
@@ -338,10 +311,7 @@ function LoginCard() {
     setError(null);
     setNote(null);
     const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
     setLoading(false);
     if (error) {
       setError(error.message);
@@ -368,9 +338,6 @@ function LoginCard() {
     width: "100%",
   };
 
-  // The static GitHub-Pages demo has no Supabase backend, so swap the sign-in
-  // form for a button that drops visitors straight into the tool (/app).
-  const isDemo = process.env.NEXT_PUBLIC_DEMO === "true";
   const cardStyle: React.CSSProperties = {
     background: "var(--color-surface)",
     border: "1px solid var(--color-border)",
@@ -380,87 +347,33 @@ function LoginCard() {
     flexDirection: "column",
     gap: "var(--space-3)",
   };
-  const logoRow = (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-2)" }}>
-      <CnslLogo size={28} />
-      <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
-    </div>
-  );
 
   return (
-    <div style={{ marginLeft: "auto", width: "100%", maxWidth: "360px" }}>
-      {isDemo ? (
-        <div style={cardStyle}>
-          {logoRow}
-          <p style={{ margin: 0, fontSize: "var(--text-sm)", lineHeight: 1.4, color: "var(--color-text-muted)" }}>
-            You&rsquo;re viewing the public demo — no sign-in needed.
-          </p>
-          <Link
-            href="/app"
-            style={{
-              height: "44px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "var(--radius-input)",
-              background: "var(--color-accent)",
-              color: "var(--color-card-ink)",
-              fontWeight: 700,
-              fontSize: "var(--text-base)",
-              textDecoration: "none",
-            }}
-          >
-            Enter the demo →
-          </Link>
-        </div>
-      ) : (
+    <div style={{ width: "100%" }}>
       <form onSubmit={submit} style={cardStyle}>
-        {logoRow}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "var(--space-2)" }}>
+          <CnslLogo size={28} />
+          <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+              style={{ marginLeft: "auto", background: "transparent", border: "none", color: "var(--color-text-muted)", cursor: "pointer", fontSize: "18px", lineHeight: 1, padding: 0 }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@email.com"
-          autoComplete="email"
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          style={inputStyle}
-        />
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" autoComplete="email" style={inputStyle} />
+        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" autoComplete={mode === "signup" ? "new-password" : "current-password"} style={inputStyle} />
         {mode === "signup" && (
-          <input
-            type="text"
-            required
-            value={betaCode}
-            onChange={(e) => setBetaCode(e.target.value)}
-            placeholder="Beta code"
-            autoComplete="off"
-            style={inputStyle}
-          />
+          <input type="text" required value={betaCode} onChange={(e) => setBetaCode(e.target.value)} placeholder="Beta code" autoComplete="off" style={inputStyle} />
         )}
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            height: "44px",
-            borderRadius: "var(--radius-input)",
-            border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-card-ink)",
-            fontWeight: 700,
-            fontSize: "var(--text-base)",
-            cursor: "pointer",
-            opacity: loading ? 0.6 : 1,
-          }}
-        >
+
+        <button type="submit" disabled={loading} className="start-btn start-btn-primary" style={{ opacity: loading ? 0.6 : 1 }}>
           {loading ? "…" : mode === "signup" ? "Create account" : "Sign in"}
         </button>
 
@@ -472,39 +385,16 @@ function LoginCard() {
             setNote(null);
           }}
           disabled={loading}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "var(--color-text-muted)",
-            fontSize: "var(--text-sm)",
-            cursor: "pointer",
-            padding: "4px 0 0",
-            textAlign: "center",
-          }}
+          style={{ background: "transparent", border: "none", color: "var(--color-text-muted)", fontSize: "var(--text-sm)", cursor: "pointer", padding: "4px 0 0", textAlign: "center" }}
         >
-          {mode === "signin"
-            ? "New here? Create an account"
-            : "Already have an account? Sign in"}
+          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
 
-        {note && (
-          <p style={{ color: "var(--color-running)", fontSize: "var(--text-sm)", margin: 0 }}>{note}</p>
-        )}
-        {error && (
-          <p style={{ color: "#e0709a", fontSize: "var(--text-sm)", margin: 0 }}>{error}</p>
-        )}
+        {note && <p style={{ color: "var(--color-running)", fontSize: "var(--text-sm)", margin: 0 }}>{note}</p>}
+        {error && <p style={{ color: "#e0709a", fontSize: "var(--text-sm)", margin: 0 }}>{error}</p>}
       </form>
-      )}
 
-      <p
-        style={{
-          textAlign: "center",
-          margin: "12px 0 0",
-          fontSize: "var(--text-xs)",
-          fontFamily: "var(--font-family-mono)",
-          color: "var(--color-text-muted)",
-        }}
-      >
+      <p style={{ textAlign: "center", margin: "12px 0 0", fontSize: "var(--text-xs)", fontFamily: "var(--font-family-mono)", color: "var(--color-text-muted)" }}>
         This project runs on <strong style={{ color: "var(--color-text-primary)", fontWeight: 700 }}>Supabase</strong>
       </p>
     </div>

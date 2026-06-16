@@ -43,7 +43,14 @@ export default function LegalFooter({
         justifyContent: "center",
       }}
     >
-      {legal("/story", "The Story")}
+      <a
+        href="https://cnsl.aisu.studio/note/dominik-heilig/documentation/cnsl-product-snapshot"
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}
+        style={style}
+      >
+        Production Snapshot
+      </a>
       {sep}
       {legal("/impressum", "Impressum")}
       {sep}
