@@ -15,7 +15,7 @@ import {
 } from "@/lib/calendar";
 import { dayKey } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { PlusIcon, ArrowLeftIcon, ArrowRightIcon } from "./icons";
+import { AddIcon, ArrowLeftIcon, ArrowRightIcon } from "./icons";
 
 /* Calendar (#221 + #231/#232/#233/#234/#235/#236). Colours come from CSS vars
    the `.cnsl-calendar` mono override flips to dark-on-lavender.
@@ -675,7 +675,7 @@ export default function CalendarView({
             onClick={() => onCreateOnDay(dayKey(view === "today" ? anchor : new Date()))}
             style={navBtn}
           >
-            <PlusIcon color="var(--color-text-primary)" />
+            <AddIcon color="var(--color-text-primary)" />
           </button>
 
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>

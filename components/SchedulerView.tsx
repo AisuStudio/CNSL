@@ -17,7 +17,7 @@ import {
 import { formatDate } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { PlayIcon, PlusIcon, TrashIcon } from "./icons";
+import { PlayIcon, AddIcon, TrashIcon } from "./icons";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
    peace on the desktop, then hit Play to open the mobile Player.
@@ -225,7 +225,7 @@ export default function SchedulerView({
             Import
           </button>
           <button type="button" style={ghostBtn} onClick={onCreateSchedule}>
-            <PlusIcon color={text} /> New schedule
+            <AddIcon color={text} /> New schedule
           </button>
           <input
             ref={fileRef}
@@ -526,14 +526,14 @@ export default function SchedulerView({
                       style={{ ...ghostBtn, alignSelf: "flex-start" }}
                       onClick={() => addStep(s, sec)}
                     >
-                      <PlusIcon color={text} /> Add step
+                      <AddIcon color={text} /> Add step
                     </button>
                   </div>
                 ))}
 
                 <div style={{ display: "flex", gap: "8px", alignSelf: "flex-start", flexWrap: "wrap" }}>
                   <button type="button" style={ghostBtn} onClick={() => addSection(s)}>
-                    <PlusIcon color={text} /> Add section
+                    <AddIcon color={text} /> Add section
                   </button>
                   <button
                     type="button"

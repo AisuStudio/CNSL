@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import {
+  Link as LinkGlyph,
+  Image as ImageGlyph,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+} from "lucide-react";
 import { copyText, downloadFile } from "@/lib/export";
 import { htmlToRtf } from "@/lib/rtf";
 
@@ -303,70 +310,18 @@ export default function NoteToolbar({
   );
 }
 
+// Toolbar action icons render from Lucide (lighter than the custom CNSL glyphs);
+// currentColor tracks the button's hover/active state.
 function LinkIcon() {
-  // CNSL_Icon_Link.svg — two interlocking rectangles. currentColor so it tracks
-  // the button's hover/active state (the source SVG hardcodes #93928e).
-  return (
-    <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden>
-      <polygon
-        points="16.5 11 5.5 11 5.5 14.5 20 14.5 20 0 5.5 0 5.5 3.5 16.5 3.5 16.5 11"
-        fill="currentColor"
-      />
-      <polygon
-        points="3.5 16.5 3.5 9 14.5 9 14.5 5.5 0 5.5 0 20 14.5 20 14.5 16.5 3.5 16.5"
-        fill="currentColor"
-      />
-    </svg>
-  );
+  return <LinkGlyph size={16} strokeWidth={1.75} aria-hidden />;
 }
 
 function ImageIcon() {
-  // Simple framed-picture glyph: frame + sun + mountain. currentColor so it
-  // tracks the button's hover/active state like the other toolbar icons.
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      <rect
-        x="1"
-        y="2.5"
-        width="14"
-        height="11"
-        rx="1.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <circle cx="5" cy="6" r="1.3" fill="currentColor" />
-      <path
-        d="M2.5 12 L6 8 L8.5 10.5 L11 7 L13.5 10.5 L13.5 12 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
+  return <ImageGlyph size={16} strokeWidth={1.75} aria-hidden />;
 }
 
 function AlignIcon({ align }: { align: "left" | "center" | "right" }) {
-  // 4 horizontal lines; the short ones shift per alignment.
-  const rows =
-    align === "left"
-      ? [14, 8, 12, 8]
-      : align === "center"
-      ? [14, 10, 14, 10]
-      : [14, 8, 12, 8];
-  const x = (w: number) =>
-    align === "left" ? 1 : align === "center" ? (14 - w) / 2 + 1 : 14 - w + 1;
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      {rows.map((w, i) => (
-        <rect
-          key={i}
-          x={x(w)}
-          y={3 + i * 3}
-          width={w}
-          height={1.6}
-          rx={0.8}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
+  const Glyph =
+    align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+  return <Glyph size={16} strokeWidth={1.75} aria-hidden />;
 }
