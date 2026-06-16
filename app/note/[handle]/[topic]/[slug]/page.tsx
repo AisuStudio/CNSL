@@ -118,9 +118,8 @@ export default async function PublicNotePage({
           <span style={{ fontSize: "var(--text-logo)", fontWeight: 700 }}>CNSL</span>
         </Link>
 
-        <h1 style={{ fontSize: "28px", fontWeight: 700, margin: "0 0 4px" }}>
-          {note.title || "Untitled"}
-        </h1>
+        {/* No page-level title: the note body provides its own heading, so a
+            separate <h1> here just duplicated it. Byline stays. */}
         <p
           style={{
             color: "var(--color-text-muted)",
