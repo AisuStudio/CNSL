@@ -96,7 +96,12 @@ export default function NoteEditor({
   }, [value, editor]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
+    // `cnsl-notepad` namespaces every editor + toolbar style so nothing the
+    // NotePad defines can leak into (or be affected by) the rest of the app UI.
+    <div
+      className="cnsl-notepad"
+      style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}
+    >
       <NoteToolbar editor={editor} title={title} />
       <EditorContent editor={editor} />
     </div>

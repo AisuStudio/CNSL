@@ -55,7 +55,7 @@ body {
 
 /* Images embedded by URL: never overflow the editor column or the published
    article; keep the aspect ratio. */
-.cnsl-prose img,
+.cnsl-notepad .cnsl-prose img,
 .note-md img {
   max-width: 100%;
   height: auto;
@@ -235,40 +235,40 @@ body {
 }
 
 /* ─── Note editor (TipTap / ProseMirror) ─────────────────── */
-.cnsl-prose {
+.cnsl-notepad .cnsl-prose {
   outline: none;
   color: var(--color-surface);
   font-size: var(--text-base);
   line-height: 1.6;
   min-height: 320px;
 }
-.cnsl-prose:focus { outline: none; }
+.cnsl-notepad .cnsl-prose:focus { outline: none; }
 /* Shared content type scale + rhythm so the editor (.cnsl-prose) and the
    published note (.note-md) render identically. Type scale (px, per NotePad
    design): Title/H1 36, Heading/H2 20, Subheading/H3 16 (bold beige — lime is
    the toolbar hover colour, not H3). Colours stay context-specific (the editor
    sits on a dark card, the published article on the light surface), so link
    colour + the code-block bg are defined per context further down. */
-.cnsl-prose h1, .note-md h1 { font-size: 36px; font-weight: 700; line-height: 1.15; margin: 0.5em 0 0.3em; }
-.cnsl-prose h2, .note-md h2 { font-size: 20px; font-weight: 700; line-height: 1.25; margin: 0.6em 0 0.3em; }
-.cnsl-prose h3, .note-md h3 { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0.6em 0 0.2em; }
+.cnsl-notepad .cnsl-prose h1, .note-md h1 { font-size: 36px; font-weight: 700; line-height: 1.15; margin: 0.5em 0 0.3em; }
+.cnsl-notepad .cnsl-prose h2, .note-md h2 { font-size: 20px; font-weight: 700; line-height: 1.25; margin: 0.6em 0 0.3em; }
+.cnsl-notepad .cnsl-prose h3, .note-md h3 { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0.6em 0 0.2em; }
 /* Bigger paragraph gaps for readability; Tailwind preflight strips list markers
    + indent, so restore disc/decimal for both the editor and published view. */
-.cnsl-prose p, .note-md p { font-size: 16px; font-weight: 400; margin: 0 0 1em; }
-.cnsl-prose ul, .cnsl-prose ol,
+.cnsl-notepad .cnsl-prose p, .note-md p { font-size: 16px; font-weight: 400; margin: 0 0 1em; }
+.cnsl-notepad .cnsl-prose ul, .cnsl-notepad .cnsl-prose ol,
 .note-md ul, .note-md ol { padding-left: 1.5em; margin: 0 0 1em; }
-.cnsl-prose ul, .note-md ul { list-style-type: disc; }
-.cnsl-prose ol, .note-md ol { list-style-type: decimal; }
-.cnsl-prose li, .note-md li { margin: 0.35em 0; }
+.cnsl-notepad .cnsl-prose ul, .note-md ul { list-style-type: disc; }
+.cnsl-notepad .cnsl-prose ol, .note-md ol { list-style-type: decimal; }
+.cnsl-notepad .cnsl-prose li, .note-md li { margin: 0.35em 0; }
 /* Monospaced — inline `code` restyled with no background (mono font). */
-.cnsl-prose code, .note-md code {
+.cnsl-notepad .cnsl-prose code, .note-md code {
   font-family: var(--font-family-mono);
   background: none;
   padding: 0;
   font-size: 16px;
 }
-.cnsl-prose pre code, .note-md pre code { background: none; padding: 0; }
-.cnsl-prose blockquote, .note-md blockquote {
+.cnsl-notepad .cnsl-prose pre code, .note-md pre code { background: none; padding: 0; }
+.cnsl-notepad .cnsl-prose blockquote, .note-md blockquote {
   border-left: 3px solid var(--color-border);
   padding-left: 12px;
   color: var(--color-text-muted);
@@ -277,13 +277,13 @@ body {
 /* Code block — context-specific bg so it stays visible on each surface: the
    editor card is dark (surface reads light), the published page IS the surface
    (so use a faint ink tint instead of an invisible surface-on-surface block). */
-.cnsl-prose pre { background: var(--color-surface); padding: 12px; border-radius: 6px; overflow-x: auto; }
+.cnsl-notepad .cnsl-prose pre { background: var(--color-surface); padding: 12px; border-radius: 6px; overflow-x: auto; }
 .note-md pre { background: color-mix(in srgb, var(--color-text-primary) 8%, transparent); padding: 12px; border-radius: 6px; overflow-x: auto; }
 /* Link colour is context-specific (.note-md a — colour: inherit — is near the top). */
-.cnsl-prose a { color: var(--color-surface); text-decoration: underline; cursor: pointer; }
-/* Caption — editor-only small muted block (does not survive markdown reload). */
-.cnsl-prose p.cnsl-caption { font-size: 10px; font-weight: 400; color: var(--color-text-muted); }
-.cnsl-prose p.is-editor-empty:first-child::before {
+.cnsl-notepad .cnsl-prose a { color: var(--color-surface); text-decoration: underline; cursor: pointer; }
+/* Caption — editor-only small muted block. */
+.cnsl-notepad .cnsl-prose p.cnsl-caption { font-size: 10px; font-weight: 400; color: var(--color-text-muted); }
+.cnsl-notepad .cnsl-prose p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: var(--color-text-muted);
   float: left;
@@ -292,7 +292,7 @@ body {
 }
 
 /* ─── Note editor toolbar (Type_Bar / Type_Styler) ───────── */
-.cnsl-toolbar {
+.cnsl-notepad .cnsl-toolbar {
   position: sticky;
   top: 0;
   z-index: 5;
@@ -306,7 +306,7 @@ body {
   background: var(--color-bg-deep);
   border-radius: 4px;
 }
-.cnsl-tb-btn {
+.cnsl-notepad .cnsl-tb-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -323,16 +323,16 @@ body {
   cursor: pointer;
   transition: color 0.12s, background 0.12s;
 }
-.cnsl-tb-btn:hover { color: var(--color-lime); }
-.cnsl-tb-btn.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 10%, transparent); }
-.cnsl-tb-aa { font-weight: 700; }
-.cnsl-tb-sep {
+.cnsl-notepad .cnsl-tb-btn:hover { color: var(--color-lime); }
+.cnsl-notepad .cnsl-tb-btn.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 10%, transparent); }
+.cnsl-notepad .cnsl-tb-aa { font-weight: 700; }
+.cnsl-notepad .cnsl-tb-sep {
   width: 1px;
   height: 18px;
   margin: 0 4px;
   background: var(--color-border);
 }
-.cnsl-tb-current {
+.cnsl-notepad .cnsl-tb-current {
   margin-left: auto;
   padding-right: 4px;
   color: var(--color-text-muted);
@@ -340,17 +340,17 @@ body {
 }
 /* Right-aligned group at the end of the format bar: current-style label +
    the export buttons. 12px from the bar's right edge (toolbar pads 8px + 4px). */
-.cnsl-tb-right {
+.cnsl-notepad .cnsl-tb-right {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 6px;
   padding-right: 4px;
 }
-.cnsl-tb-right .cnsl-tb-current { margin-left: 0; padding-right: 0; }
+.cnsl-notepad .cnsl-tb-right .cnsl-tb-current { margin-left: 0; padding-right: 0; }
 /* Export buttons: inverted = lavender (accent) outline + text, transparent fill.
    Size class matches the Backlog "Untouched" filter pill (26px · 0 12px · r6 · text-sm). */
-.cnsl-tb-out {
+.cnsl-notepad .cnsl-tb-out {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -368,12 +368,12 @@ body {
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.cnsl-tb-out:hover {
+.cnsl-notepad .cnsl-tb-out:hover {
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 /* Type-style menu (the aA dropdown) */
-.cnsl-style-menu {
+.cnsl-notepad .cnsl-style-menu {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -387,7 +387,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
-.cnsl-tstyle {
+.cnsl-notepad .cnsl-tstyle {
   text-align: left;
   border: none;
   background: transparent;
@@ -398,19 +398,19 @@ body {
   font-family: var(--font-family);
   transition: color 0.12s, background 0.12s;
 }
-.cnsl-tstyle:hover { color: var(--color-lime); }
-.cnsl-tstyle.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 12%, transparent); }
+.cnsl-notepad .cnsl-tstyle:hover { color: var(--color-lime); }
+.cnsl-notepad .cnsl-tstyle.is-active { color: var(--color-text-primary); background: color-mix(in srgb, var(--color-text-primary) 12%, transparent); }
 /* Per-row previews mirror the actual type scale */
-.cnsl-tstyle.ts-title { font-size: 24px; font-weight: 700; }
-.cnsl-tstyle.ts-heading { font-size: 18px; font-weight: 700; }
-.cnsl-tstyle.ts-subheading { font-size: 16px; font-weight: 700; }
-.cnsl-tstyle.ts-paragraph { font-size: 16px; font-weight: 400; }
-.cnsl-tstyle.ts-bulleted,
-.cnsl-tstyle.ts-numbered { font-size: 16px; font-weight: 400; }
-.cnsl-tstyle.ts-caption { font-size: 11px; font-weight: 400; color: var(--color-text-muted); }
-.cnsl-tstyle.ts-mono { font-size: 15px; font-weight: 400; font-family: var(--font-family-mono); }
-.cnsl-tstyle.ts-caption:hover,
-.cnsl-tstyle.ts-mono:hover { color: var(--color-lime); }
+.cnsl-notepad .cnsl-tstyle.ts-title { font-size: 24px; font-weight: 700; }
+.cnsl-notepad .cnsl-tstyle.ts-heading { font-size: 18px; font-weight: 700; }
+.cnsl-notepad .cnsl-tstyle.ts-subheading { font-size: 16px; font-weight: 700; }
+.cnsl-notepad .cnsl-tstyle.ts-paragraph { font-size: 16px; font-weight: 400; }
+.cnsl-notepad .cnsl-tstyle.ts-bulleted,
+.cnsl-notepad .cnsl-tstyle.ts-numbered { font-size: 16px; font-weight: 400; }
+.cnsl-notepad .cnsl-tstyle.ts-caption { font-size: 11px; font-weight: 400; color: var(--color-text-muted); }
+.cnsl-notepad .cnsl-tstyle.ts-mono { font-size: 15px; font-weight: 400; font-family: var(--font-family-mono); }
+.cnsl-notepad .cnsl-tstyle.ts-caption:hover,
+.cnsl-notepad .cnsl-tstyle.ts-mono:hover { color: var(--color-lime); }
 
 /* ─── Animations ────────────────────────────────────────── */
 @keyframes cnsl-slide-in-right {
