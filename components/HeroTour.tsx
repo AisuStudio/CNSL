@@ -9,6 +9,7 @@ import SchedulerView from "./SchedulerView";
 import NotePad from "./NotePad";
 import ChatView from "./ChatView";
 import TrackingLogView from "./TrackingLogView";
+import Footer from "./Footer";
 import type { Task, LogEntry } from "@/lib/mock-data";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Schedule } from "@/lib/scheduler";
@@ -325,6 +326,12 @@ export default function HeroTour() {
 
   const logDelete = (id: string) => setLog((l) => l.filter((e) => e.id !== id));
   const logCreateTask = (id: string) => setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true } : e)));
+  // Blurp console (footer): a new blurp prepends a log entry.
+  const logTrack = (text: string) =>
+    setLog((l) => [{ id: newId("log"), ts: nowIso(), text, processed: false }, ...l]);
+
+  // Blurp footer shows on the tracker Project view and the Log tool (like the app).
+  const showBlurp = (tool === "tracker" && view === "project") || tool === "log";
 
   return (
     <div
@@ -373,7 +380,7 @@ export default function HeroTour() {
                   open
                 />
                 <div className="cnsl-content">
-                  <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: "24px" }}>
+                  <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: showBlurp ? "104px" : "24px" }}>
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
                       <ProjectView
                         tasks={tasks}
@@ -434,6 +441,7 @@ export default function HeroTour() {
                       />
                     </div>
                   </main>
+                  {showBlurp && <Footer onTrack={logTrack} />}
                 </div>
               </div>
             </div>
