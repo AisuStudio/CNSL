@@ -314,7 +314,7 @@ export default function NoteToolbar({
 // currentColor tracks the button's hover/active state. A heavier stroke + size
 // keeps them legible on the dark toolbar next to the bold B/I/U/S letters.
 const TB_ICON = 17;
-const TB_STROKE = 2.25;
+const TB_STROKE = 2.5;
 function LinkIcon() {
   return <LinkGlyph size={TB_ICON} strokeWidth={TB_STROKE} aria-hidden />;
 }
