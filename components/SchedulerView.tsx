@@ -20,6 +20,7 @@ import { formatDate } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { PlayIcon, AddIcon, TrashIcon, CopyIcon } from "./icons";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
    peace on the desktop, then hit Play to open the mobile Player.
@@ -371,6 +372,20 @@ export default function SchedulerView({
                 flexWrap: isMobile ? "wrap" : "nowrap",
               }}
             >
+              <button
+                type="button"
+                onClick={() => (isOpen ? closeCard(s.id) : openCard(s.id))}
+                aria-label={isOpen ? "Collapse schedule" : "Expand schedule"}
+                aria-expanded={isOpen}
+                title={isOpen ? "Collapse" : "Expand"}
+                style={iconBtn}
+              >
+                {isOpen ? (
+                  <ChevronUp size={18} strokeWidth={1.75} color={text} aria-hidden />
+                ) : (
+                  <ChevronDown size={18} strokeWidth={1.75} color={text} aria-hidden />
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => onPlay(s)}
