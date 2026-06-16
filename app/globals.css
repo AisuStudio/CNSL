@@ -235,9 +235,20 @@ body {
 }
 
 /* ─── Note editor (TipTap / ProseMirror) ─────────────────── */
+/* The editing surface ("paper") renders 1:1 with the published article: it
+   carries data-theme="mono" (see NoteEditor) so this box uses the same
+   lavender-on-dark ramp + the same content type scale as /note/…. */
+.cnsl-notepad-paper {
+  flex: 1;
+  min-height: 360px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: 8px;
+  padding: 20px 24px;
+}
 .cnsl-notepad .cnsl-prose {
   outline: none;
-  color: var(--color-surface);
+  color: inherit; /* inherit the mono text colour from the paper (was surface) */
   font-size: var(--text-base);
   line-height: 1.6;
   min-height: 320px;
@@ -277,10 +288,11 @@ body {
 /* Code block — context-specific bg so it stays visible on each surface: the
    editor card is dark (surface reads light), the published page IS the surface
    (so use a faint ink tint instead of an invisible surface-on-surface block). */
-.cnsl-notepad .cnsl-prose pre { background: var(--color-surface); padding: 12px; border-radius: 6px; overflow-x: auto; }
+/* Code-block bg matches the published page now (faint ink tint on the mono surface). */
+.cnsl-notepad .cnsl-prose pre,
 .note-md pre { background: color-mix(in srgb, var(--color-text-primary) 8%, transparent); padding: 12px; border-radius: 6px; overflow-x: auto; }
-/* Link colour is context-specific (.note-md a — colour: inherit — is near the top). */
-.cnsl-notepad .cnsl-prose a { color: var(--color-surface); text-decoration: underline; cursor: pointer; }
+/* Links inherit the text colour, exactly like the published article (.note-md a). */
+.cnsl-notepad .cnsl-prose a { color: inherit; text-decoration: underline; cursor: pointer; }
 /* Caption — editor-only small muted block. */
 .cnsl-notepad .cnsl-prose p.cnsl-caption { font-size: 10px; font-weight: 400; color: var(--color-text-muted); }
 .cnsl-notepad .cnsl-prose p.is-editor-empty:first-child::before {
