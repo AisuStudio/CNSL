@@ -184,9 +184,15 @@ export default function SchedulerView({
   const accent = "var(--mono)";
   const onAccent = "color-mix(in srgb, var(--mono) 14%, #000)"; // ink on a lavender fill
 
-  // Filled dark input field.
+  // Shared column widths so the duration fields line up vertically across the
+  // auto-pause / section / step rows, and the trailing action slot is reserved
+  // in every row (so the duration column lands at the same x).
+  const DUR_W = "108px"; // wide enough for "00:00:00"
+  const ACT_W = "62px"; // two 30px icon buttons + gap
+
+  // Filled dark input field — no outline (the darker fill reads as the field).
   const inputStyle: React.CSSProperties = {
-    border: `1px solid ${border}`,
+    border: "none",
     borderRadius: "8px",
     background: fieldBg,
     color: text,
@@ -505,12 +511,13 @@ export default function SchedulerView({
                       }
                       style={{
                         ...inputStyle,
-                        width: "92px",
+                        width: DUR_W,
                         textAlign: "center",
                         fontFamily: "var(--font-family-mono)",
                         opacity: s.autoPause ? 1 : 0.4,
                       }}
                     />
+                    {!isMobile && <div aria-hidden style={{ width: ACT_W, flexShrink: 0 }} />}
                   </div>
                 </div>
 
@@ -530,7 +537,9 @@ export default function SchedulerView({
                         />
                         <span
                           style={{
-                            fontSize: "var(--text-sm)",
+                            width: DUR_W,
+                            textAlign: "center",
+                            fontSize: "var(--text-base)",
                             color: muted,
                             fontFamily: "var(--font-family-mono)",
                             whiteSpace: "nowrap",
@@ -541,7 +550,7 @@ export default function SchedulerView({
                         </span>
                         <div
                           className="sched-actions"
-                          style={{ display: "flex", gap: "2px", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
+                          style={{ display: "flex", gap: "2px", width: ACT_W, justifyContent: "flex-end", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
                         >
                           <button type="button" style={iconBtn} onClick={() => copySection(s, sec)} title="Duplicate section" aria-label="Duplicate section">
                             <CopyIcon color={text} size={16} />
@@ -589,7 +598,7 @@ export default function SchedulerView({
                             }
                             style={{
                               ...inputStyle,
-                              width: isMobile ? "100%" : "96px",
+                              width: isMobile ? "100%" : DUR_W,
                               textAlign: "center",
                               fontFamily: "var(--font-family-mono)",
                               flexShrink: 0,
@@ -597,7 +606,7 @@ export default function SchedulerView({
                           />
                           <div
                             className="sched-actions"
-                            style={{ display: "flex", gap: "2px", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
+                            style={{ display: "flex", gap: "2px", width: isMobile ? undefined : ACT_W, justifyContent: "flex-end", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
                           >
                             <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
                               <CopyIcon color={text} size={16} />
