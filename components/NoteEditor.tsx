@@ -103,7 +103,13 @@ export default function NoteEditor({
       style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}
     >
       <NoteToolbar editor={editor} title={title} />
-      <EditorContent editor={editor} />
+      {/* The editing surface mirrors the published article 1:1: data-theme="mono"
+          gives this subtree the same lavender-on-dark ramp as /note/…, and the
+          content uses the same type scale, so what you write looks exactly like
+          what gets published. */}
+      <div className="cnsl-notepad-paper" data-theme="mono">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }
