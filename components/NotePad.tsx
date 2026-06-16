@@ -299,12 +299,14 @@ export default function NotePad({
               onClick={() => setSelectedId(n.id)}
               style={{
                 textAlign: "left",
-                padding: "10px 14px",
+                // Match the project cards: inset, 12px left padding, rounded 8px.
+                margin: "0 8px 6px",
+                padding: "10px 12px",
+                borderRadius: "8px",
                 flexShrink: 0,
                 border: "none",
                 cursor: "pointer",
                 background: active ? "var(--color-surface)" : "transparent",
-                borderLeft: `3px solid ${active ? "var(--color-accent)" : "transparent"}`,
                 display: "flex",
                 flexDirection: "column",
                 gap: "2px",
@@ -366,22 +368,19 @@ export default function NotePad({
       {/* Editor */}
       {showEditor && (
       <div
-        className="cnsl-scroll"
         style={{
           flex: 1,
           minWidth: 0,
-          overflowY: "auto",
-          padding: "20px 24px 104px",
-          // Block scroll container so the editor's sticky toolbar actually
-          // sticks — position: sticky is unreliable inside a flex scroll box.
-          // The empty-state placeholder still centres via flex.
-          ...(selected
-            ? { display: "block" }
-            : { display: "flex", flexDirection: "column" }),
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
         }}
       >
         {selected ? (
           <>
+            {/* Fixed top area (a) — title + project/task bar stay put; the editor
+                body below scrolls (its toolbar pins to the top of that scroll). */}
+            <div style={{ flexShrink: 0, padding: "20px 24px 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
               {isMobile && (
                 <button
@@ -609,17 +608,38 @@ export default function NotePad({
                 </datalist>
               </div>
             </div>
+            </div>
 
-            <NoteEditor
-              key={selected.id}
-              value={selected.body}
-              title={selected.title}
-              onChange={(md) => onUpdate(selected.id, { body: md })}
-            />
+            {/* Scrolling note body. Block scroll container so the editor's sticky
+                toolbar pins reliably (sticky is unreliable inside a flex scroll box). */}
+            <div
+              className="cnsl-scroll"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                minHeight: 0,
+                overflowY: "auto",
+                padding: "0 24px 104px",
+              }}
+            >
+              <NoteEditor
+                key={selected.id}
+                value={selected.body}
+                title={selected.title}
+                onChange={(html) => onUpdate(selected.id, { body: html })}
+              />
+            </div>
           </>
         ) : (
-          <div style={{ color: "var(--color-text-muted)", margin: "auto" }}>
-            Select a note, or create one.
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              padding: "20px 24px",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            <span style={{ margin: "auto" }}>Select a note, or create one.</span>
           </div>
         )}
       </div>
