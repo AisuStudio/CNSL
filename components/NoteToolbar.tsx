@@ -287,13 +287,15 @@ export default function NoteToolbar({
         </button>
       ))}
 
-      {/* Right end: current style label + export buttons (12px from the edge) */}
+      {/* Current block style — sits right after the alignment controls. */}
+      {activeStyle && (
+        <span className="cnsl-tb-current" title="Current style">
+          {activeStyle.label}
+        </span>
+      )}
+
+      {/* Right end: export buttons (12px from the edge) */}
       <div className="cnsl-tb-right">
-        {activeStyle && (
-          <span className="cnsl-tb-current" title="Current style">
-            {activeStyle.label}
-          </span>
-        )}
         <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
           {copied ? "Copied" : "Copy MD"}
         </button>

@@ -367,9 +367,8 @@ body {
   background: var(--color-border);
 }
 .cnsl-notepad .cnsl-tb-current {
-  margin-left: auto;
-  padding-right: 4px;
-  color: var(--color-text-muted);
+  margin-left: 6px;
+  color: color-mix(in srgb, var(--color-text-primary) 70%, transparent);
   font-size: var(--text-modal);
 }
 /* Right-aligned group at the end of the format bar: current-style label +
@@ -381,16 +380,15 @@ body {
   gap: 6px;
   padding-right: 4px;
 }
-.cnsl-notepad .cnsl-tb-right .cnsl-tb-current { margin-left: 0; padding-right: 0; }
-/* Export buttons: inverted = lavender (accent) outline + text, transparent fill.
-   Size class matches the Backlog "Untouched" filter pill (26px · 0 12px · r6 · text-sm). */
+/* Export buttons: inverted = lavender (accent) text, transparent fill, faint
+   (50% accent) outline so they read less loud than a solid 1px accent border. */
 .cnsl-notepad .cnsl-tb-out {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 26px;
   padding: 0 12px;
-  border: 1px solid var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
   border-radius: 6px;
   background: transparent;
   color: var(--color-accent);
