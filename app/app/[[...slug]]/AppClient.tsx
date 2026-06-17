@@ -595,21 +595,18 @@ export default function Home() {
   }, [tasks, log, projectColors, notes, events, projectList, schedules, activities, rev, conflict, pendingChanges]);
 
   // Auto-save: debounce 1.5s after any change.
-  // ── Monochrome theme — now the DEFAULT (the "radical cut") ──
-  // Mono is applied on <html> (so it also recolours `body`) for everyone.
-  // ?theme=classic falls back to the old palette for comparison, and
-  // ?hue=%23xxxxxx trials a different base colour. Removed on unmount so
-  // other routes aren't affected.
+  // ── Monochrome theme — the only theme (the "radical cut") ──
+  // Mono is applied on <html> (so it also recolours `body`) for everyone. The
+  // old "classic" palette is retired; ?hue=%23xxxxxx still trials a different
+  // base colour. Removed on unmount so other routes aren't affected.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const root = document.documentElement;
-    if (params.get("theme") !== "classic") {
-      root.setAttribute("data-theme", "mono");
-      const hue = params.get("hue");
-      // Only accept a plain #rrggbb / #rgb hex (S5 — don't inject arbitrary CSS).
-      if (hue && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hue)) {
-        root.style.setProperty("--mono", hue);
-      }
+    root.setAttribute("data-theme", "mono");
+    const hue = params.get("hue");
+    // Only accept a plain #rrggbb / #rgb hex (S5 — don't inject arbitrary CSS).
+    if (hue && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hue)) {
+      root.style.setProperty("--mono", hue);
     }
     return () => {
       root.removeAttribute("data-theme");
