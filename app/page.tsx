@@ -7,7 +7,7 @@ import LegalFooter from "@/components/LegalFooter";
 import HeroTour from "@/components/HeroTour";
 import { LogIcon, TaskTrackerIcon, NotePadIcon, CalIcon, SchedulerIcon, ChatIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { BETA_CODE } from "@/lib/auth-config";
+import { betaLabelFor } from "@/lib/auth-config";
 
 /* ───────────────────────────────────────────────────────────
    CNSL — Start / Landing page (public, lives at "/").
@@ -303,7 +303,10 @@ function LoginCard({ initialMode = "signin", onClose }: { initialMode?: "signin"
   }
 
   async function register() {
-    if (betaCode.trim() !== BETA_CODE) {
+    // Multiple named beta codes: any valid code lets a tester in; its label is
+    // stamped onto the new user so we can see which code they came in through.
+    const betaLabel = betaLabelFor(betaCode);
+    if (!betaLabel) {
       setError("Wrong beta code. Ask the CNSL team for the current one.");
       return;
     }
@@ -311,7 +314,11 @@ function LoginCard({ initialMode = "signin", onClose }: { initialMode?: "signin"
     setError(null);
     setNote(null);
     const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { betaCode: betaCode.trim(), betaLabel } },
+    });
     setLoading(false);
     if (error) {
       setError(error.message);
