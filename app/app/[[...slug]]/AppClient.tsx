@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { stateToSlug, slugToState } from "@/components/viewDefs";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -107,7 +107,6 @@ export default function Home() {
   // Route-driven view: /app/<slug> (optional catch-all). The slug is the single
   // source of truth for which tool/sub-view is open, so reloads/deep-links stay
   // put and the browser back button works.
-  const router = useRouter();
   const params = useParams();
   const slug = Array.isArray(params?.slug) ? params.slug[0] : undefined;
 
@@ -115,16 +114,26 @@ export default function Home() {
   const [tool, setTool] = useState<Tool>(initial.tool);
   const [view, setView] = useState<View>(initial.view);
 
-  // tool/view → URL. Compare the route's slug param (basePath/trailingSlash
-  // safe), not the raw pathname. Landing on /app (slug undefined) canonicalises
-  // to /app/<default>. The resulting slug change re-runs the sync-back effect,
-  // which is a no-op since state already matches.
+  // tool/view → URL. Update the address bar via the History API (router-integrated
+  // since Next 14.1) instead of router.replace. A real navigation here ran the
+  // middleware on EVERY tool/view switch — and the middleware does a Supabase
+  // auth.getUser() round-trip (token validated against the auth server, not local)
+  // plus an RSC fetch — which made switching tools/views slow, especially on
+  // mobile. history.replaceState updates the URL with ZERO round-trip; reloads,
+  // deep-links and the back button keep working (the slug is still read on load).
+  // basePath- + trailingSlash-safe: the GH Pages static export serves under /CNSL/.
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const targetSlug = stateToSlug(tool, view);
-    if (slug !== targetSlug) {
-      router.replace(`/app/${targetSlug}`, { scroll: false });
+    const path = window.location.pathname;
+    const i = path.indexOf("/app");
+    const base = i > 0 ? path.slice(0, i) : ""; // "/CNSL" on GH Pages, "" on Vercel
+    const trailing = path.endsWith("/") ? "/" : "";
+    const target = `${base}/app/${targetSlug}${trailing}`;
+    if (path !== target) {
+      window.history.replaceState(window.history.state, "", target);
     }
-  }, [tool, view, slug, router]);
+  }, [tool, view]);
 
   // URL → tool/view (browser back/forward, or landing on /app or a deep link).
   useEffect(() => {
