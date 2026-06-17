@@ -43,6 +43,7 @@ import {
   taskSortValue,
   dayKey,
   accrueTracking,
+  stopTimer,
   type Task,
   type LogEntry,
 } from "@/lib/mock-data";
@@ -974,11 +975,14 @@ export default function Home() {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
-        const next = { ...t, [key]: value };
+        let next = { ...t, [key]: value };
         if (key === "status") {
           if (value === "done" && t.status !== "done") {
             next.completedAt = new Date().toISOString();
             next.urgency = "today";
+            // Finishing a task stops its timer — otherwise it keeps tracking
+            // behind the Archive icon (the line hides Pause once done).
+            next = stopTimer(next);
           } else if (value !== "done") next.completedAt = undefined;
         }
         return next;
@@ -1018,6 +1022,10 @@ export default function Home() {
           },
         };
       }
+
+      // Finishing the task via the modal stops its timer too (same rule as the
+      // inline status change), so a done task never keeps tracking.
+      if (becameDone) final = stopTimer(final);
 
       if (prevTask) {
         return prev.map((t) => (t.id === updated.id ? final : t));
@@ -1088,8 +1096,7 @@ export default function Home() {
           };
         }
         // stopping → commit the final elapsed slice, then drop the anchor
-        const accrued = accrueTracking(t, nowMs);
-        return { ...accrued, isTracking: false, trackingStartedAt: undefined };
+        return stopTimer(t, nowMs);
       })
     );
   }
@@ -1759,17 +1766,21 @@ export default function Home() {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
-        // Archiving implies the task is finished → auto-done (#138)
-        if (archived && t.status !== "done") {
+        // Un-archiving: just flip the flag back.
+        if (!archived) return { ...t, archived };
+        // Archiving → always stop a running timer first (an archived task that
+        // kept playing was the irritating bug). Archiving also implies the task
+        // is finished → auto-done (#138).
+        const stopped = stopTimer(t);
+        if (stopped.status !== "done") {
           return {
-            ...t,
+            ...stopped,
             archived,
             status: "done",
-            isTracking: false,
-            completedAt: t.completedAt ?? new Date().toISOString(),
+            completedAt: stopped.completedAt ?? new Date().toISOString(),
           };
         }
-        return { ...t, archived };
+        return { ...stopped, archived };
       })
     );
     setModalTask(null);
@@ -1777,7 +1788,10 @@ export default function Home() {
   function archiveAllDone() {
     setTasks((prev) =>
       prev.map((t) =>
-        !t.archived && t.status === "done" ? { ...t, archived: true } : t
+        // Archiving a done task also stops any timer still running on it.
+        !t.archived && t.status === "done"
+          ? { ...stopTimer(t), archived: true }
+          : t
       )
     );
   }
