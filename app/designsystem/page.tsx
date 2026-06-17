@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import {
@@ -166,7 +166,7 @@ export default function DesignSystemPage() {
           (the app's lavender tracker canvas) — a design showcase needs the neutral
           dark canvas so accent/card-filled specimens don't go lavender-on-lavender. */}
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 96px", background: "var(--color-bg)" }}>
-        {tab === "global" && <GlobalTab />}
+        {tab === "global" && <GlobalTab mono={mono} />}
         {tab === "homepage" && <HomepageTab />}
         {tab === "app" && <AppTab />}
         {tab === "notes" && <NotesTab />}
@@ -322,7 +322,46 @@ const CUSTOM_ICONS: { Icon: (p: { color?: string }) => React.ReactElement; name:
   { Icon: PlusIcon, name: "Plus" },
 ];
 
-function GlobalTab() {
+// Computed colour → #rrggbb(aa). Classic tokens resolve to `rgb(0–255)`; Mono's
+// color-mix() values resolve to `color(srgb 0–1 …)` floats in modern Chromium —
+// handle both so the hex is correct in either theme.
+function rgbToHex(c: string): string {
+  const m = c.match(/[\d.]+/g);
+  if (!m) return c;
+  let [r, g, b, a] = m.map(Number);
+  if (c.startsWith("color(")) {
+    // color(srgb r g b [/ a]) — channels are 0–1, scale to 0–255 (alpha stays 0–1).
+    [r, g, b] = [r * 255, g * 255, b * 255];
+  }
+  const h = (n: number) => Math.round(n).toString(16).padStart(2, "0");
+  const base = `#${h(r)}${h(g)}${h(b)}`;
+  return a !== undefined && a < 1 ? base + h(a * 255) : base;
+}
+
+// A colour-token swatch that reads its own computed hex (re-read on theme flip).
+function ColorSwatch({ token, mono }: { token: string; mono: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [hex, setHex] = useState("");
+  useEffect(() => {
+    // rAF: the theme attribute is set in a parent effect (runs after this child
+    // effect) — wait one frame so getComputedStyle sees the new ramp.
+    const id = requestAnimationFrame(() => {
+      if (ref.current) setHex(rgbToHex(getComputedStyle(ref.current).backgroundColor));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [mono]);
+  return (
+    <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-container)", overflow: "hidden" }}>
+      <div ref={ref} style={{ height: 64, background: `var(${token})`, borderBottom: "1px solid var(--color-border)" }} />
+      <div style={{ padding: "8px 10px", fontFamily: "var(--font-family-mono)", fontSize: "var(--text-xs)" }}>
+        <div style={{ color: "var(--color-text-primary)" }}>{token.replace("--color-", "")}</div>
+        <div style={{ marginTop: 2, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{hex || "—"}</div>
+      </div>
+    </div>
+  );
+}
+
+function GlobalTab({ mono }: { mono: boolean }) {
   return (
     <div>
       <TabIntro title="Global elements">
@@ -334,12 +373,7 @@ function GlobalTab() {
       <Section title="Colour tokens" note="Surfaces, text, accents & the light-card palette. Signal colours (lime, running-green) stay constant across themes.">
         <Grid min={150}>
           {COLOR_TOKENS.map((c) => (
-            <div key={c.name} style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-container)", overflow: "hidden" }}>
-              <div style={{ height: 64, background: `var(${c.name})`, borderBottom: "1px solid var(--color-border)" }} />
-              <div style={{ padding: "8px 10px", fontFamily: "var(--font-family-mono)", fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-                {c.name.replace("--color-", "")}
-              </div>
-            </div>
+            <ColorSwatch key={c.name} token={c.name} mono={mono} />
           ))}
         </Grid>
       </Section>
