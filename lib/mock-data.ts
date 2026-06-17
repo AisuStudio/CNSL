@@ -58,6 +58,9 @@ export interface Task {
   // DB-managed row version (server write time). Used for newer-wins sync so a
   // stale device can't overwrite a newer change. Not bumped by local edits.
   updatedAt?: string;
+  // Manual backlog order — a fractional-index key (string). Sorted lexically by
+  // char code; absent until the task is first dragged. Maps to DB `position`.
+  order?: string;
 }
 
 // Local calendar day key "YYYY-MM-DD" (not UTC — matches the user's day).

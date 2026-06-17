@@ -8,6 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
 import Footer from "@/components/Footer";
 import BacklogView, { type BacklogFilter, type BacklogSort } from "@/components/BacklogView";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 import KanbanView from "@/components/KanbanView";
 import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
@@ -1630,6 +1631,17 @@ export default function Home() {
   // Like applySort but with an explicit sort arg (for the Backlog's own sort).
   function sortTasksBy(list: Task[], s: BacklogSort): Task[] {
     if (!s) return list;
+    // Manual "Custom order": compare the fractional-index keys by CHAR CODE
+    // (not localeCompare — that would mis-order the keys). Unkeyed tasks sort
+    // last (sentinel above any ASCII key) so freshly-created tasks land at the end.
+    if (s.key === "order") {
+      return [...list].sort((a, b) => {
+        const av = a.order || "￿";
+        const bv = b.order || "￿";
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return s.dir === "asc" ? cmp : -cmp;
+      });
+    }
     return [...list].sort((a, b) => {
       const av = taskSortValue(a, s.key);
       const bv = taskSortValue(b, s.key);
@@ -1639,6 +1651,64 @@ export default function Home() {
           : String(av).localeCompare(String(bv));
       return s.dir === "asc" ? cmp : -cmp;
     });
+  }
+
+  // Manual drag-reorder of the backlog. `orderedIds` is the full backlog order
+  // AFTER the move; `draggedId` is the task that moved. Persists fractional-index
+  // keys on Task.order (→ DB `position`), so a move writes a single row. The
+  // one-time exception: if the list isn't fully keyed yet (first ever drag),
+  // assign evenly-spaced keys to all of it in the new order.
+  function reorderBacklog(orderedIds: string[], draggedId: string) {
+    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const fullyKeyed = orderedIds.every((id) => byId.get(id)?.order);
+    if (!fullyKeyed) {
+      const keys = generateNKeysBetween(null, null, orderedIds.length);
+      const keyById = new Map(orderedIds.map((id, i) => [id, keys[i]]));
+      setTasks((prev) =>
+        prev.map((t) => (keyById.has(t.id) ? { ...t, order: keyById.get(t.id) } : t))
+      );
+      return;
+    }
+    const idx = orderedIds.indexOf(draggedId);
+    const beforeKey = idx > 0 ? byId.get(orderedIds[idx - 1])!.order! : null;
+    const afterKey =
+      idx < orderedIds.length - 1 ? byId.get(orderedIds[idx + 1])!.order! : null;
+    updateTask(draggedId, "order", generateKeyBetween(beforeKey, afterKey));
+  }
+
+  // Drag-reorder within the "By project" backlog view. `orderedIds` is the TARGET
+  // project group's task order after the move; the dragged task also adopts the
+  // target project (cross-project move = option B). Same fractional-key scheme,
+  // scoped to the target group (one-time full-keying of that group if needed).
+  function reorderTaskInProject(
+    draggedId: string,
+    targetProject: string,
+    orderedIds: string[]
+  ) {
+    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const fullyKeyed = orderedIds.every((id) => byId.get(id)?.order);
+    if (!fullyKeyed) {
+      const keys = generateNKeysBetween(null, null, orderedIds.length);
+      const keyById = new Map(orderedIds.map((id, i) => [id, keys[i]]));
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === draggedId)
+            return { ...t, project: targetProject, order: keyById.get(t.id) };
+          return keyById.has(t.id) ? { ...t, order: keyById.get(t.id) } : t;
+        })
+      );
+      return;
+    }
+    const idx = orderedIds.indexOf(draggedId);
+    const beforeKey = idx > 0 ? byId.get(orderedIds[idx - 1])!.order! : null;
+    const afterKey =
+      idx < orderedIds.length - 1 ? byId.get(orderedIds[idx + 1])!.order! : null;
+    const key = generateKeyBetween(beforeKey, afterKey);
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === draggedId ? { ...t, project: targetProject, order: key } : t
+      )
+    );
   }
 
   // Active (non-archived) vs archived; active feeds Backlog/Kanban/Project.
@@ -1877,6 +1947,8 @@ export default function Home() {
             onFilterChange={setBacklogFilter}
             sort={backlogSort}
             onSortChange={setBacklogSort}
+            onReorder={reorderBacklog}
+            onReorderInProject={reorderTaskInProject}
             onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
             onSetStatus={(id, status) => updateTask(id, "status", status)}
           />

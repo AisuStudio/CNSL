@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { type Task, type Urgency, type Status } from "@/lib/mock-data";
 import TaskLine from "./TaskLine";
 
@@ -7,7 +8,7 @@ export type BacklogFilter = "all" | "open";
 export type BacklogSort = { key: string; dir: "asc" | "desc" } | null;
 
 // Sort keys the Backlog exposes. "" = default order (insertion / no sort).
-// "Custom order" (manual drag) is Phase 2 and intentionally not listed yet.
+// "order" = manual drag order (rows become draggable when it's selected).
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "Default order" },
   { value: "project", label: "Project" },
@@ -15,20 +16,33 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "urgency", label: "Urgency" },
   { value: "status", label: "Status" },
   { value: "tracked", label: "Time spent" },
+  { value: "order", label: "Custom order" },
 ];
 
-/* Backlog header: All/Untouched filter (#53) on the left, sort control on the
-   right. Only rendered when the parent passes a filter and/or a sort handler. */
+// Compare two fractional-index keys by CHAR CODE (matches the lib's ordering;
+// localeCompare would mis-order them). Unkeyed tasks sort last.
+const byOrder = (x: Task, y: Task) => {
+  const xo = x.order || "￿";
+  const yo = y.order || "￿";
+  return xo < yo ? -1 : xo > yo ? 1 : 0;
+};
+
+/* Backlog header: All/Untouched filter (#53) on the left; on the right a
+   Flat ↔ By project toggle and (in flat mode) the sort control. */
 function BacklogHeader({
   filter,
   onFilterChange,
   sort,
   onSortChange,
+  grouped,
+  onGroupedChange,
 }: {
   filter?: BacklogFilter;
   onFilterChange?: (f: BacklogFilter) => void;
   sort?: BacklogSort;
   onSortChange?: (s: BacklogSort) => void;
+  grouped?: boolean;
+  onGroupedChange?: (g: boolean) => void;
 }) {
   const filterOpts: { value: BacklogFilter; label: string }[] = [
     { value: "all", label: "All" },
@@ -37,10 +51,21 @@ function BacklogHeader({
   const key = sort?.key ?? "";
   const dir = sort?.dir ?? "asc";
 
+  const pill = (active: boolean): React.CSSProperties => ({
+    height: "26px",
+    padding: "0 12px",
+    borderRadius: "6px",
+    border: "1px solid var(--color-border-subtle)",
+    background: active ? "var(--color-accent)" : "transparent",
+    color: "var(--color-text-primary)",
+    fontSize: "var(--text-sm)",
+    fontWeight: active ? 700 : 400,
+    cursor: "pointer",
+  });
+
   return (
     <div
-      // cnsl-on-canvas: redefine the text vars dark so the sort label + dropdown
-      // are readable on the mono lavender canvas (#210), like the filter pills.
+      // cnsl-on-canvas: text vars dark so labels/dropdown read on the lavender canvas (#210).
       className="cnsl-on-canvas flex items-center"
       style={{
         height: "var(--row-height)",
@@ -51,74 +76,83 @@ function BacklogHeader({
     >
       {filter &&
         onFilterChange &&
-        filterOpts.map((o) => {
-          const active = filter === o.value;
-          return (
+        filterOpts.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onFilterChange(o.value)}
+            className={filter === o.value ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
+            style={pill(filter === o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+
+      <div className="flex items-center" style={{ marginLeft: "auto", gap: "8px" }}>
+        {onGroupedChange && (
+          <div className="flex items-center" style={{ gap: "4px" }}>
             <button
-              key={o.value}
               type="button"
-              onClick={() => onFilterChange(o.value)}
-              // #210: dark text on the lavender canvas (lavender-on-lavender else).
-              className={active ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
+              onClick={() => onGroupedChange(false)}
+              className={!grouped ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
+              style={pill(!grouped)}
+            >
+              Flat
+            </button>
+            <button
+              type="button"
+              onClick={() => onGroupedChange(true)}
+              className={grouped ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
+              style={pill(!!grouped)}
+            >
+              By project
+            </button>
+          </div>
+        )}
+
+        {onSortChange && (
+          <div className="flex items-center" style={{ gap: "6px" }}>
+            <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+              Sort
+            </span>
+            <select
+              className="cnsl-row-select"
+              value={key}
+              onChange={(e) =>
+                onSortChange(e.target.value ? { key: e.target.value, dir } : null)
+              }
+              style={{ fontSize: "var(--text-sm)" }}
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={!key}
+              title={dir === "asc" ? "Ascending" : "Descending"}
+              aria-label="Toggle sort direction"
+              onClick={() => onSortChange({ key, dir: dir === "asc" ? "desc" : "asc" })}
+              className="cnsl-on-canvas"
               style={{
+                width: "26px",
                 height: "26px",
-                padding: "0 12px",
                 borderRadius: "6px",
                 border: "1px solid var(--color-border-subtle)",
-                background: active ? "var(--color-accent)" : "transparent",
+                background: "transparent",
                 color: "var(--color-text-primary)",
                 fontSize: "var(--text-sm)",
-                fontWeight: active ? 700 : 400,
-                cursor: "pointer",
+                cursor: key ? "pointer" : "default",
+                opacity: key ? 1 : 0.35,
               }}
             >
-              {o.label}
+              {dir === "asc" ? "↑" : "↓"}
             </button>
-          );
-        })}
-
-      {onSortChange && (
-        <div className="flex items-center" style={{ marginLeft: "auto", gap: "6px" }}>
-          <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-            Sort
-          </span>
-          <select
-            className="cnsl-row-select"
-            value={key}
-            onChange={(e) =>
-              onSortChange(e.target.value ? { key: e.target.value, dir } : null)
-            }
-            style={{ fontSize: "var(--text-sm)" }}
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={!key}
-            title={dir === "asc" ? "Ascending" : "Descending"}
-            aria-label="Toggle sort direction"
-            onClick={() => onSortChange({ key, dir: dir === "asc" ? "desc" : "asc" })}
-            className="cnsl-on-canvas"
-            style={{
-              width: "26px",
-              height: "26px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-border-subtle)",
-              background: "transparent",
-              color: "var(--color-text-primary)",
-              fontSize: "var(--text-sm)",
-              cursor: key ? "pointer" : "default",
-              opacity: key ? 1 : 0.35,
-            }}
-          >
-            {dir === "asc" ? "↑" : "↓"}
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -133,6 +167,8 @@ export default function BacklogView({
   showUrgency = true,
   sort,
   onSortChange,
+  onReorder,
+  onReorderInProject,
   onSetUrgency,
   onSetStatus,
 }: {
@@ -145,34 +181,201 @@ export default function BacklogView({
   showUrgency?: boolean;
   sort?: BacklogSort;
   onSortChange?: (s: BacklogSort) => void;
+  // Flat custom-order reorder (only in "Custom order" sort).
+  onReorder?: (orderedIds: string[], draggedId: string) => void;
+  // "By project" reorder — moves the task into targetProject + positions it.
+  onReorderInProject?: (
+    draggedId: string,
+    targetProject: string,
+    orderedIds: string[]
+  ) => void;
   // When provided, rows expose inline urgency/status dropdowns (edit in place).
   onSetUrgency?: (id: string, urgency: Urgency) => void;
   onSetStatus?: (id: string, status: Status) => void;
 }) {
-  const showHeader = (filter && onFilterChange) || onSortChange;
+  const [grouped, setGrouped] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [over, setOver] = useState<{ id: string; pos: "before" | "after" } | null>(null);
+  const [overHeader, setOverHeader] = useState<string | null>(null);
+
+  const canGroup = !!onReorderInProject;
+  const showHeader = (filter && onFilterChange) || onSortChange || canGroup;
+  const flatDragMode = !grouped && sort?.key === "order" && !!onReorder;
+
+  // Group by raw project ("" = no project); each group sorted by order key.
+  const groups = useMemo(() => {
+    const m = new Map<string, Task[]>();
+    for (const t of tasks) {
+      const k = t.project || "";
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(t);
+    }
+    return [...m.entries()]
+      // empty project ("") sorts last
+      .sort((a, b) => (a[0] || "￿").localeCompare(b[0] || "￿"))
+      .map(([key, items]) => ({ key, items: [...items].sort(byOrder) }));
+  }, [tasks]);
+
+  function resetDrag() {
+    setDragId(null);
+    setOver(null);
+    setOverHeader(null);
+  }
+
+  function handleFlatDrop() {
+    if (dragId && over && onReorder && dragId !== over.id) {
+      const ids = tasks.map((t) => t.id).filter((id) => id !== dragId);
+      const tIdx = ids.indexOf(over.id);
+      ids.splice(over.pos === "before" ? tIdx : tIdx + 1, 0, dragId);
+      onReorder(ids, dragId);
+    }
+    resetDrag();
+  }
+
+  // Reorder within the target row's project group (cross-project if dragged from
+  // elsewhere). Builds the target group's order after the move.
+  function handleGroupedRowDrop() {
+    if (dragId && over && onReorderInProject) {
+      const overTask = tasks.find((t) => t.id === over.id);
+      if (overTask) {
+        const target = overTask.project || "";
+        const ids = tasks
+          .filter((t) => (t.project || "") === target && t.id !== dragId)
+          .sort(byOrder)
+          .map((t) => t.id);
+        const tIdx = ids.indexOf(over.id);
+        ids.splice(over.pos === "before" ? tIdx : tIdx + 1, 0, dragId);
+        onReorderInProject(dragId, target, ids);
+      }
+    }
+    resetDrag();
+  }
+
+  // Drop on a project header → move to the top of that project.
+  function handleHeaderDrop(project: string) {
+    if (dragId && onReorderInProject) {
+      const ids = tasks
+        .filter((t) => (t.project || "") === project && t.id !== dragId)
+        .sort(byOrder)
+        .map((t) => t.id);
+      ids.unshift(dragId);
+      onReorderInProject(dragId, project, ids);
+    }
+    resetDrag();
+  }
+
+  const renderRow = (t: Task) => (
+    <TaskLine
+      task={t}
+      onToggleTimer={onToggleTimer}
+      onEditTask={onEditTask}
+      onArchive={onArchive}
+      padLeft="16px"
+      showUrgency={showUrgency}
+      onSetUrgency={onSetUrgency}
+      onSetStatus={onSetStatus}
+    />
+  );
+
+  // Draggable row wrapper; onDrop differs (flat vs grouped).
+  const dragRow = (t: Task, onDrop: () => void) => {
+    const indic =
+      over?.id === t.id
+        ? over.pos === "before"
+          ? "inset 0 2px 0 0 var(--color-accent)"
+          : "inset 0 -2px 0 0 var(--color-accent)"
+        : undefined;
+    return (
+      <div
+        key={t.id}
+        draggable
+        onDragStart={(e) => {
+          setDragId(t.id);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (t.id === dragId) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          setOver({ id: t.id, pos: e.clientY < r.top + r.height / 2 ? "before" : "after" });
+          setOverHeader(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          onDrop();
+        }}
+        onDragEnd={resetDrag}
+        style={{ cursor: "grab", opacity: dragId === t.id ? 0.4 : 1, boxShadow: indic }}
+      >
+        {renderRow(t)}
+      </div>
+    );
+  };
+
   return (
     <div>
       {showHeader && (
         <BacklogHeader
           filter={filter}
           onFilterChange={onFilterChange}
-          sort={sort}
-          onSortChange={onSortChange}
+          sort={grouped ? undefined : sort}
+          onSortChange={grouped ? undefined : onSortChange}
+          grouped={canGroup ? grouped : undefined}
+          onGroupedChange={canGroup ? setGrouped : undefined}
         />
       )}
-      {tasks.map((t) => (
-        <TaskLine
-          key={t.id}
-          task={t}
-          onToggleTimer={onToggleTimer}
-          onEditTask={onEditTask}
-          onArchive={onArchive}
-          padLeft="16px"
-          showUrgency={showUrgency}
-          onSetUrgency={onSetUrgency}
-          onSetStatus={onSetStatus}
-        />
-      ))}
+
+      {grouped
+        ? groups.map((g) => (
+            <div key={g.key || "—"}>
+              <div
+                className="flex items-center"
+                onDragOver={(e) => {
+                  if (!dragId) return;
+                  e.preventDefault();
+                  setOverHeader(g.key);
+                  setOver(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleHeaderDrop(g.key);
+                }}
+                style={{
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 1,
+                  minHeight: "var(--row-height)",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 16px",
+                  gap: "8px",
+                  // dark band + accent (light lavender) text → clear group separator
+                  background: "color-mix(in srgb, var(--color-accent) 16%, #000)",
+                  boxShadow:
+                    overHeader === g.key
+                      ? "inset 0 0 0 2px var(--color-accent)"
+                      : undefined,
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: "var(--text-base)", color: "var(--color-accent)" }}>
+                  {g.key || "—"}
+                </span>
+                <span
+                  style={{
+                    fontWeight: 300,
+                    fontSize: "var(--text-sm)",
+                    color: "color-mix(in srgb, var(--color-accent) 55%, transparent)",
+                  }}
+                >
+                  {g.items.length}
+                </span>
+              </div>
+              {g.items.map((t) => dragRow(t, handleGroupedRowDrop))}
+            </div>
+          ))
+        : tasks.map((t) =>
+            flatDragMode ? dragRow(t, handleFlatDrop) : <div key={t.id}>{renderRow(t)}</div>
+          )}
     </div>
   );
 }
