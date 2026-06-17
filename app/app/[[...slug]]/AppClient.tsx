@@ -1679,6 +1679,41 @@ export default function Home() {
     updateTask(draggedId, "order", generateKeyBetween(beforeKey, afterKey));
   }
 
+  // Drag-reorder within the "By project" backlog view. `orderedIds` is the TARGET
+  // project group's task order after the move; the dragged task also adopts the
+  // target project (cross-project move = option B). Same fractional-key scheme,
+  // scoped to the target group (one-time full-keying of that group if needed).
+  function reorderTaskInProject(
+    draggedId: string,
+    targetProject: string,
+    orderedIds: string[]
+  ) {
+    const byId = new Map(tasks.map((t) => [t.id, t]));
+    const fullyKeyed = orderedIds.every((id) => byId.get(id)?.order);
+    if (!fullyKeyed) {
+      const keys = generateNKeysBetween(null, null, orderedIds.length);
+      const keyById = new Map(orderedIds.map((id, i) => [id, keys[i]]));
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === draggedId)
+            return { ...t, project: targetProject, order: keyById.get(t.id) };
+          return keyById.has(t.id) ? { ...t, order: keyById.get(t.id) } : t;
+        })
+      );
+      return;
+    }
+    const idx = orderedIds.indexOf(draggedId);
+    const beforeKey = idx > 0 ? byId.get(orderedIds[idx - 1])!.order! : null;
+    const afterKey =
+      idx < orderedIds.length - 1 ? byId.get(orderedIds[idx + 1])!.order! : null;
+    const key = generateKeyBetween(beforeKey, afterKey);
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === draggedId ? { ...t, project: targetProject, order: key } : t
+      )
+    );
+  }
+
   // Active (non-archived) vs archived; active feeds Backlog/Kanban/Project.
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived), [tasks]);
   const archivedTasks = useMemo(() => tasks.filter((t) => t.archived), [tasks]);
@@ -1916,6 +1951,7 @@ export default function Home() {
             sort={backlogSort}
             onSortChange={setBacklogSort}
             onReorder={reorderBacklog}
+            onReorderInProject={reorderTaskInProject}
             onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
             onSetStatus={(id, status) => updateTask(id, "status", status)}
           />
