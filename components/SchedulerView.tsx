@@ -390,10 +390,18 @@ export default function SchedulerView({
                 type="button"
                 onClick={() => onPlay(s)}
                 disabled={stepCount(s) === 0}
+                aria-label="Play"
                 title="Play"
-                style={{ ...ghostBtn, opacity: stepCount(s) === 0 ? 0.4 : 1 }}
+                style={{
+                  ...ghostBtn,
+                  opacity: stepCount(s) === 0 ? 0.4 : 1,
+                  // Mobile: icon-only to save header width (the schedule name is
+                  // tight on small screens); desktop keeps the labelled pill.
+                  ...(isMobile ? { padding: "0 12px" } : null),
+                }}
               >
-                <PlayIcon color={text} /> Play
+                <PlayIcon color={text} />
+                {!isMobile && " Play"}
               </button>
 
               {isOpen ? (
