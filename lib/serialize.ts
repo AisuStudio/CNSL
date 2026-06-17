@@ -219,6 +219,8 @@ export function scheduleFromDb(row: DbSchedule): Schedule {
     sections: Array.isArray(row.sections)
       ? (row.sections as unknown as Section[])
       : [],
+    autoPause: row.autoPause ?? false,
+    pauseBetweenSteps: row.pauseBetweenSteps ?? undefined,
     createdAt: row.createdAt?.toISOString(),
     updatedAt: row.updatedAt?.toISOString(),
   };
@@ -231,6 +233,8 @@ export function scheduleToDb(s: Schedule, boardId: string) {
     name: s.name ?? "",
     project: s.project ?? null,
     sections: (s.sections ?? []) as unknown as Prisma.InputJsonValue,
+    autoPause: s.autoPause ?? false,
+    pauseBetweenSteps: s.pauseBetweenSteps ?? null,
     createdAt: s.createdAt ? new Date(s.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
   };

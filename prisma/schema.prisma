@@ -284,6 +284,8 @@ model Schedule {
   name      String   @default("")
   project   String?
   sections  Json?    // [{ id, name, order, steps: [{ id, name, description?, durationSeconds, order }] }]
+  autoPause Boolean  @default(false) // insert a fixed rest between steps when on
+  pauseBetweenSteps Int? // rest length in seconds (used when autoPause is on)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
 
