@@ -58,6 +58,7 @@ export function taskFromDb(row: DbTask & { timeEntries?: DbTimeEntry[] }): Task 
     archived: row.archived,
     completedAt: row.completedAt?.toISOString() ?? undefined,
     updatedAt: row.updatedAt?.toISOString(),
+    order: row.position ?? undefined, // manual backlog order (fractional-index key)
   };
 }
 
@@ -81,6 +82,7 @@ export function taskToDb(t: Task, boardId: string, userId: string) {
     createdById: userId,
     createdAt: t.createdAt ? new Date(t.createdAt) : undefined,
     completedAt: t.completedAt ? new Date(t.completedAt) : null,
+    position: t.order ?? null, // manual backlog order (fractional-index key)
   };
 }
 

@@ -149,7 +149,7 @@ model Task {
   urgency        Urgency     @default(unsorted)
   status         Status      @default(open)
   complexity     Int? // poker
-  position       Float? // manual ordering
+  position       String? // manual backlog order — fractional-index key (string)
   trackedMinutes   Int       @default(0) // cached total; per-day in TimeEntry
   trackingStartedAt DateTime? // anchor while the timer runs (timestamp-based)
   archived       Boolean     @default(false)
