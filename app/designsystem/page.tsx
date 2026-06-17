@@ -39,7 +39,7 @@ import {
    CNSL — Public Design System / Style-guide showcase (/designsystem)
    Every design-element category, split into tabs:
      Global · Homepage · App · Published Notes
-   Live Classic/Mono theme toggle drives the same tokens the
+   Renders the live mono design tokens — the same tokens the
    real app uses, so swatches & components reflect the theme.
    ─────────────────────────────────────────────────────────── */
 
@@ -54,16 +54,14 @@ const TABS: { key: Tab; label: string }[] = [
 
 export default function DesignSystemPage() {
   const [tab, setTab] = useState<Tab>("global");
-  const [mono, setMono] = useState(true);
 
-  // Drive the real token system: data-theme="mono" on <html> regenerates the
-  // whole colour ramp (mirrors the app / landing). Classic = remove it.
+  // Mono is the only theme: apply data-theme="mono" on <html> (mirrors the app /
+  // landing). Cleaned up on unmount so other routes aren't affected.
   useEffect(() => {
     const root = document.documentElement;
-    if (mono) root.setAttribute("data-theme", "mono");
-    else root.removeAttribute("data-theme");
+    root.setAttribute("data-theme", "mono");
     return () => root.removeAttribute("data-theme");
-  }, [mono]);
+  }, []);
 
   return (
     <div
@@ -74,7 +72,7 @@ export default function DesignSystemPage() {
         fontFamily: "var(--font-family)",
       }}
     >
-      {/* ── Sticky chrome: brand · tabs · theme toggle ── */}
+      {/* ── Sticky chrome: brand · tabs ── */}
       <header
         style={{
           position: "sticky",
@@ -105,29 +103,6 @@ export default function DesignSystemPage() {
             <span style={{ color: "var(--color-text-muted)", fontFamily: "var(--font-family-mono)", fontSize: "var(--text-sm)" }}>
               / design system
             </span>
-
-            <button
-              type="button"
-              onClick={() => setMono((m) => !m)}
-              style={{
-                marginLeft: "auto",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                height: 34,
-                padding: "0 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--color-border)",
-                background: "transparent",
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-family)",
-                fontSize: "var(--text-sm)",
-                cursor: "pointer",
-              }}
-            >
-              <span style={{ width: 12, height: 12, borderRadius: 3, background: "var(--color-accent)" }} />
-              Theme: {mono ? "Mono" : "Classic"}
-            </button>
           </div>
 
           {/* Tab bar */}
@@ -166,7 +141,7 @@ export default function DesignSystemPage() {
           (the app's lavender tracker canvas) — a design showcase needs the neutral
           dark canvas so accent/card-filled specimens don't go lavender-on-lavender. */}
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 96px", background: "var(--color-bg)" }}>
-        {tab === "global" && <GlobalTab mono={mono} />}
+        {tab === "global" && <GlobalTab />}
         {tab === "homepage" && <HomepageTab />}
         {tab === "app" && <AppTab />}
         {tab === "notes" && <NotesTab />}
@@ -322,9 +297,9 @@ const CUSTOM_ICONS: { Icon: (p: { color?: string }) => React.ReactElement; name:
   { Icon: PlusIcon, name: "Plus" },
 ];
 
-// Computed colour → #rrggbb(aa). Classic tokens resolve to `rgb(0–255)`; Mono's
+// Computed colour → #rrggbb(aa). Plain hex tokens resolve to `rgb(0–255)`, while
 // color-mix() values resolve to `color(srgb 0–1 …)` floats in modern Chromium —
-// handle both so the hex is correct in either theme.
+// handle both so the hex is correct for every token.
 function rgbToHex(c: string): string {
   const m = c.match(/[\d.]+/g);
   if (!m) return c;
@@ -338,18 +313,18 @@ function rgbToHex(c: string): string {
   return a !== undefined && a < 1 ? base + h(a * 255) : base;
 }
 
-// A colour-token swatch that reads its own computed hex (re-read on theme flip).
-function ColorSwatch({ token, mono }: { token: string; mono: boolean }) {
+// A colour-token swatch that reads its own computed hex from the live ramp.
+function ColorSwatch({ token }: { token: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [hex, setHex] = useState("");
   useEffect(() => {
     // rAF: the theme attribute is set in a parent effect (runs after this child
-    // effect) — wait one frame so getComputedStyle sees the new ramp.
+    // effect) — wait one frame so getComputedStyle sees the applied ramp.
     const id = requestAnimationFrame(() => {
       if (ref.current) setHex(rgbToHex(getComputedStyle(ref.current).backgroundColor));
     });
     return () => cancelAnimationFrame(id);
-  }, [mono]);
+  }, []);
   return (
     <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-container)", overflow: "hidden" }}>
       <div ref={ref} style={{ height: 64, background: `var(${token})`, borderBottom: "1px solid var(--color-border)" }} />
@@ -361,19 +336,19 @@ function ColorSwatch({ token, mono }: { token: string; mono: boolean }) {
   );
 }
 
-function GlobalTab({ mono }: { mono: boolean }) {
+function GlobalTab() {
   return (
     <div>
       <TabIntro title="Global elements">
         The foundation shared by every instance — colours, type, spacing, radii, shadows, buttons, form controls,
-        the logo and the icon set. All driven by the central design-token system; flip the theme toggle to watch the
-        same tokens regenerate the Classic and Mono ramps live.
+        the logo and the icon set. All driven by the central design-token system — the single source of truth that
+        regenerates the whole mono colour ramp from one base hue.
       </TabIntro>
 
       <Section title="Colour tokens" note="Surfaces, text, accents & the light-card palette. Signal colours (lime, running-green) stay constant across themes.">
         <Grid min={150}>
           {COLOR_TOKENS.map((c) => (
-            <ColorSwatch key={c.name} token={c.name} mono={mono} />
+            <ColorSwatch key={c.name} token={c.name} />
           ))}
         </Grid>
       </Section>

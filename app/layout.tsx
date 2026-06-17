@@ -76,11 +76,11 @@ export default function RootLayout({
         {/* Apply the mono theme BEFORE first paint to kill the FOUC (old purple
             flash). Runs synchronously during parsing. Mirrors the useEffects /
             <MonoTheme/>: mono on the landing, the app, the published article
-            pages and the public legal/info pages, unless ?theme=classic;
-            optional ?hue. */}
+            pages and the public legal/info pages. Optional ?hue. (Mono is the
+            only theme — the old "classic" palette is retired.) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);var mono=p==="/"||p.indexOf("/app")===0||p.indexOf("/note")===0||p==="/designsystem"||p==="/impressum"||p==="/datenschutz"||p==="/terms"||p==="/story";if(mono&&q.get("theme")!=="classic"){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h&&/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(h))r.style.setProperty("--mono",h);}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname,q=new URLSearchParams(location.search);var mono=p==="/"||p.indexOf("/app")===0||p.indexOf("/note")===0||p==="/designsystem"||p==="/impressum"||p==="/datenschutz"||p==="/terms"||p==="/story";if(mono){var r=document.documentElement;r.setAttribute("data-theme","mono");var h=q.get("hue");if(h&&/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(h))r.style.setProperty("--mono",h);}}catch(e){}})();`,
           }}
         />
         {children}
