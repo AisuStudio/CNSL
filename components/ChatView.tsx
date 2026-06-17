@@ -16,8 +16,8 @@ import {
   sortedConversations,
 } from "@/lib/chat";
 
-// A round initials avatar. Theme-friendly: a faint dark tint of the primary
-// text colour (legible on the lavender canvas in mono and on dark in classic).
+// A round initials avatar: a faint dark tint of the primary text colour, legible
+// on the lavender mono canvas.
 function Avatar({ name, size = 34 }: { name: string; size?: number }) {
   return (
     <div
