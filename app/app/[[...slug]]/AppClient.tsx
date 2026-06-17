@@ -1010,7 +1010,7 @@ export default function Home() {
       if (becameDone) completedAt = new Date().toISOString();
       else if (updated.status !== "done") completedAt = undefined;
       // On completion, mark it "today" so it shows in the Today view (done-today).
-      let final = {
+      let final: Task = {
         ...updated,
         completedAt,
         ...(becameDone ? { urgency: "today" as const } : {}),
