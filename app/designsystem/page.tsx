@@ -36,7 +36,7 @@ import {
 } from "@/components/icons";
 
 /* ───────────────────────────────────────────────────────────
-   CNSL — Public Design System / Style-guide showcase (/design)
+   CNSL — Public Design System / Style-guide showcase (/designsystem)
    Every design-element category, split into tabs:
      Global · Homepage · App · Published Notes
    Live Classic/Mono theme toggle drives the same tokens the
