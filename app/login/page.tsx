@@ -5,7 +5,7 @@ import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { BETA_CODE } from "@/lib/auth-config";
+import { betaLabelFor } from "@/lib/auth-config";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -52,7 +52,10 @@ export default function LoginPage() {
   // we go straight into the app (no confirmation link → no PKCE/cross-device
   // breakage). If confirmation is still on, we tell the user to check their mail.
   async function register() {
-    if (betaCode.trim() !== BETA_CODE) {
+    // Multiple named beta codes: any valid code lets a tester in; its label is
+    // stamped onto the new user so we can see which code they came in through.
+    const betaLabel = betaLabelFor(betaCode);
+    if (!betaLabel) {
       setError("Wrong beta code. Ask the CNSL team for the current one.");
       return;
     }
@@ -63,6 +66,7 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: { data: { betaCode: betaCode.trim(), betaLabel } },
     });
     setLoading(false);
     if (error) {

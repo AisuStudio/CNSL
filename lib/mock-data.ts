@@ -102,6 +102,18 @@ export function accrueTracking(t: Task, nowMs: number): Task {
   };
 }
 
+// Stop a running timer: commit the final elapsed slice (via accrueTracking),
+// then clear the anchor + flag. No-op when the task isn't tracking. Used wherever
+// a task is finished (status→done) or archived — a done/archived task must never
+// keep tracking, or it would keep firing the 30s accrual-save (re-bumping
+// `updatedAt`, waking every other device's resync, and keeping the app-icon badge
+// lit), and the line hides the Pause button on a done task so it'd be unstoppable.
+export function stopTimer(t: Task, nowMs = Date.now()): Task {
+  if (!t.isTracking) return t;
+  const accrued = accrueTracking(t, nowMs);
+  return { ...accrued, isTracking: false, trackingStartedAt: undefined };
+}
+
 // A raw capture from the footer input — the "tracking log" inbox.
 // Stays append-only; triage turns it into a Task without deleting it.
 export interface LogEntry {
