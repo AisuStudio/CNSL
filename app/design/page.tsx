@@ -162,7 +162,10 @@ export default function DesignSystemPage() {
       </header>
 
       {/* ── Body ── */}
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 96px" }}>
+      {/* Explicit bg beats `:root[data-theme="mono"] main { background: var(--mono) }`
+          (the app's lavender tracker canvas) — a design showcase needs the neutral
+          dark canvas so accent/card-filled specimens don't go lavender-on-lavender. */}
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px clamp(16px, 4vw, 40px) 96px", background: "var(--color-bg)" }}>
         {tab === "global" && <GlobalTab />}
         {tab === "homepage" && <HomepageTab />}
         {tab === "app" && <AppTab />}
@@ -429,7 +432,9 @@ function GlobalTab() {
 
       <Section title="Buttons" note="Three core styles, used across modals, cards and panels.">
         <Specimen>
-          <button className="cnsl-btn-primary">Save</button>
+          {/* card-ink label reads on the accent fill in both themes (in Mono the
+              token --color-card-bg collapses to the accent hue). */}
+          <button className="cnsl-btn-primary" style={{ color: "var(--color-card-ink)" }}>Save</button>
           <button className="cnsl-btn-secondary">Cancel</button>
           <button className="cnsl-btn-ghost">Archive</button>
         </Specimen>
@@ -635,7 +640,7 @@ function AppTab() {
       <Section title="Chrome — footer (Blurp logger)">
         <div style={{ display: "flex", gap: 10, maxWidth: 520 }}>
           <input style={{ ...loginInput, height: 45.5, background: "var(--color-card-bg)", color: "var(--color-card-ink)", border: "1px solid var(--color-accent)" }} placeholder="Blurp console — capture a thought…" />
-          <button className="cnsl-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <button className="cnsl-btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--color-card-ink)" }}>
             <LogIcon color="currentColor" /> Log
           </button>
         </div>
@@ -712,7 +717,7 @@ function AppTab() {
 
       <Section title="Calendar event chip">
         <Row>
-          <span style={{ display: "inline-flex", gap: 6, padding: "3px 8px", borderRadius: "var(--radius-small)", background: "var(--color-accent)", color: "var(--color-card-bg)", fontSize: "var(--text-xs)" }}>
+          <span style={{ display: "inline-flex", gap: 6, padding: "3px 8px", borderRadius: "var(--radius-small)", background: "var(--color-accent)", color: "var(--color-card-ink)", fontSize: "var(--text-xs)" }}>
             <b>09:00</b> Standup
           </span>
           <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>+2 more</span>
@@ -724,7 +729,7 @@ function AppTab() {
           <div style={{ alignSelf: "flex-start", maxWidth: "75%", padding: "8px 12px", borderRadius: 12, background: "color-mix(in srgb, var(--color-text-primary) 10%, transparent)", fontSize: "var(--text-sm)" }}>
             How&rsquo;s the design page coming along?
           </div>
-          <div style={{ alignSelf: "flex-end", maxWidth: "75%", padding: "8px 12px", borderRadius: 12, background: "var(--color-accent)", color: "var(--color-card-bg)", fontSize: "var(--text-sm)" }}>
+          <div style={{ alignSelf: "flex-end", maxWidth: "75%", padding: "8px 12px", borderRadius: 12, background: "var(--color-accent)", color: "var(--color-card-ink)", fontSize: "var(--text-sm)" }}>
             Just shipped the App tab ✦
           </div>
         </div>
