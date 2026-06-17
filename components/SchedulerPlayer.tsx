@@ -63,7 +63,9 @@ export default function SchedulerPlayer({
   }, [sound]);
 
   const current = flat[idx];
-  const next = flat[idx + 1];
+  // The "Next" hint shows the next REAL step — synthetic auto-pause rests are
+  // skipped so a "Rest" never shows up as the upcoming step.
+  const nextReal = flat.slice(idx + 1).find((f) => !f.isPause);
 
   // Step counter ignores the synthetic rests; during a rest it reads ahead.
   const doneReal = flat.slice(0, idx + 1).filter((f) => !f.isPause).length;
@@ -388,9 +390,10 @@ export default function SchedulerPlayer({
               {formatDuration(Math.ceil(remaining))}
             </div>
 
-            {/* Following step */}
-            <div style={{ fontSize: "var(--text-base)", color: muted }}>
-              {next ? `Next: ${next.step.name || "(unnamed)"}` : "Last step"}
+            {/* Following step — same size as the current step, Regular weight (the
+                current step is bold), and skips synthetic auto-pause rests. */}
+            <div style={{ fontSize: "var(--text-logo)", fontWeight: 400, color: muted }}>
+              {nextReal ? `Next: ${nextReal.step.name || "(unnamed)"}` : "Last step"}
             </div>
 
             <div style={hr} />
