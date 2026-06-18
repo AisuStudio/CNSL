@@ -724,17 +724,20 @@ a:focus-visible {
   width: 50vw; /* desktop: half the viewport */
 }
 @media (max-width: 768px) {
+  /* Mobile shows the static hero image instead of the live self-playing demo. */
   .cnsl-hero-tour {
-    /* Full width minus 12px gutters, breaking out of the hero's side padding
-       (50% - 50vw cancels the parent padding; +12px = left gutter). */
-    width: calc(100vw - 24px);
-    margin-left: calc(50% - 50vw + 12px);
+    display: none;
   }
 }
 
 /* New landing layout: hero (top), tools (left) + preview & tagline (right
    column), all vertically centered. (#homepage-redesign · toolbox-66) */
-.start-hero { flex-shrink: 0; }
+/* Headline hidden on desktop via visibility (keeps its space so the toolbox +
+   demo stay put); fully removed on mobile (display:none in the media query). */
+.start-hero { flex-shrink: 0; visibility: hidden; }
+.start-logo { flex-shrink: 0; }
+/* Static mobile hero image — hidden on desktop (the live demo shows instead). */
+.start-hero-img { display: none; }
 .start-cols { display: flex; gap: clamp(24px, 3vw, 56px); align-items: flex-start; flex: 1 1 auto; min-height: 0; }
 /* The left column is a fixed-width SLOT (keeps the demo's left edge put); the
    tool box itself only fills 66% of that slot, so shrinking it doesn't move the
@@ -828,15 +831,18 @@ a:focus-visible {
   z-index: 3;
 }
 @media (max-width: 768px) {
-  /* Badge flows above the hero instead of overlapping the headline */
+  /* Badge sits top-right on the same row as the logo (top-left). */
   .start-topbar {
-    position: static !important;
-    display: flex;
-    justify-content: flex-end;
-    padding: 44px 20px 0;
+    position: absolute !important;
+    top: 18px !important;
+    right: 20px !important;
+    padding: 0 !important;
+    transform: scale(0.62);
+    transform-origin: top right;
+    z-index: 4;
   }
   /* Hero hugs the top; cards flow naturally instead of fold-pinning */
-  .start-main { justify-content: flex-start !important; padding-top: 16px !important; }
+  .start-main { justify-content: flex-start !important; padding: 16px 20px 36px !important; }
   /* Login flows back into the page below the tools card */
   .start-login {
     position: static;
@@ -849,13 +855,32 @@ a:focus-visible {
     position: static;
     padding: 4px 20px 28px;
   }
-  /* Stack the two-column layout on mobile (desktop is a flex row + 2-col grid).
-     DOM order → hero, tools+CTA, demo, tagline. */
-  .start-cols { flex-direction: column; align-items: stretch; gap: clamp(20px, 4vh, 32px); }
-  .start-left,
-  .start-right { width: 100%; align-self: stretch; }
+  /* Hide the "Welcome to CNSL" headline on mobile (logo + hero image carry it). */
+  .start-hero { display: none; }
+
+  /* Mobile layout (per CNSL_Mob_HP_Hero mockup): logo+badge → hero image →
+     toolbox (overlapping the hero) → tagline → footer. start-right is flattened
+     (display:contents) so the image, toolbox and tagline reorder as siblings. */
+  .start-cols { flex-direction: column; align-items: stretch; gap: 0; }
+  .start-right { display: contents; }
+
+  .start-hero-img { display: block; order: 1; width: 100%; height: auto; }
+
+  /* Toolbox pulled up 44px to overlap the bottom of the hero image. */
+  .start-left {
+    order: 2;
+    width: 100%;
+    margin-top: -84px;
+    position: relative;
+    z-index: 2;
+  }
   .start-tools { width: 100%; }
-  .start-tagline { grid-template-columns: 1fr; gap: 16px; }
+  .start-tools ul { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  /* Sign up / Log in side by side on mobile to save vertical space. */
+  .start-auth { flex-direction: row; }
+  .start-auth .start-btn { flex: 1 1 0; min-width: 0; }
+
+  .start-tagline { order: 3; margin-top: 28px; grid-template-columns: 1fr; gap: 16px; }
   .start-squiggle {
     top: auto;
     left: auto;

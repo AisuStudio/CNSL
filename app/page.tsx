@@ -69,6 +69,11 @@ export default function StartPage() {
           gap: "clamp(12px, 2vh, 28px)",
         }}
       >
+        {/* CNSL logo — top-left, shown on both mobile and desktop */}
+        <div className="start-logo">
+          <CnslLogo size={40} />
+        </div>
+
         {/* Hero — top-left */}
         <h1
           className="start-hero"
@@ -93,7 +98,13 @@ export default function StartPage() {
             <ToolsPanel onSignUp={() => setAuthMode("signup")} onLogin={() => setAuthMode("signin")} />
           </div>
           <div className="start-right">
+            {/* Desktop: live self-playing demo. Mobile: static hero image. */}
             <HeroTour />
+            <img
+              className="start-hero-img"
+              src="/CNSL_Mob_HP_Hero@2x.png"
+              alt="CNSL running across phone and desktop"
+            />
             <Tagline />
           </div>
         </div>
@@ -241,7 +252,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Tagline() {
   return (
     <div className="start-tagline">
-      <p className="start-tagline-lead">CNSL is a collaborative multi-console — EU-hosted, your data stays yours:</p>
+      <p className="start-tagline-lead">CNSL is a free &amp; collaborative multi-console that takes privacy seriously:</p>
       <div>
         <p className="start-tagline-body">
           time tracking, project &amp; routine planning, calendar, notes with micro-publishing, and chat, synced across devices and browsers.
