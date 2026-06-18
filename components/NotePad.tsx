@@ -268,25 +268,32 @@ export default function NotePad({
           flexDirection: "column",
         }}
       >
-        {isMobile && (
-          <button
-            type="button"
-            onClick={() => setEnteredProject(false)}
-            style={{
-              margin: "12px 12px 0",
-              flexShrink: 0,
-              alignSelf: "flex-start",
-              background: "transparent",
-              border: "none",
-              color: "var(--color-text-muted)",
-              fontSize: "var(--text-sm)",
-              cursor: "pointer",
-            }}
-          >
-            ← Projects
-          </button>
-        )}
         <div style={addRow}>
+          {/* Mobile: back to the project list, sitting on the same row as the
+              add icons (chevron-left, compact, secondary styling). */}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setEnteredProject(false)}
+              aria-label="Back to projects"
+              title="Projects"
+              style={{
+                flexShrink: 0,
+                width: "44px",
+                height: "36px",
+                borderRadius: "8px",
+                border: "1px solid var(--color-border)",
+                background: "transparent",
+                color: "var(--color-text-muted)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChevronLeft size={18} strokeWidth={1.75} aria-hidden />
+            </button>
+          )}
           {/* Mobile: also offer "new project" here so both actions are visible. */}
           {isMobile && (
             <button type="button" onClick={createProject} style={addBtn} aria-label="New project" title="New project">
