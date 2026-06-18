@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { type Task, type Urgency, type Status } from "@/lib/mock-data";
 import TaskLine from "./TaskLine";
 
@@ -148,7 +149,7 @@ function BacklogHeader({
                 opacity: key ? 1 : 0.35,
               }}
             >
-              {dir === "asc" ? "↑" : "↓"}
+              {dir === "asc" ? <ArrowUp size={14} strokeWidth={2} /> : <ArrowDown size={14} strokeWidth={2} />}
             </button>
           </div>
         )}
