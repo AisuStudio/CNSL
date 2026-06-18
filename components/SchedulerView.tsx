@@ -433,6 +433,7 @@ export default function SchedulerView({
                     style={{ ...inputStyle, flex: 1, fontWeight: 700, fontSize: "18px" }}
                   />
                 ) : (
+                  // Collapsed: on mobile the name + meta (time · steps) stack in a column
                   <button
                     type="button"
                     onClick={() => openCard(s.id)}
@@ -445,35 +446,46 @@ export default function SchedulerView({
                       border: "none",
                       cursor: "pointer",
                       padding: "0 2px",
-                      fontWeight: 700,
-                      fontSize: "18px",
-                      fontFamily: "var(--font-family)",
-                      color: s.name ? text : faint,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      display: "flex",
+                      flexDirection: isMobile ? "column" : "row",
+                      alignItems: isMobile ? "flex-start" : "center",
+                      gap: isMobile ? "2px" : "0",
                     }}
                   >
-                    {s.name || "Routine Name"}
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: "18px",
+                        fontFamily: "var(--font-family)",
+                        color: s.name ? text : faint,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {s.name || "Routine Name"}
+                    </span>
+                    {isMobile && (
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: muted,
+                          fontFamily: "var(--font-family-mono)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {formatDuration(total)} · {stepCount(s)} steps
+                      </span>
+                    )}
                   </button>
                 )}
 
-                {/* Collapsed summary (desktop inline, mobile stacked) */}
-                {!isOpen && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: isMobile ? "column" : "row",
-                      alignItems: isMobile ? "flex-end" : "center",
-                      gap: isMobile ? "1px" : "0",
-                      flexShrink: 0,
-                    }}
-                  >
+                {/* Collapsed summary — desktop only (mobile is now inside the name button) */}
+                {!isOpen && !isMobile && (
+                  <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
                     <span style={{ fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)", whiteSpace: "nowrap" }}>
-                      {formatDuration(total)}
-                    </span>
-                    <span style={{ fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)", whiteSpace: "nowrap" }}>
-                      {isMobile ? "" : " · "}{stepCount(s)} steps
+                      {formatDuration(total)} · {stepCount(s)} steps
                     </span>
                   </div>
                 )}
