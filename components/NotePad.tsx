@@ -5,6 +5,7 @@ import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { FolderPlus, FilePlus } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -182,9 +183,10 @@ export default function NotePad({
     border: "none",
     background: "var(--color-accent)",
     color: "var(--color-card-ink)",
-    fontWeight: 700,
-    fontSize: "var(--text-base)",
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
   const addRow: React.CSSProperties = {
     display: "flex",
@@ -209,13 +211,13 @@ export default function NotePad({
         }}
       >
         <div style={addRow}>
-          <button type="button" onClick={createProject} style={addBtn}>
-            + Project
+          <button type="button" onClick={createProject} style={addBtn} aria-label="New project" title="New project">
+            <FolderPlus size={18} strokeWidth={1.75} aria-hidden />
           </button>
-          {/* Mobile: also offer "+ New note" here so both actions are visible. */}
+          {/* Mobile: also offer "new note" here so both actions are visible. */}
           {isMobile && (
-            <button type="button" onClick={newNote} style={addBtn}>
-              + New note
+            <button type="button" onClick={newNote} style={addBtn} aria-label="New note" title="New note">
+              <FilePlus size={18} strokeWidth={1.75} aria-hidden />
             </button>
           )}
         </div>
@@ -285,14 +287,14 @@ export default function NotePad({
           </button>
         )}
         <div style={addRow}>
-          {/* Mobile: also offer "+ Project" here so both actions are visible. */}
+          {/* Mobile: also offer "new project" here so both actions are visible. */}
           {isMobile && (
-            <button type="button" onClick={createProject} style={addBtn}>
-              + Project
+            <button type="button" onClick={createProject} style={addBtn} aria-label="New project" title="New project">
+              <FolderPlus size={18} strokeWidth={1.75} aria-hidden />
             </button>
           )}
-          <button type="button" onClick={newNote} style={addBtn}>
-            + New note
+          <button type="button" onClick={newNote} style={addBtn} aria-label="New note" title="New note">
+            <FilePlus size={18} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
         {visibleNotes.length === 0 && (
