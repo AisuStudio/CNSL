@@ -19,6 +19,7 @@ import type { Schedule } from "@/lib/scheduler";
 import type { Note } from "@/lib/notes";
 import { type Contact, type Conversation, type Message, ME } from "@/lib/chat";
 import { newId } from "@/lib/storage";
+import { MobileOverrideContext } from "@/lib/useIsMobile";
 
 const DEMO_PROJECTS = ["Personal", "Studio", "Website"];
 
@@ -36,7 +37,7 @@ const DEMO_PROJECTS = ["Personal", "Studio", "Website"];
    ─────────────────────────────────────────────────────────── */
 
 const DESKTOP = { w: 1024, h: 700 };
-const MOBILE = { w: 390, h: 700 };
+const MOBILE = { w: 390, h: 844 }; // real phone aspect (iPhone 12/13/14 logical)
 
 const noop = () => {};
 
@@ -188,10 +189,15 @@ export default function HeroTour() {
   const [scale, setScale] = useState(1);
   const stage = isMobile ? MOBILE : DESKTOP;
   const pausedRef = useRef(false); // true while hovering → auto-advance holds
+  const isMobileRef = useRef(false); // current viewport-mobile, read by the async driver
+  const [navOpen, setNavOpen] = useState(false); // mobile sidebar drawer (demo)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
-    const update = () => setIsMobile(mq.matches);
+    const update = () => {
+      setIsMobile(mq.matches);
+      isMobileRef.current = mq.matches;
+    };
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
@@ -233,12 +239,26 @@ export default function HeroTour() {
     };
     const patch = (id: string, p: Partial<Task>) =>
       setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, ...p } : t)));
+    // On mobile the sidebar is an off-canvas drawer, so make navigation visible
+    // by briefly sliding it open on each tool switch. Desktop: plain setTool.
+    const switchTool = async (t: Tool) => {
+      if (isMobileRef.current) {
+        setNavOpen(true);
+        await sleep(700);
+        if (cancelled) return;
+      }
+      setTool(t);
+      if (isMobileRef.current) {
+        await sleep(500);
+        setNavOpen(false);
+      }
+    };
 
     (async () => {
       while (!cancelled) {
         // ── Tracker: capture → run → done ──
         await holdIfPaused();
-        setTool("tracker");
+        await switchTool("tracker");
         setView("project");
         setTasks(makeTasks());
         await sleep(1500);
@@ -256,7 +276,7 @@ export default function HeroTour() {
         // ── Calendar: drop a new event ──
         await holdIfPaused();
         if (cancelled) break;
-        setTool("calendar");
+        await switchTool("calendar");
         await sleep(1300);
         if (cancelled) break;
         const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 16, 0);
@@ -270,28 +290,28 @@ export default function HeroTour() {
         // ── Scheduler: show the routine editor ──
         await holdIfPaused();
         if (cancelled) break;
-        setTool("scheduler");
+        await switchTool("scheduler");
         await sleep(3400);
         if (cancelled) break;
 
         // ── Note Pad ──
         await holdIfPaused();
         if (cancelled) break;
-        setTool("notepad");
+        await switchTool("notepad");
         await sleep(3200);
         if (cancelled) break;
 
         // ── Chat ──
         await holdIfPaused();
         if (cancelled) break;
-        setTool("chat");
+        await switchTool("chat");
         await sleep(3000);
         if (cancelled) break;
 
         // ── Blurp Logger ──
         await holdIfPaused();
         if (cancelled) break;
-        setTool("log");
+        await switchTool("log");
         await sleep(3000);
         if (cancelled) break;
       }
@@ -367,18 +387,23 @@ export default function HeroTour() {
             transformOrigin: "top left",
           }}
         >
-          {/* App window — the REAL shell so the mono lavender canvas applies. */}
+          {/* App window — the REAL shell so the mono lavender canvas applies.
+              Mobile: a phone bezel; desktop: a thin lavender outline. */}
           <div
             style={{
+              position: "relative", // positioned ancestor for the absolute footer/drawer
               width: "100%",
               height: "100%",
-              border: "2px solid var(--color-accent)",
-              borderRadius: "12px",
+              border: isMobile ? "10px solid var(--color-bg-deep)" : "2px solid var(--color-accent)",
+              borderRadius: isMobile ? "36px" : "12px",
               overflow: "hidden",
               boxShadow: "var(--shadow-modal)",
             }}
           >
-            <div className="cnsl-app" style={{ height: "100%" }}>
+            {/* Force the MOBILE layout for the components inside the frame on
+                mobile viewports (useIsMobile reads this override first). */}
+            <MobileOverrideContext.Provider value={isMobile}>
+            <div className="cnsl-app cnsl-demo" data-nav-open={navOpen ? "true" : "false"} style={{ height: "100%" }}>
               <Header
                 onNewTask={noop}
                 onLogoClick={noop}
@@ -386,6 +411,7 @@ export default function HeroTour() {
                 onForceSave={noop}
                 searchQuery=""
                 onSearchChange={noop}
+                onToggleNav={() => setNavOpen((o) => !o)}
               />
               <div className="cnsl-body">
                 <Sidebar
@@ -394,10 +420,18 @@ export default function HeroTour() {
                   onViewChange={(v) => {
                     setTool("tracker");
                     setView(v);
+                    setNavOpen(false);
                   }}
-                  onToolChange={setTool}
+                  onToolChange={(t) => {
+                    setTool(t);
+                    setNavOpen(false);
+                  }}
                   open
+                  mobileOpen={navOpen}
                 />
+                {navOpen && (
+                  <div className="cnsl-nav-backdrop" onClick={() => setNavOpen(false)} aria-hidden="true" />
+                )}
                 <div className="cnsl-content">
                   <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: showBlurp ? "104px" : "24px" }}>
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
@@ -464,10 +498,11 @@ export default function HeroTour() {
                       />
                     </div>
                   </main>
-                  {showBlurp && <Footer onTrack={logTrack} />}
+                  {showBlurp && <Footer onTrack={logTrack} embedded />}
                 </div>
               </div>
             </div>
+            </MobileOverrideContext.Provider>
           </div>
         </div>
       </div>
