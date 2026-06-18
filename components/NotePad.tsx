@@ -5,7 +5,7 @@ import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { FolderPlus, FilePlus } from "lucide-react";
+import { FolderPlus, FilePlus, ChevronLeft } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -417,7 +417,7 @@ export default function NotePad({
                     flexShrink: 0,
                   }}
                 >
-                  ←
+                  <ChevronLeft size={20} strokeWidth={1.75} aria-hidden />
                 </button>
               )}
               <input
@@ -430,7 +430,9 @@ export default function NotePad({
                   border: "none",
                   outline: "none",
                   color: "var(--color-surface)",
-                  fontSize: "24px",
+                  // Mobile: title at the base 1rem/16px (--text-base); desktop keeps
+                  // the larger 24px wordmark size.
+                  fontSize: isMobile ? "var(--text-base)" : "24px",
                   fontWeight: 700,
                   fontFamily: "var(--font-family)",
                 }}
