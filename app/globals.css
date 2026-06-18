@@ -725,10 +725,10 @@ a:focus-visible {
 }
 @media (max-width: 768px) {
   .cnsl-hero-tour {
-    /* Full width minus 12px gutters, breaking out of the hero's side padding
-       (50% - 50vw cancels the parent padding; +12px = left gutter). */
-    width: calc(100vw - 24px);
-    margin-left: calc(50% - 50vw + 12px);
+    /* Mobile: a centered phone at 70% of the column width (was full-bleed). */
+    width: 70vw;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
@@ -828,12 +828,15 @@ a:focus-visible {
   z-index: 3;
 }
 @media (max-width: 768px) {
-  /* Badge flows above the hero instead of overlapping the headline */
+  /* Badge: 50% smaller, tucked top-right on the same line as the hero. */
   .start-topbar {
-    position: static !important;
-    display: flex;
-    justify-content: flex-end;
-    padding: 44px 20px 0;
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    padding: 0 !important;
+    transform: scale(0.5);
+    transform-origin: top right;
+    z-index: 4;
   }
   /* Hero hugs the top; cards flow naturally instead of fold-pinning */
   .start-main { justify-content: flex-start !important; padding-top: 16px !important; }
@@ -849,13 +852,17 @@ a:focus-visible {
     position: static;
     padding: 4px 20px 28px;
   }
-  /* Stack the two-column layout on mobile (desktop is a flex row + 2-col grid).
-     DOM order → hero, tools+CTA, demo, tagline. */
+  /* Stack the two-column layout on mobile. start-right is flattened
+     (display:contents) so the demo, tools and tagline become siblings we can
+     reorder: phone → toolbox → tagline (toolbox moved below the bezel). */
   .start-cols { flex-direction: column; align-items: stretch; gap: clamp(20px, 4vh, 32px); }
-  .start-left,
-  .start-right { width: 100%; align-self: stretch; }
+  .start-right { display: contents; }
+  .cnsl-hero-tour { order: 1; }
+  .start-left { width: 100%; order: 2; }
   .start-tools { width: 100%; }
-  .start-tagline { grid-template-columns: 1fr; gap: 16px; }
+  /* Tools list in two columns to save vertical space. */
+  .start-tools ul { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .start-tagline { order: 3; grid-template-columns: 1fr; gap: 16px; }
   .start-squiggle {
     top: auto;
     left: auto;
