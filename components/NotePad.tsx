@@ -5,6 +5,7 @@ import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { FolderPlus, FilePlus } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -172,6 +173,28 @@ export default function NotePad({
       ? `/note/${handle}/${encodeURIComponent(selected.topic)}/${selected.slug}`
       : null;
 
+  // Accent "add" button (+ Project / + New note). On mobile both live in every
+  // pane (project list AND note list) so both actions are always one tap away;
+  // they share this style and sit in a flex row.
+  const addBtn: React.CSSProperties = {
+    flex: 1,
+    height: "36px",
+    borderRadius: "8px",
+    border: "none",
+    background: "var(--color-accent)",
+    color: "var(--color-card-ink)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  const addRow: React.CSSProperties = {
+    display: "flex",
+    gap: "8px",
+    margin: "12px",
+    flexShrink: 0,
+  };
+
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
       {/* Project column */}
@@ -187,24 +210,17 @@ export default function NotePad({
           flexDirection: "column",
         }}
       >
-        <button
-          type="button"
-          onClick={createProject}
-          style={{
-            margin: "12px",
-            flexShrink: 0,
-            height: "36px",
-            borderRadius: "8px",
-            border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-card-ink)",
-            fontWeight: 700,
-            fontSize: "var(--text-base)",
-            cursor: "pointer",
-          }}
-        >
-          + Project
-        </button>
+        <div style={addRow}>
+          <button type="button" onClick={createProject} style={addBtn} aria-label="New project" title="New project">
+            <FolderPlus size={18} strokeWidth={1.75} aria-hidden />
+          </button>
+          {/* Mobile: also offer "new note" here so both actions are visible. */}
+          {isMobile && (
+            <button type="button" onClick={newNote} style={addBtn} aria-label="New note" title="New note">
+              <FilePlus size={18} strokeWidth={1.75} aria-hidden />
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => pickProject(null)}
@@ -270,24 +286,17 @@ export default function NotePad({
             ← Projects
           </button>
         )}
-        <button
-          type="button"
-          onClick={newNote}
-          style={{
-            margin: "12px",
-            flexShrink: 0,
-            height: "36px",
-            borderRadius: "8px",
-            border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-card-ink)",
-            fontWeight: 700,
-            fontSize: "var(--text-base)",
-            cursor: "pointer",
-          }}
-        >
-          + New note
-        </button>
+        <div style={addRow}>
+          {/* Mobile: also offer "new project" here so both actions are visible. */}
+          {isMobile && (
+            <button type="button" onClick={createProject} style={addBtn} aria-label="New project" title="New project">
+              <FolderPlus size={18} strokeWidth={1.75} aria-hidden />
+            </button>
+          )}
+          <button type="button" onClick={newNote} style={addBtn} aria-label="New note" title="New note">
+            <FilePlus size={18} strokeWidth={1.75} aria-hidden />
+          </button>
+        </div>
         {visibleNotes.length === 0 && (
           <div style={{ padding: "0 14px", color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
             No notes here yet.
