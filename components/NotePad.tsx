@@ -559,7 +559,7 @@ export default function NotePad({
                       borderRadius: "9px",
                       border: "none",
                       background: selected.published
-                        ? "var(--color-accent)"
+                        ? "var(--color-text-primary)"
                         : "var(--color-border)",
                       cursor: "pointer",
                       position: "relative",
@@ -583,7 +583,9 @@ export default function NotePad({
                   <span
                     style={{
                       fontSize: "var(--text-sm)",
-                      color: "var(--color-text-muted)",
+                      color: selected.published
+                        ? "var(--color-text-primary)"
+                        : "var(--color-text-muted)",
                     }}
                   >
                     Published
