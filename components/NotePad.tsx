@@ -71,7 +71,18 @@ export default function NotePad({
       name,
       noteCount: notes.filter((n) => sameProject(n.project, name)).length,
       taskCount: tasks.filter((t) => sameProject(t.project, name)).length,
-    }));
+    }))
+    // Notes context: only list projects that actually contain notes (task-only
+    // projects are hidden here). Keep the currently-selected project visible even
+    // at 0 notes, so creating/selecting a fresh project then adding its first
+    // note doesn't make it vanish mid-flow.
+    .filter(
+      (p) =>
+        p.noteCount > 0 ||
+        (selectedProject !== null &&
+          selectedProject !== "" &&
+          sameProject(selectedProject, p.name))
+    );
   const unassignedCount = notes.filter(
     (n) => !isAssignedName(n.project ?? undefined)
   ).length;
