@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
 import { AddIcon, ShareIcon } from "./icons";
+import { FileBadge, Eye } from "lucide-react";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -186,23 +187,27 @@ export default function ProjectView({
                 {items.length}
               </span>
 
-              {/* C4 — marker when this project is shared WITH me (+ my role). */}
+              {/* C4 — marker when this project is shared WITH me. Plain text in
+                  the same class as the task count; file-badge icon for editor/
+                  owner, eye icon when I only have viewer access. */}
               {sharedRole?.(project) && (
                 <span
                   style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    color: "var(--color-accent)",
-                    border:
-                      "1px solid color-mix(in srgb, var(--color-accent) 45%, transparent)",
-                    borderRadius: "5px",
-                    padding: "1px 6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    color: nameColor,
+                    fontWeight: 300,
+                    fontSize: "var(--text-sm)",
                     flexShrink: 0,
                   }}
                 >
-                  shared · {sharedRole(project)}
+                  {sharedRole(project) === "viewer" ? (
+                    <Eye size={14} strokeWidth={1.75} aria-hidden />
+                  ) : (
+                    <FileBadge size={14} strokeWidth={1.75} aria-hidden />
+                  )}
+                  Shared
                 </span>
               )}
 
