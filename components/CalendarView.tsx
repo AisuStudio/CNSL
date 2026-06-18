@@ -177,6 +177,7 @@ function WeeksGrid({
   maxChips,
   rowHeight,
   isMobile,
+  fill = true,
 }: {
   weeks: Date[][];
   refMonth: number | null;
@@ -187,9 +188,10 @@ function WeeksGrid({
   maxChips: number;
   rowHeight: number;
   isMobile: boolean;
+  fill?: boolean; // false for scrollable views (twomonths, year) so natural height drives scroll
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", ...(fill ? { flex: 1 } : {}) }}>
       {/* Weekday header — #236: 12px bold surface-dark */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "2px" }}>
         {WEEKDAYS.map((w) => (
@@ -215,7 +217,7 @@ function WeeksGrid({
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
           gridAutoRows: `${rowHeight}px`,
           gap: "2px",
-          flex: 1,
+          ...(fill ? { flex: 1 } : {}),
         }}
       >
         {weeks.flat().map((day) => (
@@ -593,7 +595,7 @@ export default function CalendarView({
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
             gap: "24px",
-            flex: 1,
+            // No flex:1 — let natural height overflow <main> so it scrolls
           }}
         >
           {blocks.map((b) => (
@@ -611,6 +613,7 @@ export default function CalendarView({
                 maxChips={isMobile ? 2 : 2}
                 rowHeight={isMobile ? 64 : 76}
                 isMobile={isMobile}
+                fill={false}
               />
             </div>
           ))}
@@ -648,7 +651,9 @@ export default function CalendarView({
         display: "flex",
         flexDirection: "row",
         gap: "24px",
-        minHeight: "100%",
+        // Scrollable views (twomonths, future year) use natural height so content
+        // overflows <main> and triggers the scroll container. Fill views get minHeight.
+        ...(view === "twomonths" ? {} : { minHeight: "100%" }),
       }}
     >
       {/* #231 — two-month overview, desktop only */}
