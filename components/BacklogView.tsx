@@ -109,7 +109,7 @@ function BacklogHeader({
         {onSortChange && (
           <>
             <select
-              className="cnsl-row-select"
+              className="cnsl-row-select cnsl-sort-select"
               value={key}
               onChange={(e) =>
                 onSortChange(e.target.value ? { key: e.target.value, dir } : null)
@@ -308,7 +308,7 @@ export default function BacklogView({
   };
 
   return (
-    <div>
+    <div className="cnsl-backlog">
       {showHeader && (
         <BacklogHeader
           filter={filter}

@@ -512,6 +512,10 @@ a:focus-visible {
 .cnsl-row-select:hover { border-color: var(--color-border); }
 .cnsl-row-select:focus { outline: none; border-color: var(--color-accent); }
 .cnsl-row-select option { color: #1a1a1a; } /* readable in the native popup */
+/* Header sort dropdown: slim, fixed width so it + the direction arrow stay
+   inside the mobile viewport (a native select otherwise widens to the longest
+   option, "Custom order", pushing the sort arrow off-screen). */
+.cnsl-sort-select { width: 84px; }
 .cnsl-row-line::after {
   content: "";
   position: absolute;
@@ -520,6 +524,11 @@ a:focus-visible {
   bottom: 0;
   height: 1px;
   background: var(--color-border);
+}
+/* Backlog + Today: lighter dividers (50%) to reduce optical noise. Scoped to
+   .cnsl-backlog so the Tracker/ProjectView dividers keep full strength. */
+.cnsl-backlog .cnsl-row-line::after {
+  background: color-mix(in srgb, var(--color-border) 50%, transparent);
 }
 /* No trailing divider on the LAST row of a project group — otherwise that last
    task's line floats in the 2px gap just above the next project bar. Scoped to
