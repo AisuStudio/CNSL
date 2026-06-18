@@ -292,8 +292,8 @@ export default function NoteToolbar({
         </button>
       ))}
 
-      {/* Current block style — sits right after the alignment controls. */}
-      {activeStyle && (
+      {/* Current block style — desktop only (mobile toolbar stays single-row) */}
+      {!isMobile && activeStyle && (
         <span className="cnsl-tb-current" title="Current style">
           {activeStyle.label}
         </span>
