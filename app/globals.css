@@ -732,7 +732,9 @@ a:focus-visible {
 
 /* New landing layout: hero (top), tools (left) + preview & tagline (right
    column), all vertically centered. (#homepage-redesign · toolbox-66) */
-.start-hero { flex-shrink: 0; }
+/* Headline hidden on desktop via visibility (keeps its space so the toolbox +
+   demo stay put); fully removed on mobile (display:none in the media query). */
+.start-hero { flex-shrink: 0; visibility: hidden; }
 .start-logo { flex-shrink: 0; }
 /* Static mobile hero image — hidden on desktop (the live demo shows instead). */
 .start-hero-img { display: none; }
@@ -868,7 +870,7 @@ a:focus-visible {
   .start-left {
     order: 2;
     width: 100%;
-    margin-top: -44px;
+    margin-top: -84px;
     position: relative;
     z-index: 2;
   }

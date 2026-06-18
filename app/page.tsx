@@ -252,7 +252,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Tagline() {
   return (
     <div className="start-tagline">
-      <p className="start-tagline-lead">CNSL is a collaborative multi-console — EU-hosted, your data stays yours:</p>
+      <p className="start-tagline-lead">CNSL is a free &amp; collaborative multi-console that takes privacy seriously:</p>
       <div>
         <p className="start-tagline-body">
           time tracking, project &amp; routine planning, calendar, notes with micro-publishing, and chat, synced across devices and browsers.
