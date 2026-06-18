@@ -514,9 +514,11 @@ export default function SchedulerView({
                       <button type="button" style={accentBtn} onClick={() => closeCard(s.id)}>
                         Save
                       </button>
-                      <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
-                        Export JSON
-                      </button>
+                      {!isMobile && (
+                        <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
+                          Export JSON
+                        </button>
+                      )}
                     </>
                   )}
 
