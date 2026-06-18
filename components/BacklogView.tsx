@@ -11,7 +11,7 @@ export type BacklogSort = { key: string; dir: "asc" | "desc" } | null;
 // Sort keys the Backlog exposes. "" = default order (insertion / no sort).
 // "order" = manual drag order (rows become draggable when it's selected).
 const SORT_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "Default order" },
+  { value: "", label: "Order" },
   { value: "project", label: "Project" },
   { value: "number", label: "Number" },
   { value: "urgency", label: "Urgency" },
