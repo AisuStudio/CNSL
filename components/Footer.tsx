@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { LogIcon } from "./icons";
 import { useIsMobile } from "@/lib/useIsMobile";
 
 export default function Footer({ onTrack }: { onTrack: (text: string) => void }) {
   const [text, setText] = useState("");
   const isMobile = useIsMobile();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   function submit() {
     const t = text.trim();
@@ -15,12 +19,14 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
     setText("");
   }
 
-  return (
+  const footer = (
     <footer
       className="cnsl-footer flex items-center"
       style={{
-        // On mobile use fixed so it always anchors to the viewport bottom
-        // regardless of any transform on .cnsl-content (nav push-drawer).
+        // Desktop: absolute inside .cnsl-content (no transform ancestor issues).
+        // Mobile: fixed via portal (see below) so iOS Safari's rule of treating
+        // position:fixed as absolute inside transition:transform ancestors doesn't
+        // apply — .cnsl-content has `transition: transform` for the push-drawer.
         position: isMobile ? "fixed" : "absolute",
         left: "12px",
         right: "12px",
@@ -78,4 +84,12 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
       </button>
     </footer>
   );
+
+  // On mobile, portal to document.body so the footer escapes .cnsl-content's
+  // transition:transform stacking context (iOS Safari bug).
+  if (isMobile && mounted) {
+    return createPortal(footer, document.body);
+  }
+
+  return footer;
 }
