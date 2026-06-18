@@ -686,6 +686,7 @@ export default function SchedulerView({
                                 }
                                 style={{
                                   ...inputStyle,
+                                  height: "36px",
                                   flex: 1,
                                   textAlign: "center",
                                   fontFamily: "var(--font-family-mono)",
