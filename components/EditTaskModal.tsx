@@ -504,7 +504,11 @@ export default function EditTaskModal({
           <PillField
             label="Status"
             value={status}
-            onChange={(v) => setStatus(v as Status)}
+            onChange={(v) => {
+              const s = v as Status;
+              setStatus(s);
+              if (s === "paused") setUrgency("unsorted");
+            }}
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>

@@ -993,6 +993,7 @@ export default function Home() {
             // behind the Archive icon (the line hides Pause once done).
             next = stopTimer(next);
           } else if (value !== "done") next.completedAt = undefined;
+          if (value === "paused") next.urgency = "unsorted";
         }
         return next;
       })
