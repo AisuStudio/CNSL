@@ -209,6 +209,7 @@ export default function SchedulerView({
     fontSize: "var(--text-base)",
     padding: "0 12px",
     height: "36px",
+    minHeight: "36px", // flex-basis:0 in column layouts would collapse below height otherwise
     outline: "none",
     minWidth: 0,
   };
