@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useIsMobile } from "@/lib/useIsMobile";
 import type { Editor } from "@tiptap/react";
 import {
   Link as LinkGlyph,
@@ -106,6 +107,7 @@ export default function NoteToolbar({
   editor: Editor | null;
   title?: string;
 }) {
+  const isMobile = useIsMobile();
   const [styleOpen, setStyleOpen] = useState(false);
   const [, force] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -182,39 +184,42 @@ export default function NoteToolbar({
 
   return (
     <div className="cnsl-toolbar">
-      {/* aA — type-style menu */}
-      <div ref={menuRef} style={{ position: "relative" }}>
-        <button
-          type="button"
-          className={`cnsl-tb-btn cnsl-tb-aa${styleOpen ? " is-active" : ""}`}
-          onClick={() => setStyleOpen((o) => !o)}
-          title="Text style"
-        >
-          aA
-        </button>
-        {styleOpen && (
-          <div className="cnsl-style-menu" role="menu">
-            {TYPE_STYLES.map((s) => (
-              <button
-                key={s.label}
-                type="button"
-                role="menuitem"
-                className={`cnsl-tstyle ${s.className ?? ""}${
-                  s.isActive(editor) ? " is-active" : ""
-                }`}
-                onClick={() => {
-                  s.run(editor);
-                  setStyleOpen(false);
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
+      {/* aA — type-style menu: hidden on mobile */}
+      {!isMobile && (
+        <>
+          <div ref={menuRef} style={{ position: "relative" }}>
+            <button
+              type="button"
+              className={`cnsl-tb-btn cnsl-tb-aa${styleOpen ? " is-active" : ""}`}
+              onClick={() => setStyleOpen((o) => !o)}
+              title="Text style"
+            >
+              aA
+            </button>
+            {styleOpen && (
+              <div className="cnsl-style-menu" role="menu">
+                {TYPE_STYLES.map((s) => (
+                  <button
+                    key={s.label}
+                    type="button"
+                    role="menuitem"
+                    className={`cnsl-tstyle ${s.className ?? ""}${
+                      s.isActive(editor) ? " is-active" : ""
+                    }`}
+                    onClick={() => {
+                      s.run(editor);
+                      setStyleOpen(false);
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      <span className="cnsl-tb-sep" aria-hidden />
+          <span className="cnsl-tb-sep" aria-hidden />
+        </>
+      )}
 
       {/* Inline marks */}
       <button
@@ -294,20 +299,17 @@ export default function NoteToolbar({
         </span>
       )}
 
-      {/* Right end: export buttons (12px from the edge) */}
-      <div className="cnsl-tb-right">
-        <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
-          {copied ? "Copied" : "Copy MD"}
-        </button>
-        {/* "Save MD" hidden per user — restore this button + the saveMD handler to bring it back.
-        <button type="button" className="cnsl-tb-out" onClick={saveMD} title="Save as Markdown">
-          Save MD
-        </button>
-        */}
-        <button type="button" className="cnsl-tb-out" onClick={saveRTF} title="Save as RTF">
-          Save RTF
-        </button>
-      </div>
+      {/* Right end: export buttons — hidden on mobile */}
+      {!isMobile && (
+        <div className="cnsl-tb-right">
+          <button type="button" className="cnsl-tb-out" onClick={copyMD} title="Copy as Markdown">
+            {copied ? "Copied" : "Copy MD"}
+          </button>
+          <button type="button" className="cnsl-tb-out" onClick={saveRTF} title="Save as RTF">
+            Save RTF
+          </button>
+        </div>
+      )}
     </div>
   );
 }

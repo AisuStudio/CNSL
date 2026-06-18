@@ -5,7 +5,7 @@ import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { FolderPlus, FilePlus, ChevronLeft, Menu } from "lucide-react";
+import { FolderPlus, FilePlus, ChevronLeft, Menu, Trash2 } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -477,9 +477,8 @@ export default function NotePad({
                   fontFamily: "var(--font-family)",
                 }}
               />
-              {isMobile ? (
-                /* Mobile: collapse the title-row actions into a hamburger menu
-                   (publish/unpublish, project, task, delete). */
+              {isMobile && (
+                /* Mobile: menu for project/task only — publish + delete moved to the row below. */
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   <button
                     type="button"
@@ -501,7 +500,6 @@ export default function NotePad({
                   </button>
                   {menuOpen && (
                     <>
-                      {/* click-away backdrop */}
                       <div
                         onClick={() => setMenuOpen(false)}
                         style={{ position: "fixed", inset: 0, zIndex: 40 }}
@@ -523,124 +521,113 @@ export default function NotePad({
                           flexDirection: "column",
                         }}
                       >
-                        {canPublishNotes && (
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => {
-                              setMenuOpen(false);
-                              if (selected.published) unpublish(selected.id);
-                              else setPublishOpen(true);
-                            }}
-                            style={menuItem}
-                          >
-                            {selected.published ? "Unpublish" : "Publish"}
-                          </button>
-                        )}
                         <button type="button" role="menuitem" onClick={() => revealMeta("project")} style={menuItem}>
                           Project
                         </button>
                         <button type="button" role="menuitem" onClick={() => revealMeta("task")} style={menuItem}>
                           Task
                         </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setMenuOpen(false);
-                            onDelete(selected.id);
-                            setSelectedId(null);
-                          }}
-                          style={{ ...menuItem, color: "#e5484d" }}
-                        >
-                          Delete
-                        </button>
                       </div>
                     </>
                   )}
                 </div>
-              ) : (
+              )}
+            </div>
+            {/* Published toggle + delete bin — always visible, both desktop and mobile */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "12px",
+              }}
+            >
+              {canPublishNotes && (
                 <>
-                  {canPublishNotes &&
-                    (selected.published ? (
-                      <button
-                        type="button"
-                        onClick={() => unpublish(selected.id)}
-                        title="Make this note private again"
-                        style={{
-                          background: "transparent",
-                          border: "1px solid var(--color-accent)",
-                          borderRadius: "6px",
-                          color: "var(--color-accent)",
-                          padding: "4px 10px",
-                          cursor: "pointer",
-                          fontSize: "var(--text-sm)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        Unpublish
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setPublishOpen(true)}
-                        title="Publish this note as a public page"
-                        style={{
-                          background: "transparent",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: "6px",
-                          color: "var(--color-text-muted)",
-                          padding: "4px 10px",
-                          cursor: "pointer",
-                          fontSize: "var(--text-sm)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        Publish
-                      </button>
-                    ))}
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={!!selected.published}
+                    title={selected.published ? "Unpublish" : "Publish"}
                     onClick={() => {
-                      onDelete(selected.id);
-                      setSelectedId(null);
+                      if (selected.published) unpublish(selected.id);
+                      else setPublishOpen(true);
                     }}
-                    title="Delete note"
                     style={{
-                      background: "transparent",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "6px",
-                      color: "var(--color-text-muted)",
-                      padding: "4px 10px",
+                      width: "32px",
+                      height: "18px",
+                      borderRadius: "9px",
+                      border: "none",
+                      background: selected.published
+                        ? "var(--color-accent)"
+                        : "var(--color-border)",
                       cursor: "pointer",
-                      fontSize: "var(--text-sm)",
+                      position: "relative",
+                      padding: 0,
                       flexShrink: 0,
                     }}
                   >
-                    Delete
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "2px",
+                        left: selected.published ? "16px" : "2px",
+                        width: "14px",
+                        height: "14px",
+                        borderRadius: "50%",
+                        background: "white",
+                        transition: "left 150ms ease",
+                      }}
+                    />
                   </button>
+                  <span
+                    style={{
+                      fontSize: "var(--text-sm)",
+                      color: "var(--color-text-muted)",
+                    }}
+                  >
+                    Published
+                  </span>
+                  {publicUrl && (
+                    <a
+                      href={publicUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontSize: "var(--text-sm)",
+                        color: "var(--color-accent)",
+                        textDecoration: "underline",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {publicUrl}
+                    </a>
+                  )}
                 </>
               )}
-            </div>
-            {publicUrl && (
-              <div
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(selected.id);
+                  setSelectedId(null);
+                }}
+                title="Delete note"
+                className="flex items-center justify-center"
                 style={{
-                  marginBottom: "12px",
-                  fontSize: "var(--text-sm)",
+                  marginLeft: "auto",
+                  background: "transparent",
+                  border: "none",
                   color: "var(--color-text-muted)",
+                  cursor: "pointer",
+                  padding: "4px",
+                  flexShrink: 0,
                 }}
               >
-                Live at{" "}
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: "inherit", textDecoration: "underline" }}
-                >
-                  {publicUrl}
-                </a>
-              </div>
-            )}
+                <Trash2 size={16} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
             {/* A1 — Project + linked task metadata bar. On mobile it's hidden
                 until revealed from the actions menu (Project / Task). */}
             {(!isMobile || metaOpen) && (
