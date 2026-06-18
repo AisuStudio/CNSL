@@ -519,27 +519,29 @@ export default function SchedulerView({
                     </>
                   )}
 
-                  <button
-                    type="button"
-                    style={iconBtn}
-                    onClick={() => onCopySchedule(s.id)}
-                    aria-label="Duplicate schedule"
-                    title="Duplicate"
-                  >
-                    <CopyIcon color={text} size={17} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm(`Delete schedule "${s.name || "Untitled"}"?`))
-                        onDeleteSchedule(s.id);
-                    }}
-                    aria-label="Delete schedule"
-                    title="Delete"
-                    style={iconBtn}
-                  >
-                    <TrashIcon color={text} size={17} />
-                  </button>
+                  <div style={{ marginLeft: "auto", display: "flex", gap: "4px" }}>
+                    <button
+                      type="button"
+                      style={iconBtn}
+                      onClick={() => onCopySchedule(s.id)}
+                      aria-label="Duplicate schedule"
+                      title="Duplicate"
+                    >
+                      <CopyIcon color={text} size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`Delete schedule "${s.name || "Untitled"}"?`))
+                          onDeleteSchedule(s.id);
+                      }}
+                      aria-label="Delete schedule"
+                      title="Delete"
+                      style={iconBtn}
+                    >
+                      <TrashIcon color={text} size={17} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
