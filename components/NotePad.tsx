@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { FolderPlus, FilePlus, ChevronLeft } from "lucide-react";
+import { FolderPlus, FilePlus, ChevronLeft, Menu } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -60,6 +60,22 @@ export default function NotePad({
   const [taskQuery, setTaskQuery] = useState("");
   const selected = notes.find((n) => n.id === selectedId) ?? null;
   const isMobile = useIsMobile();
+  // Mobile note view: the title-row actions collapse into a hamburger menu, and
+  // the Project/Task metadata bar is hidden until revealed from that menu.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [metaOpen, setMetaOpen] = useState(false);
+  const projectInputRef = useRef<HTMLInputElement>(null);
+  const taskInputRef = useRef<HTMLInputElement>(null);
+  // Reveal the metadata bar (mobile) and focus the requested field once it's
+  // mounted. Works whether the bar was hidden or already open.
+  function revealMeta(which: "project" | "task") {
+    setMenuOpen(false);
+    setMetaOpen(true);
+    requestAnimationFrame(() => {
+      const el = which === "project" ? projectInputRef.current : taskInputRef.current;
+      el?.focus();
+    });
+  }
 
   // Project column: every known project (incl. task-only ones from the registry)
   // with its note + task counts, plus the count of unassigned notes.
@@ -116,8 +132,12 @@ export default function NotePad({
     }
   }, [focusNoteId, onFocusHandled]);
 
-  // Reset the link-search box when switching notes.
-  useEffect(() => setTaskQuery(""), [selectedId]);
+  // Reset the link-search box + mobile menu/meta state when switching notes.
+  useEffect(() => {
+    setTaskQuery("");
+    setMenuOpen(false);
+    setMetaOpen(false);
+  }, [selectedId]);
 
   const taskLabel = (t: Task) => `#${t.number} ${t.task || "(untitled)"}`;
   const linkedTask = selected?.taskId
@@ -193,6 +213,19 @@ export default function NotePad({
     gap: "8px",
     margin: "12px",
     flexShrink: 0,
+  };
+  // Row in the mobile note-actions dropdown.
+  const menuItem: React.CSSProperties = {
+    textAlign: "left",
+    background: "transparent",
+    border: "none",
+    borderRadius: "6px",
+    padding: "11px 12px",
+    color: "var(--color-text-primary)",
+    fontSize: "var(--text-base)",
+    fontFamily: "var(--font-family)",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
   };
 
   return (
@@ -444,30 +477,135 @@ export default function NotePad({
                   fontFamily: "var(--font-family)",
                 }}
               />
-              {canPublishNotes &&
-                (selected.published ? (
+              {isMobile ? (
+                /* Mobile: collapse the title-row actions into a hamburger menu
+                   (publish/unpublish, project, task, delete). */
+                <div style={{ position: "relative", flexShrink: 0 }}>
                   <button
                     type="button"
-                    onClick={() => unpublish(selected.id)}
-                    title="Make this note private again"
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-label="Note actions"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    className="flex items-center justify-center"
                     style={{
                       background: "transparent",
-                      border: "1px solid var(--color-accent)",
-                      borderRadius: "6px",
-                      color: "var(--color-accent)",
-                      padding: "4px 10px",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--color-surface)",
                       cursor: "pointer",
-                      fontSize: "var(--text-sm)",
                       flexShrink: 0,
                     }}
                   >
-                    Unpublish
+                    <Menu size={24} strokeWidth={1.75} aria-hidden />
                   </button>
-                ) : (
+                  {menuOpen && (
+                    <>
+                      {/* click-away backdrop */}
+                      <div
+                        onClick={() => setMenuOpen(false)}
+                        style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                      />
+                      <div
+                        role="menu"
+                        style={{
+                          position: "absolute",
+                          top: "calc(100% + 6px)",
+                          right: 0,
+                          zIndex: 41,
+                          minWidth: "180px",
+                          background: "var(--color-surface)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "10px",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+                          padding: "6px",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        {canPublishNotes && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              if (selected.published) unpublish(selected.id);
+                              else setPublishOpen(true);
+                            }}
+                            style={menuItem}
+                          >
+                            {selected.published ? "Unpublish" : "Publish"}
+                          </button>
+                        )}
+                        <button type="button" role="menuitem" onClick={() => revealMeta("project")} style={menuItem}>
+                          Project
+                        </button>
+                        <button type="button" role="menuitem" onClick={() => revealMeta("task")} style={menuItem}>
+                          Task
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            onDelete(selected.id);
+                            setSelectedId(null);
+                          }}
+                          style={{ ...menuItem, color: "#e5484d" }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {canPublishNotes &&
+                    (selected.published ? (
+                      <button
+                        type="button"
+                        onClick={() => unpublish(selected.id)}
+                        title="Make this note private again"
+                        style={{
+                          background: "transparent",
+                          border: "1px solid var(--color-accent)",
+                          borderRadius: "6px",
+                          color: "var(--color-accent)",
+                          padding: "4px 10px",
+                          cursor: "pointer",
+                          fontSize: "var(--text-sm)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Unpublish
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setPublishOpen(true)}
+                        title="Publish this note as a public page"
+                        style={{
+                          background: "transparent",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "6px",
+                          color: "var(--color-text-muted)",
+                          padding: "4px 10px",
+                          cursor: "pointer",
+                          fontSize: "var(--text-sm)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Publish
+                      </button>
+                    ))}
                   <button
                     type="button"
-                    onClick={() => setPublishOpen(true)}
-                    title="Publish this note as a public page"
+                    onClick={() => {
+                      onDelete(selected.id);
+                      setSelectedId(null);
+                    }}
+                    title="Delete note"
                     style={{
                       background: "transparent",
                       border: "1px solid var(--color-border)",
@@ -479,29 +617,10 @@ export default function NotePad({
                       flexShrink: 0,
                     }}
                   >
-                    Publish
+                    Delete
                   </button>
-                ))}
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete(selected.id);
-                  setSelectedId(null);
-                }}
-                title="Delete note"
-                style={{
-                  background: "transparent",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "6px",
-                  color: "var(--color-text-muted)",
-                  padding: "4px 10px",
-                  cursor: "pointer",
-                  fontSize: "var(--text-sm)",
-                  flexShrink: 0,
-                }}
-              >
-                Delete
-              </button>
+                </>
+              )}
             </div>
             {publicUrl && (
               <div
@@ -522,7 +641,9 @@ export default function NotePad({
                 </a>
               </div>
             )}
-            {/* A1 — Project + linked task metadata bar */}
+            {/* A1 — Project + linked task metadata bar. On mobile it's hidden
+                until revealed from the actions menu (Project / Task). */}
+            {(!isMobile || metaOpen) && (
             <div
               style={{
                 display: "flex",
@@ -537,6 +658,7 @@ export default function NotePad({
                   Project
                 </span>
                 <input
+                  ref={projectInputRef}
                   value={selected.project ?? ""}
                   onChange={(e) =>
                     onUpdate(selected.id, { project: e.target.value || undefined })
@@ -600,6 +722,7 @@ export default function NotePad({
                   </>
                 ) : (
                   <input
+                    ref={taskInputRef}
                     value={taskQuery}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -637,6 +760,7 @@ export default function NotePad({
                 </datalist>
               </div>
             </div>
+            )}
             </div>
 
             {/* Scrolling note body. Block scroll container so the editor's sticky
