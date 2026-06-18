@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { type Task, type Urgency, type Status } from "@/lib/mock-data";
+import { useIsMobile } from "@/lib/useIsMobile";
 import TaskLine from "./TaskLine";
 
 export type BacklogFilter = "all" | "open";
@@ -45,6 +46,7 @@ function BacklogHeader({
   grouped?: boolean;
   onGroupedChange?: (g: boolean) => void;
 }) {
+  const isMobile = useIsMobile();
   const filterOpts: { value: BacklogFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "open", label: "Untouched" },
@@ -73,6 +75,8 @@ function BacklogHeader({
         borderBottom: "1px solid var(--color-border)",
         padding: "0 16px",
         gap: "8px",
+        overflowX: "auto",
+        scrollbarWidth: "none",
       }}
     >
       {filter &&
@@ -89,8 +93,8 @@ function BacklogHeader({
           </button>
         ))}
 
-      <div className="flex items-center" style={{ marginLeft: "auto", gap: "8px" }}>
-        {onGroupedChange && (
+      <div className="flex items-center" style={{ marginLeft: "auto", gap: "8px", flexShrink: 0 }}>
+        {onGroupedChange && !isMobile && (
           <div className="flex items-center" style={{ gap: "4px" }}>
             <button
               type="button"
@@ -113,9 +117,11 @@ function BacklogHeader({
 
         {onSortChange && (
           <div className="flex items-center" style={{ gap: "6px" }}>
-            <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-              Sort
-            </span>
+            {!isMobile && (
+              <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                Sort
+              </span>
+            )}
             <select
               className="cnsl-row-select"
               value={key}
