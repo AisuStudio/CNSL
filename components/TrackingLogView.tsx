@@ -34,7 +34,7 @@ function EntryRow({
         padding: "8px 16px",
         gap: "16px",
         opacity: entry.processed ? 0.55 : 1,
-        flexWrap: isMobile ? "wrap" : "nowrap",
+        flexWrap: "wrap",
       }}
     >
       {/* timestamp */}
@@ -69,9 +69,8 @@ function EntryRow({
         style={{
           gap: "8px",
           flexShrink: 0,
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          width: isMobile ? "100%" : undefined,
+          flexWrap: "wrap",
+          alignItems: "center",
         }}
       >
         {entry.processed && (
@@ -171,7 +170,6 @@ export default function TrackingLogView({
   onDownloadMarkdown: (project?: string) => void;
   onDownloadJson: (project?: string) => void;
 }) {
-  const isMobile = useIsMobile();
   const open = log.filter((e) => !e.processed).length;
   // newest first
   const entries = [...log].sort((a, b) => b.ts.localeCompare(a.ts));
@@ -196,61 +194,43 @@ export default function TrackingLogView({
           {log.length} entries · {open} open
         </span>
         <div
+          className="flex items-center"
           style={{
             display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "flex-start" : "center",
-            marginLeft: isMobile ? "0" : "auto",
-            gap: isMobile ? "6px" : "8px",
-            width: isMobile ? "100%" : "auto",
+            flexWrap: "wrap",
+            alignItems: "center",
+            marginLeft: "auto",
+            gap: "8px",
           }}
         >
-          {/* Row 1 (mobile): label + dropdown on same line */}
-          <div className="flex items-center" style={{ gap: "8px" }}>
-            <span
-              style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}
-            >
-              Export
-            </span>
-            <select
-              value={exportProject}
-              onChange={(e) => setExportProject(e.target.value)}
-              title="Limit export to one project"
-              style={{
-                height: "30px",
-                borderRadius: "6px",
-                border: "1px solid var(--color-border-subtle)",
-                background: "var(--color-bg)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-                padding: "0 8px",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">All projects</option>
-              {[...projects].sort((a, b) => a.localeCompare(b)).map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-            {/* On desktop keep buttons on same row as label+dropdown */}
-            {!isMobile && (
-              <>
-                <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
-                <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
-                <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
-              </>
-            )}
-          </div>
-          {/* Row 2 (mobile only): action buttons */}
-          {isMobile && (
-            <div className="flex items-center" style={{ gap: "8px" }}>
-              <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
-              <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
-              <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
-            </div>
-          )}
+          <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
+            Export
+          </span>
+          <select
+            value={exportProject}
+            onChange={(e) => setExportProject(e.target.value)}
+            title="Limit export to one project"
+            style={{
+              height: "30px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-border-subtle)",
+              background: "var(--color-bg)",
+              color: "var(--color-text-primary)",
+              fontSize: "var(--text-sm)",
+              padding: "0 8px",
+              cursor: "pointer",
+            }}
+          >
+            <option value="">All projects</option>
+            {[...projects].sort((a, b) => a.localeCompare(b)).map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
+          <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
+          <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
         </div>
       </div>
 
