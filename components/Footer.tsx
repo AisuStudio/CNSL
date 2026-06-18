@@ -59,7 +59,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         }}
       />
 
-      {/* Log button — purple, "Log" label + icon */}
+      {/* Log button — purple; icon-only on mobile, label+icon on desktop */}
       <button
         type="button"
         onClick={submit}
@@ -68,7 +68,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         className="flex items-center justify-center"
         style={{
           height: "45.5px",
-          padding: "0 18px",
+          padding: isMobile ? "0 14px" : "0 18px",
           gap: "10px",
           background: "var(--color-accent)",
           color: "var(--color-text-primary)",
@@ -79,7 +79,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
           flexShrink: 0,
         }}
       >
-        Log
+        {!isMobile && "Log"}
         <LogIcon color="var(--color-text-primary)" />
       </button>
     </footer>
