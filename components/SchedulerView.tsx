@@ -185,6 +185,14 @@ export default function SchedulerView({
   const accent = "var(--mono)";
   const onAccent = "color-mix(in srgb, var(--mono) 14%, #000)"; // ink on a lavender fill
 
+  // Canvas-level palette — used for elements that sit directly on the lavender
+  // main background (toolbar buttons, saved-activities section), NOT inside the
+  // dark schedule cards. These reference the CSS variables that the
+  // .cnsl-scheduler mono override flips to dark-on-lavender.
+  const cvText = "var(--color-text-primary)";
+  const cvMuted = "var(--color-text-muted)";
+  const cvBorder = "var(--color-border)";
+
   // Shared column widths so the duration fields line up vertically across the
   // auto-pause / section / step rows, and the trailing action slot is reserved
   // in every row (so the duration column lands at the same x).
@@ -205,13 +213,13 @@ export default function SchedulerView({
     minWidth: 0,
   };
 
-  // Outline pill (Play, Export JSON, Add …).
+  // Outline pill — sits on the lavender canvas, so uses canvas-level tokens.
   const ghostBtn: React.CSSProperties = {
     height: isMobile ? "40px" : "32px",
     padding: "0 14px",
     background: "transparent",
-    color: text,
-    border: `1px solid ${border}`,
+    color: cvText,
+    border: `1px solid ${cvBorder}`,
     borderRadius: "8px",
     fontSize: "var(--text-sm)",
     fontWeight: 600,
@@ -305,7 +313,7 @@ export default function SchedulerView({
     >
       {/* Toolbar */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <h2 style={{ margin: 0, fontSize: "var(--text-logo)", fontWeight: 700, color: text }}>
+        <h2 style={{ margin: 0, fontSize: "var(--text-logo)", fontWeight: 700, color: cvText }}>
           Scheduler
         </h2>
         <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
@@ -313,7 +321,7 @@ export default function SchedulerView({
             Import
           </button>
           <button type="button" style={ghostBtn} onClick={onCreateSchedule}>
-            <AddIcon color={text} /> New schedule
+            <AddIcon color={cvText} /> New schedule
           </button>
           <input
             ref={fileRef}
@@ -660,7 +668,7 @@ export default function SchedulerView({
       {/* Saved activities — one record per played run (xlsx "Saved activities") */}
       {activities.length > 0 && (
         <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 700, color: text }}>
+          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 700, color: cvText }}>
             Saved activities
           </h3>
           {activities.slice(0, 30).map((a) => (
@@ -672,21 +680,21 @@ export default function SchedulerView({
                 gap: "10px",
                 padding: "8px 12px",
                 borderRadius: "8px",
-                border: `1px solid ${border}`,
+                border: `1px solid ${cvBorder}`,
                 background: "color-mix(in srgb, var(--color-accent) 5%, transparent)",
                 fontSize: "var(--text-sm)",
-                color: text,
+                color: cvText,
                 flexWrap: "wrap",
               }}
             >
               <span style={{ fontWeight: 700 }}>{a.scheduleName}</span>
-              {a.project && <span style={{ color: muted }}>· {a.project}</span>}
-              <span style={{ color: muted }}>· {formatDate(a.startedAt)}</span>
+              {a.project && <span style={{ color: cvMuted }}>· {a.project}</span>}
+              <span style={{ color: cvMuted }}>· {formatDate(a.startedAt)}</span>
               <span
                 style={{
                   marginLeft: "auto",
                   fontFamily: "var(--font-family-mono)",
-                  color: muted,
+                  color: cvMuted,
                 }}
               >
                 {formatDuration(a.recordedSeconds)} {a.completed ? "✓" : "(partial)"}
