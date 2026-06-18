@@ -559,7 +559,7 @@ export default function NotePad({
                       borderRadius: "9px",
                       border: "none",
                       background: selected.published
-                        ? "var(--color-text-primary)"
+                        ? "color-mix(in srgb, var(--color-card-ink) 20%, transparent)"
                         : "var(--color-border)",
                       cursor: "pointer",
                       position: "relative",
@@ -584,7 +584,7 @@ export default function NotePad({
                     style={{
                       fontSize: "var(--text-sm)",
                       color: selected.published
-                        ? "var(--color-text-primary)"
+                        ? "var(--color-card-ink)"
                         : "var(--color-text-muted)",
                     }}
                   >

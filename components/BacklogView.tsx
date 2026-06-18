@@ -61,7 +61,7 @@ function BacklogHeader({
           height: "18px",
           borderRadius: "9px",
           border: "none",
-          background: on ? "var(--color-text-primary)" : "var(--color-border)",
+          background: on ? "color-mix(in srgb, var(--color-card-ink) 20%, transparent)" : "var(--color-border)",
           cursor: "pointer",
           position: "relative",
           padding: 0,
