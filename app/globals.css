@@ -876,6 +876,9 @@ a:focus-visible {
   }
   .start-tools { width: 100%; }
   .start-tools ul { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  /* Sign up / Log in side by side on mobile to save vertical space. */
+  .start-auth { flex-direction: row; }
+  .start-auth .start-btn { flex: 1 1 0; min-width: 0; }
 
   .start-tagline { order: 3; margin-top: 28px; grid-template-columns: 1fr; gap: 16px; }
   .start-squiggle {
