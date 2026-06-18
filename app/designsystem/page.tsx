@@ -464,6 +464,55 @@ function GlobalTab() {
         </div>
       </Section>
 
+      <Section title="Toggle" note="On/off switch used in NotePad (publish) and Backlog filters. Off = color-border track; On = 20% card-ink track + 100% card-ink label.">
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {/* on dark surface */}
+          <Specimen dark label="on dark — off / on">
+            <Row>
+              {[false, true].map((on) => (
+                <div key={String(on)} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    style={{
+                      width: 32, height: 18, borderRadius: 9, border: "none", padding: 0,
+                      background: on ? "color-mix(in srgb, var(--color-card-ink) 20%, transparent)" : "var(--color-border)",
+                      cursor: "pointer", position: "relative", flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ position: "absolute", top: 2, left: on ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "white", transition: "left 150ms ease" }} />
+                  </button>
+                  <span style={{ fontSize: "var(--text-sm)", color: on ? "var(--color-card-ink)" : "var(--color-text-muted)" }}>Label</span>
+                </div>
+              ))}
+            </Row>
+          </Specimen>
+          {/* on lavender canvas */}
+          <Specimen label="on lavender — off / on">
+            <div style={{ background: "var(--color-accent)", borderRadius: 8, padding: "12px 20px", display: "flex", gap: 20, alignItems: "center" }}>
+              {[false, true].map((on) => (
+                <div key={String(on)} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    style={{
+                      width: 32, height: 18, borderRadius: 9, border: "none", padding: 0,
+                      background: on ? "color-mix(in srgb, var(--color-card-ink) 20%, transparent)" : "var(--color-border)",
+                      cursor: "pointer", position: "relative", flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ position: "absolute", top: 2, left: on ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "white", transition: "left 150ms ease" }} />
+                  </button>
+                  <span style={{ fontSize: "var(--text-sm)", color: on ? "var(--color-card-ink)" : "var(--color-text-muted)" }}>Label</span>
+                </div>
+              ))}
+            </div>
+          </Specimen>
+        </div>
+      </Section>
+
       <Section title="Logo">
         <Specimen label="CnslLogo + wordmark">
           <CnslLogo size={28} />
