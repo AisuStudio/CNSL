@@ -5,7 +5,15 @@ import { createPortal } from "react-dom";
 import { LogIcon } from "./icons";
 import { useIsMobile } from "@/lib/useIsMobile";
 
-export default function Footer({ onTrack }: { onTrack: (text: string) => void }) {
+export default function Footer({
+  onTrack,
+  embedded = false,
+}: {
+  onTrack: (text: string) => void;
+  // embedded = rendered inside the landing demo frame: stay absolute + no portal
+  // so the footer stays INSIDE the scaled phone frame (not pinned to the page).
+  embedded?: boolean;
+}) {
   const [text, setText] = useState("");
   const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
@@ -27,7 +35,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
         // Mobile: fixed via portal (see below) so iOS Safari's rule of treating
         // position:fixed as absolute inside transition:transform ancestors doesn't
         // apply — .cnsl-content has `transition: transform` for the push-drawer.
-        position: isMobile ? "fixed" : "absolute",
+        position: isMobile && !embedded ? "fixed" : "absolute",
         left: "12px",
         right: "12px",
         bottom: "12px",
@@ -87,7 +95,7 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
 
   // On mobile, portal to document.body so the footer escapes .cnsl-content's
   // transition:transform stacking context (iOS Safari bug).
-  if (isMobile && mounted) {
+  if (isMobile && mounted && !embedded) {
     return createPortal(footer, document.body);
   }
 
