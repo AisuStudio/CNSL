@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { LogIcon } from "./icons";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 export default function Footer({ onTrack }: { onTrack: (text: string) => void }) {
   const [text, setText] = useState("");
+  const isMobile = useIsMobile();
 
   function submit() {
     const t = text.trim();
@@ -17,9 +19,9 @@ export default function Footer({ onTrack }: { onTrack: (text: string) => void })
     <footer
       className="cnsl-footer flex items-center"
       style={{
-        // Floats over the table; new design (CNSL_Desktop Design.svg) = bare
-        // cream input + purple Log button, no grey bar, 12px from the edges.
-        position: "absolute",
+        // On mobile use fixed so it always anchors to the viewport bottom
+        // regardless of any transform on .cnsl-content (nav push-drawer).
+        position: isMobile ? "fixed" : "absolute",
         left: "12px",
         right: "12px",
         bottom: "12px",
