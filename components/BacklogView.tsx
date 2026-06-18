@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { type Task, type Urgency, type Status } from "@/lib/mock-data";
-import { useIsMobile } from "@/lib/useIsMobile";
 import TaskLine from "./TaskLine";
 
 export type BacklogFilter = "all" | "open";
@@ -46,82 +45,69 @@ function BacklogHeader({
   grouped?: boolean;
   onGroupedChange?: (g: boolean) => void;
 }) {
-  const isMobile = useIsMobile();
-  const filterOpts: { value: BacklogFilter; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "open", label: "Untouched" },
-  ];
   const key = sort?.key ?? "";
   const dir = sort?.dir ?? "asc";
+  const untouched = filter === "open";
 
-  const pill = (active: boolean): React.CSSProperties => ({
-    height: "26px",
-    padding: "0 12px",
-    borderRadius: "6px",
-    border: "1px solid var(--color-border-subtle)",
-    background: active ? "var(--color-accent)" : "transparent",
-    color: "var(--color-text-primary)",
-    fontSize: "var(--text-sm)",
-    fontWeight: active ? 700 : 400,
-    cursor: "pointer",
-  });
+  const toggle = (on: boolean, onClick: () => void, label: string) => (
+    <div className="flex items-center" style={{ gap: "6px", flexShrink: 0 }}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={onClick}
+        style={{
+          width: "32px",
+          height: "18px",
+          borderRadius: "9px",
+          border: "none",
+          background: on ? "var(--color-accent)" : "var(--color-border)",
+          cursor: "pointer",
+          position: "relative",
+          padding: 0,
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: on ? "16px" : "2px",
+            width: "14px",
+            height: "14px",
+            borderRadius: "50%",
+            background: "white",
+            transition: "left 150ms ease",
+          }}
+        />
+      </button>
+      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", userSelect: "none" }}>
+        {label}
+      </span>
+    </div>
+  );
 
   return (
     <div
-      // cnsl-on-canvas: text vars dark so labels/dropdown read on the lavender canvas (#210).
       className="cnsl-on-canvas flex items-center"
       style={{
         height: "var(--row-height)",
         borderBottom: "1px solid var(--color-border)",
         padding: "0 16px",
-        gap: "8px",
+        gap: "12px",
         overflowX: "auto",
         scrollbarWidth: "none",
       }}
     >
-      {filter &&
-        onFilterChange &&
-        filterOpts.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => onFilterChange(o.value)}
-            className={filter === o.value ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
-            style={pill(filter === o.value)}
-          >
-            {o.label}
-          </button>
-        ))}
+      {filter && onFilterChange &&
+        toggle(untouched, () => onFilterChange(untouched ? "all" : "open"), "Untouched")}
 
-      <div className="flex items-center" style={{ marginLeft: "auto", gap: "8px", flexShrink: 0 }}>
-        {onGroupedChange && !isMobile && (
-          <div className="flex items-center" style={{ gap: "4px" }}>
-            <button
-              type="button"
-              onClick={() => onGroupedChange(false)}
-              className={!grouped ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
-              style={pill(!grouped)}
-            >
-              Flat
-            </button>
-            <button
-              type="button"
-              onClick={() => onGroupedChange(true)}
-              className={grouped ? "cnsl-on-canvas-active" : "cnsl-on-canvas"}
-              style={pill(!!grouped)}
-            >
-              By project
-            </button>
-          </div>
-        )}
+      {onGroupedChange &&
+        toggle(!!grouped, () => onGroupedChange(!grouped), "By Project")}
 
+      <div className="flex items-center" style={{ marginLeft: "auto", gap: "6px", flexShrink: 0 }}>
         {onSortChange && (
-          <div className="flex items-center" style={{ gap: "6px" }}>
-            {!isMobile && (
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                Sort
-              </span>
-            )}
+          <>
             <select
               className="cnsl-row-select"
               value={key}
@@ -150,14 +136,16 @@ function BacklogHeader({
                 border: "1px solid var(--color-border-subtle)",
                 background: "transparent",
                 color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
                 cursor: key ? "pointer" : "default",
                 opacity: key ? 1 : 0.35,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               {dir === "asc" ? <ArrowUp size={14} strokeWidth={2} /> : <ArrowDown size={14} strokeWidth={2} />}
             </button>
-          </div>
+          </>
         )}
       </div>
     </div>
