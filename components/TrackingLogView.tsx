@@ -171,6 +171,7 @@ export default function TrackingLogView({
   onDownloadMarkdown: (project?: string) => void;
   onDownloadJson: (project?: string) => void;
 }) {
+  const isMobile = useIsMobile();
   const open = log.filter((e) => !e.processed).length;
   // newest first
   const entries = [...log].sort((a, b) => b.ts.localeCompare(a.ts));
@@ -195,39 +196,47 @@ export default function TrackingLogView({
           {log.length} entries · {open} open
         </span>
         <div
-          className="flex items-center"
-          style={{ marginLeft: "auto", gap: "8px" }}
+          style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "flex-start" : "center",
+            marginLeft: isMobile ? "0" : "auto",
+            gap: isMobile ? "6px" : "8px",
+            width: isMobile ? "100%" : "auto",
+          }}
         >
           <span
             style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}
           >
             Export for Claude:
           </span>
-          <select
-            value={exportProject}
-            onChange={(e) => setExportProject(e.target.value)}
-            title="Limit export to one project"
-            style={{
-              height: "30px",
-              borderRadius: "6px",
-              border: "1px solid var(--color-border-subtle)",
-              background: "var(--color-bg)",
-              color: "var(--color-text-primary)",
-              fontSize: "var(--text-sm)",
-              padding: "0 8px",
-              cursor: "pointer",
-            }}
-          >
-            <option value="">All projects</option>
-            {[...projects].sort((a, b) => a.localeCompare(b)).map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
-          <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
-          <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
+          <div className="flex items-center" style={{ gap: "8px" }}>
+            <select
+              value={exportProject}
+              onChange={(e) => setExportProject(e.target.value)}
+              title="Limit export to one project"
+              style={{
+                height: "30px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border-subtle)",
+                background: "var(--color-bg)",
+                color: "var(--color-text-primary)",
+                fontSize: "var(--text-sm)",
+                padding: "0 8px",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">All projects</option>
+              {[...projects].sort((a, b) => a.localeCompare(b)).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
+            <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
+            <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
+          </div>
         </div>
       </div>
 
