@@ -158,7 +158,7 @@ export default function TaskLine({
     </span>
   );
 
-  // Mobile: stack the urgency label under the task text; time stays on the right.
+  // Mobile: task name (1em) + project below (10px); urgency on right instead of time.
   if (isMobile) {
     return (
       <div
@@ -167,30 +167,55 @@ export default function TaskLine({
       >
         {leftButton}
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          {taskText}
-          {showUrgency &&
-            (onSetUrgency ? (
-              <RowSelect
-                value={t.urgency}
-                options={URGENCY_OPTIONS}
-                onChange={(v) => onSetUrgency(t.id, v)}
-                title="Urgency"
-                minWidth="0"
-              />
-            ) : (
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 300,
-                  lineHeight: 1,
-                  color: "var(--color-text-muted)",
-                }}
-              >
-                {URGENCY_LABEL[t.urgency]}
-              </span>
-            ))}
+          <span
+            onClick={() => onEditTask(t.id)}
+            title="Edit task"
+            className="hover:underline"
+            style={{
+              fontSize: "1em",
+              cursor: "pointer",
+              color: "var(--color-text-muted)",
+              lineHeight: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {t.task || "—"}
+          </span>
+          {t.project && (
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 300,
+                lineHeight: 1,
+                color: "var(--color-text-muted)",
+              }}
+            >
+              {t.project}
+            </span>
+          )}
         </div>
-        {time}
+        {showUrgency &&
+          (onSetUrgency ? (
+            <RowSelect
+              value={t.urgency}
+              options={URGENCY_OPTIONS}
+              onChange={(v) => onSetUrgency(t.id, v)}
+              title="Urgency"
+              minWidth="0"
+            />
+          ) : (
+            <span
+              style={{
+                fontSize: "var(--text-sm)",
+                color: "var(--color-text-muted)",
+                flexShrink: 0,
+              }}
+            >
+              {URGENCY_LABEL[t.urgency]}
+            </span>
+          ))}
       </div>
     );
   }
