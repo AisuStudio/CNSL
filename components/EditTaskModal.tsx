@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   type Task,
   type Status,
@@ -195,11 +195,13 @@ export default function EditTaskModal({
     height: isMobile ? 44 : inputStyle.height,
   };
 
-  function addSubtask() {
-    setSubtasks((prev) => [
-      ...prev,
-      { id: newId("sub"), text: "", done: false },
-    ]);
+  const subtaskRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const focusNextId = useRef<string | null>(null);
+
+  function addSubtask(focusNew = false) {
+    const id = newId("sub");
+    if (focusNew) focusNextId.current = id;
+    setSubtasks((prev) => [...prev, { id, text: "", done: false }]);
   }
   function patchSubtask(id: string, patch: Partial<Subtask>) {
     setSubtasks((prev) =>
@@ -404,7 +406,7 @@ export default function EditTaskModal({
               </span>
             )}
           </div>
-          {subtasks.map((s) => (
+          {[...subtasks].sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1)).map((s) => (
             <div
               key={s.id}
               style={{ display: "flex", alignItems: "center", gap: "8px" }}
@@ -429,8 +431,25 @@ export default function EditTaskModal({
                 <SubtaskRadioIcon checked={s.done} color={INK} size={18} />
               </button>
               <input
+                ref={(el) => {
+                  if (el) {
+                    subtaskRefs.current.set(s.id, el);
+                    if (focusNextId.current === s.id) {
+                      el.focus();
+                      focusNextId.current = null;
+                    }
+                  } else {
+                    subtaskRefs.current.delete(s.id);
+                  }
+                }}
                 value={s.text}
                 onChange={(e) => patchSubtask(s.id, { text: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addSubtask(true);
+                  }
+                }}
                 placeholder="Subtask"
                 style={{
                   ...inputStyle,
@@ -463,7 +482,7 @@ export default function EditTaskModal({
           ))}
           <button
             type="button"
-            onClick={addSubtask}
+            onClick={() => addSubtask()}
             style={{
               alignSelf: "flex-start",
               height: "28px",
