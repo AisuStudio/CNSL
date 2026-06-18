@@ -1933,7 +1933,6 @@ export default function Home() {
               tool === "tracker" &&
               (view === "project" ||
                 view === "backlog" ||
-                view === "today" ||
                 view === "archive")
             ) && (
               <TableHeader
