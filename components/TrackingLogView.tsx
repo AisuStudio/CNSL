@@ -205,12 +205,13 @@ export default function TrackingLogView({
             width: isMobile ? "100%" : "auto",
           }}
         >
-          <span
-            style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}
-          >
-            Export for Claude:
-          </span>
+          {/* Row 1 (mobile): label + dropdown on same line */}
           <div className="flex items-center" style={{ gap: "8px" }}>
+            <span
+              style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}
+            >
+              Export
+            </span>
             <select
               value={exportProject}
               onChange={(e) => setExportProject(e.target.value)}
@@ -233,10 +234,23 @@ export default function TrackingLogView({
                 </option>
               ))}
             </select>
-            <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
-            <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
-            <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
+            {/* On desktop keep buttons on same row as label+dropdown */}
+            {!isMobile && (
+              <>
+                <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
+                <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
+                <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
+              </>
+            )}
           </div>
+          {/* Row 2 (mobile only): action buttons */}
+          {isMobile && (
+            <div className="flex items-center" style={{ gap: "8px" }}>
+              <ToolbarButton onClick={() => onCopyMarkdown(proj)}>Copy (MD)</ToolbarButton>
+              <ToolbarButton onClick={() => onDownloadMarkdown(proj)}>.md</ToolbarButton>
+              <ToolbarButton onClick={() => onDownloadJson(proj)}>.json</ToolbarButton>
+            </div>
+          )}
         </div>
       </div>
 
