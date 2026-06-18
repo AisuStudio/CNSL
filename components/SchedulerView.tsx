@@ -213,13 +213,13 @@ export default function SchedulerView({
     minWidth: 0,
   };
 
-  // Outline pill — sits on the lavender canvas, so uses canvas-level tokens.
+  // Outline pill — used inside dark schedule cards (light text on dark bg).
   const ghostBtn: React.CSSProperties = {
     height: isMobile ? "40px" : "32px",
     padding: "0 14px",
     background: "transparent",
-    color: cvText,
-    border: `1px solid ${cvBorder}`,
+    color: text,
+    border: `1px solid ${border}`,
     borderRadius: "8px",
     fontSize: "var(--text-sm)",
     fontWeight: 600,
@@ -230,6 +230,12 @@ export default function SchedulerView({
     alignItems: "center",
     justifyContent: "center",
     gap: "6px",
+  };
+  // Same pill for elements on the lavender canvas (toolbar Import / New schedule).
+  const canvasGhostBtn: React.CSSProperties = {
+    ...ghostBtn,
+    color: cvText,
+    border: `1px solid ${cvBorder}`,
   };
 
   // Filled accent (Save).
@@ -317,10 +323,10 @@ export default function SchedulerView({
           Scheduler
         </h2>
         <div style={{ marginLeft: "auto", display: "flex", gap: "8px" }}>
-          <button type="button" style={ghostBtn} onClick={() => fileRef.current?.click()}>
+          <button type="button" style={canvasGhostBtn} onClick={() => fileRef.current?.click()}>
             Import
           </button>
-          <button type="button" style={ghostBtn} onClick={onCreateSchedule}>
+          <button type="button" style={canvasGhostBtn} onClick={onCreateSchedule}>
             <AddIcon color={cvText} /> New schedule
           </button>
           <input
@@ -374,124 +380,133 @@ export default function SchedulerView({
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: "8px",
+                // Mobile-expanded: two explicit rows (name row / actions row).
+                // All other cases: single flat row.
+                flexDirection: isMobile && isOpen ? "column" : "row",
+                alignItems: isMobile && isOpen ? "stretch" : "center",
+                gap: isMobile && isOpen ? "6px" : "8px",
                 padding: isMobile ? "10px" : "12px",
-                flexWrap: isMobile ? "wrap" : "nowrap",
               }}
             >
-              <button
-                type="button"
-                onClick={() => (isOpen ? closeCard(s.id) : openCard(s.id))}
-                aria-label={isOpen ? "Collapse schedule" : "Expand schedule"}
-                aria-expanded={isOpen}
-                title={isOpen ? "Collapse" : "Expand"}
-                style={iconBtn}
-              >
-                {isOpen ? (
-                  <ChevronUp size={18} strokeWidth={1.75} color={text} aria-hidden />
-                ) : (
-                  <ChevronDown size={18} strokeWidth={1.75} color={text} aria-hidden />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => onPlay(s)}
-                disabled={stepCount(s) === 0}
-                aria-label="Play"
-                title="Play"
-                style={{
-                  ...ghostBtn,
-                  opacity: stepCount(s) === 0 ? 0.4 : 1,
-                  // Mobile: icon-only to save header width (the schedule name is
-                  // tight on small screens); desktop keeps the labelled pill.
-                  ...(isMobile ? { padding: "0 12px" } : null),
-                }}
-              >
-                <PlayIcon color={text} />
-                {!isMobile && " Play"}
-              </button>
-
-              {isOpen ? (
-                <input
-                  value={s.name}
-                  onChange={(e) => onUpdateSchedule({ ...s, name: e.target.value, updatedAt: now() })}
-                  placeholder="Routine Name"
-                  autoFocus
-                  style={{ ...inputStyle, flex: 1, fontWeight: 700, fontSize: "18px" }}
-                />
-              ) : (
+              {/* ── Row 1 (always): chevron + name ── */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                 <button
                   type="button"
-                  onClick={() => openCard(s.id)}
-                  title="Edit"
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    textAlign: "left",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0 2px",
-                    fontWeight: 700,
-                    fontSize: "18px",
-                    fontFamily: "var(--font-family)",
-                    color: s.name ? text : faint,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
+                  onClick={() => (isOpen ? closeCard(s.id) : openCard(s.id))}
+                  aria-label={isOpen ? "Collapse schedule" : "Expand schedule"}
+                  aria-expanded={isOpen}
+                  title={isOpen ? "Collapse" : "Expand"}
+                  style={iconBtn}
                 >
-                  {s.name || "Routine Name"}
+                  {isOpen ? (
+                    <ChevronUp size={18} strokeWidth={1.75} color={text} aria-hidden />
+                  ) : (
+                    <ChevronDown size={18} strokeWidth={1.75} color={text} aria-hidden />
+                  )}
                 </button>
-              )}
 
-              {isOpen ? (
-                <>
-                  <button type="button" style={accentBtn} onClick={() => closeCard(s.id)}>
-                    Save
-                  </button>
-                  <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
-                    Export JSON
-                  </button>
-                </>
-              ) : (
-                // Collapsed summary: stacked on mobile (time / steps), inline on desktop
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: isMobile ? "column" : "row",
-                    alignItems: isMobile ? "flex-end" : "center",
-                    gap: isMobile ? "1px" : "0",
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
+                {/* Play button — only shown in row 1 on desktop / collapsed mobile */}
+                {(!isMobile || !isOpen) && (
+                  <button
+                    type="button"
+                    onClick={() => onPlay(s)}
+                    disabled={stepCount(s) === 0}
+                    aria-label="Play"
+                    title="Play"
                     style={{
-                      fontSize: "var(--text-sm)",
-                      color: muted,
-                      fontFamily: "var(--font-family-mono)",
+                      ...ghostBtn,
+                      opacity: stepCount(s) === 0 ? 0.4 : 1,
+                      ...(isMobile ? { padding: "0 12px" } : null),
+                    }}
+                  >
+                    <PlayIcon color={text} />
+                    {!isMobile && " Play"}
+                  </button>
+                )}
+
+                {isOpen ? (
+                  <input
+                    value={s.name}
+                    onChange={(e) => onUpdateSchedule({ ...s, name: e.target.value, updatedAt: now() })}
+                    placeholder="Routine Name"
+                    autoFocus
+                    style={{ ...inputStyle, flex: 1, fontWeight: 700, fontSize: "18px" }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openCard(s.id)}
+                    title="Edit"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      textAlign: "left",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0 2px",
+                      fontWeight: 700,
+                      fontSize: "18px",
+                      fontFamily: "var(--font-family)",
+                      color: s.name ? text : faint,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {formatDuration(total)}
-                  </span>
-                  <span
+                    {s.name || "Routine Name"}
+                  </button>
+                )}
+
+                {/* Collapsed summary (desktop inline, mobile stacked) */}
+                {!isOpen && (
+                  <div
                     style={{
-                      fontSize: "var(--text-sm)",
-                      color: muted,
-                      fontFamily: "var(--font-family-mono)",
-                      whiteSpace: "nowrap",
+                      display: "flex",
+                      flexDirection: isMobile ? "column" : "row",
+                      alignItems: isMobile ? "flex-end" : "center",
+                      gap: isMobile ? "1px" : "0",
+                      flexShrink: 0,
                     }}
                   >
-                    {isMobile ? "" : " · "}{stepCount(s)} steps
-                  </span>
-                </div>
-              )}
+                    <span style={{ fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)", whiteSpace: "nowrap" }}>
+                      {formatDuration(total)}
+                    </span>
+                    <span style={{ fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)", whiteSpace: "nowrap" }}>
+                      {isMobile ? "" : " · "}{stepCount(s)} steps
+                    </span>
+                  </div>
+                )}
+              </div>
 
-              {/* Copy / delete — hidden on mobile when collapsed */}
-              {(!isMobile || isOpen) && (
-                <>
+              {/* ── Row 2 (mobile-expanded) / inline (desktop / collapsed): actions ── */}
+              {(isOpen || !isMobile) && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "nowrap" }}>
+                  {/* Play — only in action row on mobile-expanded */}
+                  {isMobile && isOpen && (
+                    <button
+                      type="button"
+                      onClick={() => onPlay(s)}
+                      disabled={stepCount(s) === 0}
+                      aria-label="Play"
+                      title="Play"
+                      style={{ ...ghostBtn, opacity: stepCount(s) === 0 ? 0.4 : 1, padding: "0 12px" }}
+                    >
+                      <PlayIcon color={text} />
+                    </button>
+                  )}
+
+                  {isOpen && (
+                    <>
+                      <button type="button" style={accentBtn} onClick={() => closeCard(s.id)}>
+                        Save
+                      </button>
+                      <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
+                        Export JSON
+                      </button>
+                    </>
+                  )}
+
                   <button
                     type="button"
                     style={iconBtn}
@@ -513,7 +528,7 @@ export default function SchedulerView({
                   >
                     <TrashIcon color={text} size={17} />
                   </button>
-                </>
+                </div>
               )}
             </div>
 
