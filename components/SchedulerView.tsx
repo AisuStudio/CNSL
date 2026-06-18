@@ -676,30 +676,58 @@ export default function SchedulerView({
                             placeholder="Description"
                             style={{ ...inputStyle, flex: 1 }}
                           />
-                          <DurationInput
-                            seconds={st.durationSeconds}
-                            onCommit={(secs) =>
-                              onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
-                            }
-                            style={{
-                              ...inputStyle,
-                              width: isMobile ? "100%" : DUR_W,
-                              textAlign: "center",
-                              fontFamily: "var(--font-family-mono)",
-                              flexShrink: 0,
-                            }}
-                          />
-                          <div
-                            className="sched-actions"
-                            style={{ display: "flex", gap: "2px", width: isMobile ? undefined : ACT_W, justifyContent: "flex-end", flexShrink: 0, opacity: isMobile ? 1 : undefined }}
-                          >
-                            <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
-                              <CopyIcon color={text} size={16} />
-                            </button>
-                            <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
-                              <TrashIcon color={text} size={16} />
-                            </button>
-                          </div>
+                          {/* On mobile: time + copy/delete share one row */}
+                          {isMobile ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <DurationInput
+                                seconds={st.durationSeconds}
+                                onCommit={(secs) =>
+                                  onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
+                                }
+                                style={{
+                                  ...inputStyle,
+                                  flex: 1,
+                                  textAlign: "center",
+                                  fontFamily: "var(--font-family-mono)",
+                                }}
+                              />
+                              <div className="sched-actions" style={{ display: "flex", gap: "2px", flexShrink: 0, opacity: 1 }}>
+                                <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
+                                  <CopyIcon color={text} size={16} />
+                                </button>
+                                <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
+                                  <TrashIcon color={text} size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <DurationInput
+                                seconds={st.durationSeconds}
+                                onCommit={(secs) =>
+                                  onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
+                                }
+                                style={{
+                                  ...inputStyle,
+                                  width: DUR_W,
+                                  textAlign: "center",
+                                  fontFamily: "var(--font-family-mono)",
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <div
+                                className="sched-actions"
+                                style={{ display: "flex", gap: "2px", width: ACT_W, justifyContent: "flex-end", flexShrink: 0 }}
+                              >
+                                <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
+                                  <CopyIcon color={text} size={16} />
+                                </button>
+                                <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
+                                  <TrashIcon color={text} size={16} />
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
 
