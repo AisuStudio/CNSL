@@ -172,6 +172,27 @@ export default function NotePad({
       ? `/note/${handle}/${encodeURIComponent(selected.topic)}/${selected.slug}`
       : null;
 
+  // Accent "add" button (+ Project / + New note). On mobile both live in every
+  // pane (project list AND note list) so both actions are always one tap away;
+  // they share this style and sit in a flex row.
+  const addBtn: React.CSSProperties = {
+    flex: 1,
+    height: "36px",
+    borderRadius: "8px",
+    border: "none",
+    background: "var(--color-accent)",
+    color: "var(--color-card-ink)",
+    fontWeight: 700,
+    fontSize: "var(--text-base)",
+    cursor: "pointer",
+  };
+  const addRow: React.CSSProperties = {
+    display: "flex",
+    gap: "8px",
+    margin: "12px",
+    flexShrink: 0,
+  };
+
   return (
     <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
       {/* Project column */}
@@ -187,24 +208,17 @@ export default function NotePad({
           flexDirection: "column",
         }}
       >
-        <button
-          type="button"
-          onClick={createProject}
-          style={{
-            margin: "12px",
-            flexShrink: 0,
-            height: "36px",
-            borderRadius: "8px",
-            border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-card-ink)",
-            fontWeight: 700,
-            fontSize: "var(--text-base)",
-            cursor: "pointer",
-          }}
-        >
-          + Project
-        </button>
+        <div style={addRow}>
+          <button type="button" onClick={createProject} style={addBtn}>
+            + Project
+          </button>
+          {/* Mobile: also offer "+ New note" here so both actions are visible. */}
+          {isMobile && (
+            <button type="button" onClick={newNote} style={addBtn}>
+              + New note
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => pickProject(null)}
@@ -270,24 +284,17 @@ export default function NotePad({
             ← Projects
           </button>
         )}
-        <button
-          type="button"
-          onClick={newNote}
-          style={{
-            margin: "12px",
-            flexShrink: 0,
-            height: "36px",
-            borderRadius: "8px",
-            border: "none",
-            background: "var(--color-accent)",
-            color: "var(--color-card-ink)",
-            fontWeight: 700,
-            fontSize: "var(--text-base)",
-            cursor: "pointer",
-          }}
-        >
-          + New note
-        </button>
+        <div style={addRow}>
+          {/* Mobile: also offer "+ Project" here so both actions are visible. */}
+          {isMobile && (
+            <button type="button" onClick={createProject} style={addBtn}>
+              + Project
+            </button>
+          )}
+          <button type="button" onClick={newNote} style={addBtn}>
+            + New note
+          </button>
+        </div>
         {visibleNotes.length === 0 && (
           <div style={{ padding: "0 14px", color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
             No notes here yet.
