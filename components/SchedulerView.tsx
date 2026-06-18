@@ -208,8 +208,8 @@ export default function SchedulerView({
     fontFamily: "var(--font-family)",
     fontSize: "var(--text-base)",
     padding: "0 12px",
-    height: "36px",
-    minHeight: "36px", // flex-basis:0 in column layouts would collapse below height otherwise
+    height: isMobile ? "32px" : "36px",
+    minHeight: isMobile ? "32px" : "36px", // flex-basis:0 in column layouts would collapse below height otherwise
     outline: "none",
     minWidth: 0,
   };
