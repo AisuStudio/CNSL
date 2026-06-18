@@ -279,10 +279,9 @@ export default function NotePad({
               title="Projects"
               style={{
                 flexShrink: 0,
-                width: "44px",
                 height: "36px",
-                borderRadius: "8px",
-                border: "1px solid var(--color-border)",
+                padding: 0,
+                border: "none",
                 background: "transparent",
                 color: "var(--color-text-muted)",
                 cursor: "pointer",
@@ -291,7 +290,7 @@ export default function NotePad({
                 justifyContent: "center",
               }}
             >
-              <ChevronLeft size={18} strokeWidth={1.75} aria-hidden />
+              <ChevronLeft size={24} strokeWidth={1.75} aria-hidden />
             </button>
           )}
           {/* Mobile: also offer "new project" here so both actions are visible. */}
@@ -414,17 +413,18 @@ export default function NotePad({
                   type="button"
                   onClick={() => setSelectedId(null)}
                   aria-label="Back to notes"
-                  className="cnsl-touch flex items-center justify-center"
+                  className="flex items-center justify-center"
                   style={{
                     background: "transparent",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "8px",
+                    border: "none",
+                    padding: 0,
+                    marginLeft: "-4px",
                     color: "var(--color-surface)",
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
                 >
-                  <ChevronLeft size={20} strokeWidth={1.75} aria-hidden />
+                  <ChevronLeft size={24} strokeWidth={1.75} aria-hidden />
                 </button>
               )}
               <input
