@@ -53,69 +53,80 @@ export default function Sidebar({
         borderTopRightRadius: "8px",
         borderBottomRightRadius: "8px",
         paddingTop: "22px",
-        overflow: "hidden",
+        overflowX: "hidden", // clips content during width:0 collapse animation
         transition: "width 160ms ease",
         display: "flex",
         flexDirection: "column",
-        gap: "4px",
       }}
     >
-      {/* ── Top-level tools (moved out of the header, #218) ── */}
-      {TOOL_DEFS.map((t) => {
-        const active = tool === t.key;
-        return (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => onToolChange(t.key)}
-            aria-label={t.label}
-            aria-pressed={active}
-            title={t.label}
-            className="flex items-center justify-center"
-            style={ITEM}
-          >
-            <t.Icon color={active ? ACTIVE : INACTIVE} />
-          </button>
-        );
-      })}
+      {/* ── Scrollable section: tools + sub-views ──
+          On short phones (iPhone SE) 6 tools + 5 views overflow the sidebar
+          height; making this section scroll keeps settings always reachable. */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+          scrollbarWidth: "none",
+        }}
+      >
+        {/* ── Top-level tools (moved out of the header, #218) ── */}
+        {TOOL_DEFS.map((t) => {
+          const active = tool === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => onToolChange(t.key)}
+              aria-label={t.label}
+              aria-pressed={active}
+              title={t.label}
+              className="flex items-center justify-center"
+              style={ITEM}
+            >
+              <t.Icon color={active ? ACTIVE : INACTIVE} />
+            </button>
+          );
+        })}
 
-      {/* ── Active tool's sub-views, below the tools (#225). Only the Task
-            Tracker has views; Note Pad / Log show none, leaving just the tools +
-            Settings. The divider only appears when there are views below it. ── */}
-      {tool === "tracker" && (
-        <>
-          {/* Divider between tools and views (CNSL_MonoSideBar.svg) */}
-          <div
-            aria-hidden="true"
-            style={{
-              height: "0.5px",
-              background: "var(--color-text-muted)",
-              margin: "8px 18px",
-            }}
-          />
+        {/* ── Active tool's sub-views (#225). Only the Task Tracker has them. ── */}
+        {tool === "tracker" && (
+          <>
+            <div
+              aria-hidden="true"
+              style={{
+                height: "0.5px",
+                background: "var(--color-text-muted)",
+                margin: "8px 18px",
+              }}
+            />
 
-          {VIEW_DEFS.map((v) => {
-            const active = view === v.key;
-            return (
-              <button
-                key={v.key}
-                type="button"
-                onClick={() => onViewChange(v.key)}
-                aria-label={v.label}
-                aria-pressed={active}
-                title={v.label}
-                className="flex items-center justify-center"
-                style={ITEM}
-              >
-                <v.Icon color={active ? ACTIVE : INACTIVE} />
-              </button>
-            );
-          })}
-        </>
-      )}
+            {VIEW_DEFS.map((v) => {
+              const active = view === v.key;
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => onViewChange(v.key)}
+                  aria-label={v.label}
+                  aria-pressed={active}
+                  title={v.label}
+                  className="flex items-center justify-center"
+                  style={ITEM}
+                >
+                  <v.Icon color={active ? ACTIVE : INACTIVE} />
+                </button>
+              );
+            })}
+          </>
+        )}
+      </div>
 
-      {/* Settings pinned to the bottom (grey, no container) — pushes down to
-          fill the viewport height via margin-top:auto. */}
+      {/* Settings pinned to the bottom — always visible regardless of how many
+          tool/view icons are above it. */}
       {onOpenSettings && (
         <button
           type="button"
@@ -123,7 +134,7 @@ export default function Sidebar({
           aria-label="Settings"
           title="Settings"
           className="flex items-center justify-center"
-          style={{ ...ITEM, marginTop: "auto", marginBottom: "18px" }}
+          style={{ ...ITEM, marginBottom: "18px" }}
         >
           <SettingsIcon color="var(--color-text-muted)" />
         </button>
