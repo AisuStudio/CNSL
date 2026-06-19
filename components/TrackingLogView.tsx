@@ -187,8 +187,6 @@ export default function TrackingLogView({
           borderBottom: "1px solid var(--color-border)",
           padding: "0 16px",
           gap: "16px",
-          overflowX: "auto",
-          scrollbarWidth: "none",
         }}
       >
         <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
