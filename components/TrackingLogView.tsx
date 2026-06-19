@@ -185,9 +185,10 @@ export default function TrackingLogView({
         style={{
           minHeight: "var(--row-height)",
           borderBottom: "1px solid var(--color-border)",
-          padding: "8px 16px",
+          padding: "0 16px",
           gap: "16px",
-          flexWrap: "wrap",
+          overflowX: "auto",
+          scrollbarWidth: "none",
         }}
       >
         <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
@@ -197,9 +198,9 @@ export default function TrackingLogView({
           className="flex items-center"
           style={{
             display: "flex",
-            flexWrap: "wrap",
             alignItems: "center",
             marginLeft: "auto",
+            flexShrink: 0,
             gap: "8px",
           }}
         >
