@@ -914,6 +914,17 @@ export default function Home() {
         ping
       );
     }
+    // C4 — when a project is shared WITH this user, the ProjectMember row is
+    // inserted by the owner. Subscribe so the recipient's app resyncs immediately
+    // without needing a tab-focus or page reload. Requires the ProjectMember table
+    // to be in the Realtime publication — see data/phase-c4-sharing-realtime.sql.
+    if (meUserId && meUserId !== ME) {
+      channel = channel.on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "ProjectMember", filter: `userId=eq.${meUserId}` },
+        ping
+      );
+    }
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED") ping(); // catch up on (re)connect
     });
@@ -922,7 +933,7 @@ export default function Home() {
       if (timer) clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [hydrated, resyncFromServer]);
+  }, [hydrated, meUserId, resyncFromServer]);
 
   // Chat realtime: deliver new messages live to participants (RLS-scoped by
   // data/phase-chat.sql). The sender's own echo dedupes against the optimistic
@@ -2115,6 +2126,7 @@ export default function Home() {
 
       {shareTarget && (
         <ShareModal
+          key={shareTarget}
           projectName={shareTarget}
           projectId={projectByName(projectList, shareTarget)?.id ?? ""}
           onClose={() => setShareTarget(null)}
