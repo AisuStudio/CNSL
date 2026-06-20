@@ -10,3 +10,6 @@ next-env.d.ts
 
 # Local snapshot / notes — keep out of the repo for now
 /SNAPSHOT.md
+
+# E2E test credentials
+.claude/e2e.env

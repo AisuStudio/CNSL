@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
 import { AddIcon, ShareIcon } from "./icons";
-import { FileBadge, Eye } from "lucide-react";
+import { FileBadge, Eye, Users } from "lucide-react";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -24,6 +24,7 @@ export default function ProjectView({
   onExportProject,
   onShareProject,
   sharedRole,
+  isSharedOut,
 }: {
   tasks: Task[];
   onUpdate?: <K extends keyof Task>(id: string, key: K, value: Task[K]) => void;
@@ -36,6 +37,7 @@ export default function ProjectView({
   // C4 sharing: open the Share dialog; sharedRole marks projects shared WITH me.
   onShareProject?: (project: string) => void;
   sharedRole?: (project: string) => "editor" | "viewer" | undefined;
+  isSharedOut?: (project: string) => boolean;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
   // Collapse state starts empty (SSR-safe) and is loaded from localStorage AFTER
@@ -187,9 +189,7 @@ export default function ProjectView({
                 {items.length}
               </span>
 
-              {/* C4 — marker when this project is shared WITH me. Plain text in
-                  the same class as the task count; file-badge icon for editor/
-                  owner, eye icon when I only have viewer access. */}
+              {/* C4 — marker when this project is shared WITH me. */}
               {sharedRole?.(project) && (
                 <span
                   style={{
@@ -203,11 +203,26 @@ export default function ProjectView({
                   }}
                 >
                   {sharedRole(project) === "viewer" ? (
-                    <Eye size={14} strokeWidth={1.75} aria-hidden />
+                    <Eye size={13} strokeWidth={1.75} aria-hidden />
                   ) : (
-                    <FileBadge size={14} strokeWidth={1.75} aria-hidden />
+                    <FileBadge size={13} strokeWidth={1.75} aria-hidden />
                   )}
-                  Shared
+                </span>
+              )}
+
+              {/* C4 — marker when I shared this project OUT to others (owner side). */}
+              {!sharedRole?.(project) && isSharedOut?.(project) && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    color: nameColor,
+                    opacity: 0.5,
+                    flexShrink: 0,
+                  }}
+                  title="Shared with others"
+                >
+                  <Users size={13} strokeWidth={1.75} aria-hidden />
                 </span>
               )}
 

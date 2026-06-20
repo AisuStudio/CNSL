@@ -86,9 +86,20 @@ export async function GET() {
       sharedEventRows = await tx.event.findMany({ where: { projectId: { in: memberProjectIds } } });
       sharedProjectRows = await tx.project.findMany({ where: { id: { in: memberProjectIds } } });
     }
-    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows };
+    // C4 — which of this user's OWN projects have been shared with others?
+    const ownProjectIds = projects.map((p) => p.id);
+    let sharedOutProjectIds: string[] = [];
+    if (ownProjectIds.length) {
+      const outMembers = await tx.projectMember.findMany({
+        where: { projectId: { in: ownProjectIds } },
+        select: { projectId: true },
+        distinct: ["projectId"],
+      });
+      sharedOutProjectIds = outMembers.map((m) => m.projectId);
+    }
+    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds };
   });
-  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows } = loaded;
+  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds } = loaded;
   const dedupe = <T extends { id: string }>(own: T[], shared: T[]): T[] => {
     const seen = new Set(own.map((r) => r.id));
     return [...own, ...shared.filter((r) => !seen.has(r.id))];
@@ -98,6 +109,11 @@ export async function GET() {
     name: p.name,
     role: roleByPid.get(p.id) ?? "viewer",
   }));
+  // Map sharedOutProjectIds → project names so the client can look up by name.
+  const pidToName = new Map(projects.map((p) => [p.id, p.name]));
+  const sharedOutProjectNames = sharedOutProjectIds
+    .map((id) => pidToName.get(id))
+    .filter((n): n is string => !!n);
 
   return NextResponse.json({
     tasks: dedupe(tasks, sharedTaskRows).map(taskFromDb),
@@ -110,6 +126,8 @@ export async function GET() {
     activities: activities.map(activityFromDb),
     // Projects shared WITH this user (by name + role) → marker + viewer read-only.
     sharedProjects,
+    // Projects this user shared OUT to others → owner-side indicator.
+    sharedOutProjectNames,
     rev: board?.rev ?? 0,
     // Board ids so the client can open a scoped Realtime subscription.
     boardId: trackerId,

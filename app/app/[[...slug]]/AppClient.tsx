@@ -182,6 +182,8 @@ export default function Home() {
   const [sharedProjects, setSharedProjects] = useState<
     { name: string; role: "editor" | "viewer" }[]
   >([]);
+  // C4 — projects this user shared OUT to others (owner-side indicator).
+  const [sharedOutNames, setSharedOutNames] = useState<string[]>([]);
   const [shareTarget, setShareTarget] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>(null);
   // Backlog filter: All ↔ Untouched (open only) — #53.
@@ -287,6 +289,7 @@ export default function Home() {
             loadedProjects.map((p) => [p.id, JSON.stringify(p)])
           );
           setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
+          setSharedOutNames(data.sharedOutProjectNames ?? []); // C4 — projects I shared out
           const loadedSchedules: Schedule[] = data.schedules ?? [];
           setSchedules(loadedSchedules);
           schedulesSavedRef.current = new Map(
@@ -819,6 +822,7 @@ export default function Home() {
         setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
         projectsSavedRef.current = nextProjectsSaved;
         setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
+        setSharedOutNames(data.sharedOutProjectNames ?? []);
         // Same newer-wins merge for schedules + activities (Phase 2).
         const serverSchedules: Schedule[] = data.schedules ?? [];
         const { tasks: mergedSchedules, nextSaved: nextSchedulesSaved } = mergeResync(
@@ -2016,7 +2020,10 @@ export default function Home() {
             onExportProject={(project) => exportCopyMarkdown(project)}
             onShareProject={(project) => setShareTarget(project)}
             sharedRole={(project) =>
-              sharedProjects.find((s) => s.name === project)?.role
+              sharedProjects.find((s) => s.name.toLowerCase() === project?.toLowerCase())?.role
+            }
+            isSharedOut={(project) =>
+              sharedOutNames.some((n) => n.toLowerCase() === project?.toLowerCase())
             }
           />
         )}
