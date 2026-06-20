@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
 import { AddIcon, ShareIcon } from "./icons";
-import { FileBadge, View, BookPlus, Users } from "lucide-react";
+import { FileUser, FilePen, FileLock, FileType } from "lucide-react";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -203,11 +203,11 @@ export default function ProjectView({
                   }}
                 >
                   {sharedRole(project) === "viewer" ? (
-                    <View size={13} strokeWidth={1.75} aria-hidden />
+                    <FileLock size={13} strokeWidth={1.75} aria-hidden />
                   ) : sharedRole(project) === "contributor" ? (
-                    <BookPlus size={13} strokeWidth={1.75} aria-hidden />
+                    <FileType size={13} strokeWidth={1.75} aria-hidden />
                   ) : (
-                    <FileBadge size={13} strokeWidth={1.75} aria-hidden />
+                    <FilePen size={13} strokeWidth={1.75} aria-hidden />
                   )}
                 </span>
               )}
@@ -223,7 +223,7 @@ export default function ProjectView({
                   }}
                   title="Shared with others"
                 >
-                  <Users size={13} strokeWidth={1.75} aria-hidden />
+                  <FileUser size={13} strokeWidth={1.75} aria-hidden />
                 </span>
               )}
 
