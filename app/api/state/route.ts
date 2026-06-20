@@ -86,28 +86,32 @@ export async function GET() {
       sharedEventRows = await tx.event.findMany({ where: { projectId: { in: memberProjectIds } } });
       sharedProjectRows = await tx.project.findMany({ where: { id: { in: memberProjectIds } } });
     }
-    // C4 — which of this user's OWN projects have been shared with others?
-    // Also load tasks contributors created in those projects (they live in the
-    // contributor's own board, tagged with our projectId).
-    const ownProjectIds = projects.map((p) => p.id);
-    let sharedOutProjectIds: string[] = [];
-    let contributorTaskRows: typeof tasks = [];
-    if (ownProjectIds.length) {
-      const outMembers = await tx.projectMember.findMany({
-        where: { projectId: { in: ownProjectIds } },
-        select: { projectId: true },
-        distinct: ["projectId"],
-      });
-      sharedOutProjectIds = outMembers.map((m) => m.projectId);
-      // Tasks in own projects but NOT in own board = contributor-created tasks.
-      contributorTaskRows = await tx.task.findMany({
-        where: { projectId: { in: ownProjectIds }, boardId: { not: trackerId } },
-        include: { timeEntries: true },
-      });
-    }
-    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds, contributorTaskRows };
+    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows };
   });
-  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds, contributorTaskRows } = loaded;
+  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows } = loaded;
+
+  // These two queries need BYPASSRLS (prisma default connection, not withUser):
+  // - sharedOutMembers: reads ProjectMember rows where userId ≠ current user
+  //   (other people's memberships in my projects) — blocked by RLS inside withUser.
+  // - contributorTaskRows: reads tasks from other boards tagged with my projectId
+  //   — also outside withUser to avoid RLS board-scope restrictions.
+  const ownProjectIds = projects.map((p) => p.id);
+  const [sharedOutMembers, contributorTaskRows] = await Promise.all([
+    ownProjectIds.length
+      ? prisma.projectMember.findMany({
+          where: { projectId: { in: ownProjectIds } },
+          select: { projectId: true },
+          distinct: ["projectId"],
+        })
+      : Promise.resolve([]),
+    ownProjectIds.length
+      ? prisma.task.findMany({
+          where: { projectId: { in: ownProjectIds }, boardId: { not: trackerId } },
+          include: { timeEntries: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
   const dedupe = <T extends { id: string }>(own: T[], shared: T[]): T[] => {
     const seen = new Set(own.map((r) => r.id));
     return [...own, ...shared.filter((r) => !seen.has(r.id))];
@@ -117,13 +121,11 @@ export async function GET() {
     name: p.name,
     role: roleByPid.get(p.id) ?? "viewer",
   }));
-  // Map sharedOutProjectIds → project names so the client can look up by name.
   const pidToName = new Map(projects.map((p) => [p.id, p.name]));
-  const sharedOutProjectNames = sharedOutProjectIds
-    .map((id) => pidToName.get(id))
+  const sharedOutProjectNames = sharedOutMembers
+    .map((m) => pidToName.get(m.projectId))
     .filter((n): n is string => !!n);
-  // IDs of tasks that belong to another owner's board (shared-with-me tasks).
-  // The client uses this to mark them read-only when the user is a contributor.
+  // IDs of tasks from another owner's board — read-only for contributors.
   const sharedTaskIds = sharedTaskRows.map((t) => t.id);
 
   return NextResponse.json({

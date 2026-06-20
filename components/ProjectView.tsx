@@ -219,7 +219,6 @@ export default function ProjectView({
                     display: "inline-flex",
                     alignItems: "center",
                     color: nameColor,
-                    opacity: 0.5,
                     flexShrink: 0,
                   }}
                   title="Shared with others"
