@@ -159,7 +159,7 @@ export default function ProjectView({
               role="button"
               tabIndex={0}
               onClick={() => toggle(project)}
-              className="cnsl-proj-bar group flex items-center"
+              className="cnsl-proj-bar group flex items-baseline"
               style={{
                 minHeight: "var(--row-h)",
                 padding: "0 12px",
@@ -175,7 +175,7 @@ export default function ProjectView({
             >
               <span
                 className="cnsl-proj-name"
-                style={{ fontWeight: 700, fontSize: "var(--text-logo)", color: nameColor }}
+                style={{ fontWeight: 700, fontSize: "var(--text-logo)", color: nameColor, paddingTop: "3px" }}
               >
                 {project}
               </span>
@@ -240,7 +240,7 @@ export default function ProjectView({
                     aria-label={`New task in ${project}`}
                     title={`New task in ${project}`}
                     className="flex items-center justify-center"
-                    style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+                    style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0, alignSelf: "center" }}
                   >
                     <AddIcon color={nameColor} />
                   </button>
@@ -256,7 +256,7 @@ export default function ProjectView({
                     }}
                     aria-label={`Copy ${project} as Markdown`}
                     title={`Copy ${project} as Markdown`}
-                    style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-accent)" : "var(--color-text-muted)", fontSize: copied === project ? "var(--text-xs)" : "var(--text-sm)", fontWeight: 700, flexShrink: 0 }}
+                    style={{ height: "26px", padding: "0 8px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", color: copied === project ? "var(--color-accent)" : "var(--color-text-muted)", fontSize: copied === project ? "var(--text-xs)" : "var(--text-sm)", fontWeight: 700, flexShrink: 0, alignSelf: "center" }}
                   >
                     {copied === project ? "copied" : "MD"}
                   </button>
@@ -272,7 +272,7 @@ export default function ProjectView({
                       aria-label={`Share ${project}`}
                       title={`Share ${project}`}
                       className="flex items-center justify-center"
-                      style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0 }}
+                      style={{ width: "26px", height: "26px", borderRadius: "6px", background: "transparent", border: "none", cursor: "pointer", flexShrink: 0, alignSelf: "center" }}
                     >
                       <ShareIcon color={nameColor} />
                     </button>
