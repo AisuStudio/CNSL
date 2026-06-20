@@ -180,8 +180,10 @@ export default function Home() {
   // C4 — projects shared WITH me (by name + my role); drives the marker + viewer
   // read-only. `shareTarget` = the project name whose Share dialog is open.
   const [sharedProjects, setSharedProjects] = useState<
-    { name: string; role: "editor" | "viewer" }[]
+    { name: string; role: "editor" | "viewer" | "contributor" }[]
   >([]);
+  // C4 — task IDs from another owner's board; contributors may not edit these.
+  const [sharedTaskIds, setSharedTaskIds] = useState<Set<string>>(new Set());
   // C4 — projects this user shared OUT to others (owner-side indicator).
   const [sharedOutNames, setSharedOutNames] = useState<string[]>([]);
   const [shareTarget, setShareTarget] = useState<string | null>(null);
@@ -289,6 +291,7 @@ export default function Home() {
             loadedProjects.map((p) => [p.id, JSON.stringify(p)])
           );
           setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
+          setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
           setSharedOutNames(data.sharedOutProjectNames ?? []); // C4 — projects I shared out
           const loadedSchedules: Schedule[] = data.schedules ?? [];
           setSchedules(loadedSchedules);
@@ -822,6 +825,7 @@ export default function Home() {
         setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
         projectsSavedRef.current = nextProjectsSaved;
         setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
+        setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
         setSharedOutNames(data.sharedOutProjectNames ?? []);
         // Same newer-wins merge for schedules + activities (Phase 2).
         const serverSchedules: Schedule[] = data.schedules ?? [];
@@ -2111,10 +2115,12 @@ export default function Home() {
           task={modalTask}
           isNew={isNewTask}
           demo={DEMO}
-          readOnly={
-            sharedProjects.find((s) => s.name === modalTask.project)?.role ===
-            "viewer"
-          }
+          readOnly={(() => {
+            const role = sharedProjects.find(
+              (s) => s.name.toLowerCase() === modalTask.project?.toLowerCase()
+            )?.role;
+            return role === "viewer" || (role === "contributor" && sharedTaskIds.has(modalTask.id));
+          })()}
           projects={projects}
           epics={epics}
           epicsByProject={epicsByProject}

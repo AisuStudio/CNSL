@@ -87,8 +87,11 @@ export async function GET() {
       sharedProjectRows = await tx.project.findMany({ where: { id: { in: memberProjectIds } } });
     }
     // C4 — which of this user's OWN projects have been shared with others?
+    // Also load tasks contributors created in those projects (they live in the
+    // contributor's own board, tagged with our projectId).
     const ownProjectIds = projects.map((p) => p.id);
     let sharedOutProjectIds: string[] = [];
+    let contributorTaskRows: typeof tasks = [];
     if (ownProjectIds.length) {
       const outMembers = await tx.projectMember.findMany({
         where: { projectId: { in: ownProjectIds } },
@@ -96,10 +99,15 @@ export async function GET() {
         distinct: ["projectId"],
       });
       sharedOutProjectIds = outMembers.map((m) => m.projectId);
+      // Tasks in own projects but NOT in own board = contributor-created tasks.
+      contributorTaskRows = await tx.task.findMany({
+        where: { projectId: { in: ownProjectIds }, boardId: { not: trackerId } },
+        include: { timeEntries: true },
+      });
     }
-    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds };
+    return { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds, contributorTaskRows };
   });
-  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds } = loaded;
+  const { tasks, log, board, notes, events, projects, schedules, activities, memberships, sharedTaskRows, sharedNoteRows, sharedEventRows, sharedProjectRows, sharedOutProjectIds, contributorTaskRows } = loaded;
   const dedupe = <T extends { id: string }>(own: T[], shared: T[]): T[] => {
     const seen = new Set(own.map((r) => r.id));
     return [...own, ...shared.filter((r) => !seen.has(r.id))];
@@ -114,9 +122,12 @@ export async function GET() {
   const sharedOutProjectNames = sharedOutProjectIds
     .map((id) => pidToName.get(id))
     .filter((n): n is string => !!n);
+  // IDs of tasks that belong to another owner's board (shared-with-me tasks).
+  // The client uses this to mark them read-only when the user is a contributor.
+  const sharedTaskIds = sharedTaskRows.map((t) => t.id);
 
   return NextResponse.json({
-    tasks: dedupe(tasks, sharedTaskRows).map(taskFromDb),
+    tasks: dedupe(tasks, [...sharedTaskRows, ...contributorTaskRows]).map(taskFromDb),
     log: log.map(logFromDb),
     projectColors: (board?.projectColors as Record<string, string> | null) ?? {},
     notes: dedupe(notes, sharedNoteRows).map(noteFromDb),
@@ -124,8 +135,10 @@ export async function GET() {
     projects: projects.map(projectFromDb),
     schedules: schedules.map(scheduleFromDb),
     activities: activities.map(activityFromDb),
-    // Projects shared WITH this user (by name + role) → marker + viewer read-only.
+    // Projects shared WITH this user (by name + role) → marker + viewer/contributor read-only.
     sharedProjects,
+    // Task IDs from other owners' boards — read-only for contributor role.
+    sharedTaskIds,
     // Projects this user shared OUT to others → owner-side indicator.
     sharedOutProjectNames,
     rev: board?.rev ?? 0,

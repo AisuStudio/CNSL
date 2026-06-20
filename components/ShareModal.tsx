@@ -45,7 +45,7 @@ export default function ShareModal({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"editor" | "viewer">("editor");
+  const [role, setRole] = useState<"editor" | "viewer" | "contributor">("editor");
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [busy, setBusy] = useState(false);
@@ -133,7 +133,7 @@ export default function ShareModal({
           <div style={{ position: "relative", flex: 1 }}>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as "editor" | "viewer")}
+              onChange={(e) => setRole(e.target.value as "editor" | "viewer" | "contributor")}
               className="cursor-pointer appearance-none"
               style={{
                 ...inputStyle,
@@ -143,6 +143,7 @@ export default function ShareModal({
               }}
             >
               <option value="editor">Editor — can edit</option>
+              <option value="contributor">Contributor — can add, not edit others</option>
               <option value="viewer">Viewer — read-only</option>
             </select>
             <span

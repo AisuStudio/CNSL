@@ -26,8 +26,8 @@ async function ownedProject(projectId: string, userId: string) {
   return board?.ownerId === userId ? project : null;
 }
 
-const cleanRole = (r: unknown): "editor" | "viewer" =>
-  r === "editor" ? "editor" : "viewer";
+const cleanRole = (r: unknown): "editor" | "viewer" | "contributor" =>
+  r === "editor" ? "editor" : r === "contributor" ? "contributor" : "viewer";
 
 // GET ?projectId — current members (+ emails) and pending invites (owner only).
 export async function GET(req: NextRequest) {

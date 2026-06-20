@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Task, formatHM } from "@/lib/mock-data";
 import { AddIcon, ShareIcon } from "./icons";
-import { FileBadge, Eye, Users } from "lucide-react";
+import { FileBadge, View, BookPlus, Users } from "lucide-react";
 import TaskLine from "./TaskLine";
 
 const COLLAPSE_KEY = "cnsl.collapsedProjects";
@@ -36,7 +36,7 @@ export default function ProjectView({
   onExportProject: (project: string) => void;
   // C4 sharing: open the Share dialog; sharedRole marks projects shared WITH me.
   onShareProject?: (project: string) => void;
-  sharedRole?: (project: string) => "editor" | "viewer" | undefined;
+  sharedRole?: (project: string) => "editor" | "viewer" | "contributor" | undefined;
   isSharedOut?: (project: string) => boolean;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -203,7 +203,9 @@ export default function ProjectView({
                   }}
                 >
                   {sharedRole(project) === "viewer" ? (
-                    <Eye size={13} strokeWidth={1.75} aria-hidden />
+                    <View size={13} strokeWidth={1.75} aria-hidden />
+                  ) : sharedRole(project) === "contributor" ? (
+                    <BookPlus size={13} strokeWidth={1.75} aria-hidden />
                   ) : (
                     <FileBadge size={13} strokeWidth={1.75} aria-hidden />
                   )}
