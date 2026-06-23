@@ -1779,13 +1779,15 @@ export default function Home() {
   // Today = planned for today (urgency = today); done/canceled sink to bottom.
   // (Worked-hours / counters moved to the Stats view.)
   const todayTasks = useMemo(() => {
-    const t = sortedTasks.filter((x) => x.urgency === "today");
+    const t = activeTasks.filter((x) => x.urgency === "today");
     const closed = (s: string) => s === "done" || s === "canceled";
+    // Open tasks in the shared manual order (drag-reorderable); done/canceled
+    // still sink to the bottom.
     return [
-      ...t.filter((x) => !closed(x.status)),
+      ...sortTasksBy(t.filter((x) => !closed(x.status)), { key: "order", dir: "asc" }),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [sortedTasks]);
+  }, [activeTasks, tasks]);
 
   // #42: when there's a query, the content area becomes a global results page
   // (overriding the current tool/view).
@@ -2002,6 +2004,8 @@ export default function Home() {
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
             showUrgency={false}
+            alwaysDragOrder
+            onReorder={reorderBacklog}
           />
         )}
         {view === "stats" && <StatsView tasks={tasks} />}

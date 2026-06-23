@@ -164,6 +164,7 @@ export default function BacklogView({
   onSortChange,
   onReorder,
   onReorderInProject,
+  alwaysDragOrder,
   onSetUrgency,
   onSetStatus,
 }: {
@@ -184,6 +185,9 @@ export default function BacklogView({
     targetProject: string,
     orderedIds: string[]
   ) => void;
+  // Force flat drag-reorder without a sort dropdown (used by the Today view —
+  // it's always a hand-arranged list). Only open tasks become draggable.
+  alwaysDragOrder?: boolean;
   // When provided, rows expose inline urgency/status dropdowns (edit in place).
   onSetUrgency?: (id: string, urgency: Urgency) => void;
   onSetStatus?: (id: string, status: Status) => void;
@@ -195,7 +199,8 @@ export default function BacklogView({
 
   const canGroup = !!onReorderInProject;
   const showHeader = (filter && onFilterChange) || onSortChange || canGroup;
-  const flatDragMode = !grouped && sort?.key === "order" && !!onReorder;
+  const flatDragMode =
+    !grouped && (alwaysDragOrder || sort?.key === "order") && !!onReorder;
 
   // Group by raw project ("" = no project); each group sorted by order key.
   const groups = useMemo(() => {
@@ -292,15 +297,25 @@ export default function BacklogView({
           e.preventDefault();
           if (t.id === dragId) return;
           const r = e.currentTarget.getBoundingClientRect();
-          setOver({ id: t.id, pos: e.clientY < r.top + r.height / 2 ? "before" : "after" });
-          setOverHeader(null);
+          const pos = e.clientY < r.top + r.height / 2 ? "before" : "after";
+          // Only update state when the target/side actually changes — otherwise
+          // dragover fires many times/sec and re-renders the whole list (jank).
+          setOver((prev) =>
+            prev && prev.id === t.id && prev.pos === pos ? prev : { id: t.id, pos }
+          );
+          setOverHeader((prev) => (prev === null ? prev : null));
         }}
         onDrop={(e) => {
           e.preventDefault();
           onDrop();
         }}
         onDragEnd={resetDrag}
-        style={{ cursor: "grab", opacity: dragId === t.id ? 0.4 : 1, boxShadow: indic }}
+        style={{
+          cursor: dragId ? "grabbing" : "grab",
+          opacity: dragId === t.id ? 0.4 : 1,
+          transition: "opacity 0.12s",
+          boxShadow: indic,
+        }}
       >
         {renderRow(t)}
       </div>
@@ -368,9 +383,17 @@ export default function BacklogView({
               {g.items.map((t) => dragRow(t, handleGroupedRowDrop))}
             </div>
           ))
-        : tasks.map((t) =>
-            flatDragMode ? dragRow(t, handleFlatDrop) : <div key={t.id}>{renderRow(t)}</div>
-          )}
+        : tasks.map((t) => {
+            // In Today (alwaysDragOrder) only open tasks are draggable; done/
+            // canceled stay pinned at the bottom.
+            const closed = t.status === "done" || t.status === "canceled";
+            const draggable = flatDragMode && !(alwaysDragOrder && closed);
+            return draggable ? (
+              dragRow(t, handleFlatDrop)
+            ) : (
+              <div key={t.id}>{renderRow(t)}</div>
+            );
+          })}
     </div>
   );
 }
