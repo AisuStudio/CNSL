@@ -57,9 +57,8 @@ export default async function PublicRoutinePage({
       {/* Match the published surfaces (note reader / publisher page): mono theme
           recolours the player's --color-* tokens to the lavender palette. */}
       <MonoTheme />
-      {/* Close → the Publisher page. (For a logged-out visitor middleware
-          redirects /app/publisher → the landing, never a 404.) */}
-      <PublicRoutinePlayer schedule={schedule} backHref="/app/publisher" />
+      {/* Close → the publisher's public landing page (works for anyone). */}
+      <PublicRoutinePlayer schedule={schedule} backHref={`/note/${p.handle}`} />
     </>
   );
 }
