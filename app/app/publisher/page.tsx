@@ -29,7 +29,15 @@ export default async function PublisherPage() {
   const [profile, notes] = await Promise.all([
     prisma.profile.findUnique({
       where: { id: user.id },
-      select: { publisherHandle: true, displayName: true },
+      select: {
+        publisherHandle: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        linkedin: true,
+        instagram: true,
+        tiktok: true,
+      },
     }),
     prisma.note.findMany({
       where: { boardId: notesId, published: true },
@@ -48,6 +56,15 @@ export default async function PublisherPage() {
 
   const handle = profile?.publisherHandle ?? null;
 
+  const profileInfo = {
+    displayName: profile?.displayName ?? null,
+    avatarUrl: profile?.avatarUrl ?? null,
+    bio: profile?.bio ?? null,
+    linkedin: profile?.linkedin ?? null,
+    instagram: profile?.instagram ?? null,
+    tiktok: profile?.tiktok ?? null,
+  };
+
   const items = notes
     .filter((n) => n.topic && n.slug)
     .map((n) => ({
@@ -61,5 +78,5 @@ export default async function PublisherPage() {
       url: handle ? `/note/${handle}/${encodeURIComponent(n.topic as string)}/${n.slug}` : null,
     }));
 
-  return <PublisherView handle={handle} items={items} />;
+  return <PublisherView handle={handle} profile={profileInfo} items={items} />;
 }

@@ -59,6 +59,14 @@ model Profile {
   // Public publisher handle (set once on first publish, then immutable). Used as
   // the namespace in /note/{publisherHandle}/{topic}/{slug}.
   publisherHandle String?   @unique
+  // Public publisher profile (shown on /app/publisher). All optional; the user
+  // fills them in via Settings. avatarUrl points at the Supabase 'avatars' bucket.
+  // Social fields hold a bare handle (e.g. "aisustudio"); the UI builds the URL.
+  avatarUrl   String?
+  bio         String?
+  linkedin    String?
+  instagram   String?
+  tiktok      String?
   createdAt   DateTime      @default(now())
 
   ownedBoards Board[]       @relation("BoardOwner")

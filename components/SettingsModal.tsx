@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SettingsIcon } from "./icons";
 import SidePanel from "./SidePanel";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -216,6 +216,208 @@ const inputStyle: React.CSSProperties = {
   height: "30px",
   outline: "none",
 };
+
+// Publisher profile — public picture, bio and social handles shown on
+// /app/publisher. Loads + saves via /api/profile; avatar uploads to the Supabase
+// 'avatars' bucket via /api/profile/avatar.
+function PublisherProfileSection() {
+  const [handle, setHandle] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [tiktok, setTiktok] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error())))
+      .then((d) => {
+        setHandle(d.publisherHandle ?? null);
+        setAvatarUrl(d.avatarUrl ?? null);
+        setDisplayName(d.displayName ?? "");
+        setBio(d.bio ?? "");
+        setLinkedin(d.linkedin ?? "");
+        setInstagram(d.instagram ?? "");
+        setTiktok(d.tiktok ?? "");
+      })
+      .catch(() => {});
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ displayName, bio, linkedin, instagram, tiktok }),
+      });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      setDisplayName(d.displayName ?? "");
+      setBio(d.bio ?? "");
+      setLinkedin(d.linkedin ?? "");
+      setInstagram(d.instagram ?? "");
+      setTiktok(d.tiktok ?? "");
+      setMsg("Saved ✓");
+    } catch {
+      setMsg("Save failed — please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    setUploading(true);
+    setMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Upload failed.");
+      setAvatarUrl(d.avatarUrl);
+      setMsg("Picture updated ✓");
+    } catch (err) {
+      setMsg((err as Error).message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const initials = (displayName || handle || "?").trim().slice(0, 2).toUpperCase();
+  const btn: React.CSSProperties = {
+    height: "30px",
+    padding: "0 12px",
+    fontSize: "var(--text-modal)",
+    flexShrink: 0,
+  };
+  const social = (label: string, value: string, set: (v: string) => void, ph: string) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ width: "72px", flexShrink: 0, color: MUTED, fontSize: "var(--text-modal)" }}>
+        {label}
+      </span>
+      <input
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        placeholder={ph}
+        autoCapitalize="none"
+        autoCorrect="off"
+        style={{ ...inputStyle, fontSize: "var(--text-modal)" }}
+      />
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ fontSize: "var(--text-sm)", fontWeight: 700 }}>Publisher profile</div>
+
+      {/* Avatar */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "color-mix(in srgb, var(--color-card-ink) 14%, transparent)",
+              color: INK,
+              fontSize: "var(--text-sm)",
+              fontWeight: 700,
+            }}
+          >
+            {initials}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="cnsl-btn-ghost"
+          style={btn}
+          disabled={uploading}
+        >
+          {uploading ? "Uploading…" : avatarUrl ? "Change picture" : "Upload picture"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          onChange={onPickFile}
+          style={{ display: "none" }}
+        />
+      </div>
+
+      {/* Display name */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ width: "72px", flexShrink: 0, color: MUTED, fontSize: "var(--text-modal)" }}>
+          Name
+        </span>
+        <input
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder="Public display name"
+          style={{ ...inputStyle, fontSize: "var(--text-modal)" }}
+        />
+      </div>
+
+      {/* Bio */}
+      <textarea
+        value={bio}
+        onChange={(e) => setBio(e.target.value)}
+        placeholder="Short description / publishing profile"
+        rows={3}
+        style={{
+          ...inputStyle,
+          height: "auto",
+          padding: "8px 10px",
+          resize: "vertical",
+          fontSize: "var(--text-modal)",
+          lineHeight: 1.5,
+        }}
+      />
+
+      {/* Socials */}
+      {social("LinkedIn", linkedin, setLinkedin, "handle, e.g. aisustudio")}
+      {social("Instagram", instagram, setInstagram, "handle, e.g. aisustudio")}
+      {social("TikTok", tiktok, setTiktok, "handle, e.g. aisustudio")}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <button type="button" onClick={save} disabled={saving} className="cnsl-btn-ghost" style={btn}>
+          {saving ? "Saving…" : "Save profile"}
+        </button>
+        {msg && (
+          <span style={{ fontSize: "11px", color: "var(--color-card-muted)" }}>{msg}</span>
+        )}
+      </div>
+
+      {!handle && (
+        <span style={{ fontSize: "11px", color: MUTED, lineHeight: 1.5 }}>
+          Publish a note to choose your publisher handle — your profile then goes live
+          at the Publisher page.
+        </span>
+      )}
+    </div>
+  );
+}
 
 function Section({
   title,
@@ -438,6 +640,8 @@ export default function SettingsModal({
       {!DEMO && (
         <>
           <AccountSection />
+          <div className="cnsl-divider" />
+          <PublisherProfileSection />
           <div className="cnsl-divider" />
         </>
       )}

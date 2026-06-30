@@ -17,6 +17,15 @@ export type PublishedItem = {
   url: string | null;
 };
 
+export type PublisherProfile = {
+  displayName: string | null;
+  avatarUrl: string | null;
+  bio: string | null;
+  linkedin: string | null;
+  instagram: string | null;
+  tiktok: string | null;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function unique<T>(arr: T[]): T[] {
@@ -203,12 +212,32 @@ function PageSection({ pageName, items }: { pageName: string; items: PublishedIt
 
 export default function PublisherView({
   handle,
+  profile,
   items,
 }: {
   handle: string | null;
+  profile: PublisherProfile;
   items: PublishedItem[];
 }) {
   const pages = unique(items.map((i) => i.pageName));
+  const title = profile.displayName || handle || "Publisher";
+  const initials = (profile.displayName || handle || "?").trim().slice(0, 2).toUpperCase();
+  const socials = (
+    [
+      profile.linkedin && {
+        label: "LinkedIn",
+        url: `https://www.linkedin.com/in/${profile.linkedin}`,
+      },
+      profile.instagram && {
+        label: "Instagram",
+        url: `https://www.instagram.com/${profile.instagram}`,
+      },
+      profile.tiktok && {
+        label: "TikTok",
+        url: `https://www.tiktok.com/@${profile.tiktok}`,
+      },
+    ] as ({ label: string; url: string } | null | "" | undefined)[]
+  ).filter(Boolean) as { label: string; url: string }[];
 
   return (
     <div
@@ -251,17 +280,99 @@ export default function PublisherView({
             CNSL
           </span>
         </div>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "32px",
-            fontWeight: 700,
-            color: "var(--color-text-primary)",
-            lineHeight: 1.15,
-          }}
-        >
-          {handle ?? "Publisher"}
-        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          {profile.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.avatarUrl}
+              alt={title}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                objectFit: "cover",
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "color-mix(in srgb, var(--color-text-primary) 14%, transparent)",
+                color: "var(--color-text-primary)",
+                fontSize: "24px",
+                fontWeight: 700,
+              }}
+            >
+              {initials}
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "32px",
+                fontWeight: 700,
+                color: "var(--color-text-primary)",
+                lineHeight: 1.15,
+              }}
+            >
+              {title}
+            </h1>
+            {handle && (
+              <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                @{handle}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {profile.bio && (
+          <p
+            style={{
+              margin: 0,
+              fontSize: "var(--text-base)",
+              color: "var(--color-text-secondary)",
+              lineHeight: 1.6,
+              maxWidth: 620,
+            }}
+          >
+            {profile.bio}
+          </p>
+        )}
+
+        {socials.length > 0 && (
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {socials.map((s) => (
+              <a
+                key={s.label}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "26px",
+                  padding: "0 12px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-text-secondary)",
+                  fontSize: "var(--text-xs)",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                }}
+              >
+                {s.label}
+              </a>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Empty states */}
