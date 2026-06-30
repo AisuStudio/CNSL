@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { withUser } from "@/lib/rls";
 import { ensureUserBoards } from "@/lib/board";
+import { sendTimerPush } from "@/lib/webpush";
 import {
   taskFromDb,
   taskToDb,
@@ -223,6 +224,8 @@ export async function POST(req: NextRequest) {
   // skipped-as-stale) → we return their authoritative rows so the client can
   // adopt the fresh updatedAt (applied) or the server truth (stale).
   const touchedTaskIds: string[] = [];
+  // Set when a save starts/stops a timer → triggers the running-timer push below.
+  let trackingChanged = false;
   // Same for notes: ids of every sent note that exists after the save (applied or
   // skipped-as-stale) → returned so the client adopts the fresh/authoritative row.
   const touchedNoteIds: string[] = [];
@@ -302,7 +305,7 @@ export async function POST(req: NextRequest) {
         const pid = resolvePid(t.project);
         const existing = await tx.task.findUnique({
           where: { id: t.id },
-          select: { boardId: true, projectId: true, updatedAt: true },
+          select: { boardId: true, projectId: true, updatedAt: true, trackingStartedAt: true },
         });
         // Scope writes: own board OR a project the user can edit (C4 sharing).
         // Not mine + not editable-shared → skip (viewer / non-member / IDOR).
@@ -318,6 +321,8 @@ export async function POST(req: NextRequest) {
         const data = { ...taskToDb(t, board, user.id), projectId: pid };
         if (!existing) {
           await tx.task.create({ data: { id: t.id, ...data } });
+          // A brand-new task that arrives already tracking flips the running set.
+          if (t.isTracking) trackingChanged = true;
         } else {
           // Per-task optimistic concurrency ("newer wins", no global 409):
           // if the DB row is newer than the version this client based its edit
@@ -329,6 +334,11 @@ export async function POST(req: NextRequest) {
             continue;
           }
           await tx.task.updateMany({ where: { id: t.id }, data });
+          // Did this write start/stop the timer? (presence of the anchor flips).
+          // The 30s accrual saves keep it non-null → no flip → no push spam.
+          if ((existing.trackingStartedAt != null) !== !!t.isTracking) {
+            trackingChanged = true;
+          }
         }
         // Rewrite time entries only for OWN rows — never clobber a shared task
         // owner's TimeEntry rows when an editor saves it.
@@ -547,6 +557,22 @@ export async function POST(req: NextRequest) {
       prisma.schedule.findMany({ where: { id: { in: touchedScheduleIds } } }),
       prisma.activity.findMany({ where: { id: { in: touchedActivityIds } } }),
     ]);
+
+  // A timer started/stopped on THIS device → push the new running-timer count to
+  // the user's OTHER devices so a closed mobile PWA updates its badge + shows a
+  // short notification. Fire-and-forget; never blocks or breaks the save.
+  if (trackingChanged) {
+    try {
+      const runningCount = await prisma.task.count({
+        where: { boardId: trackerId, trackingStartedAt: { not: null }, archived: false },
+      });
+      const originDeviceId = req.headers.get("x-cnsl-device") ?? undefined;
+      await sendTimerPush(user.id, runningCount, originDeviceId);
+    } catch {
+      /* push is best-effort; the resync-on-open remains the backstop */
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     tasks: fresh.map(taskFromDb),

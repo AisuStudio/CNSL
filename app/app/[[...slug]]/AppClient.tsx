@@ -48,6 +48,7 @@ import {
   type LogEntry,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
+import { ensurePushSubscription, getDeviceId } from "@/lib/push";
 import {
   type Contact,
   type Conversation,
@@ -492,7 +493,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/state", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "X-CNSL-Device": getDeviceId() },
         body: JSON.stringify({
           tasks: changed,
           log,
@@ -733,7 +734,7 @@ export default function Home() {
       try {
         fetch("/api/state", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", "X-CNSL-Device": getDeviceId() },
           keepalive: true,
           body: JSON.stringify({
             tasks: changed,
@@ -1105,11 +1106,19 @@ export default function Home() {
     const nowMs = Date.now();
     // iOS PWA renders the app-icon badge only once notifications are allowed.
     // Ask on the first Play tap (a valid user gesture); harmless elsewhere.
+    // Once granted, register the push subscription so a closed device's badge can
+    // be updated from another device (real app only; no-ops in the demo).
     if (
       typeof Notification !== "undefined" &&
       Notification.permission === "default"
     ) {
-      Notification.requestPermission?.().catch(() => {});
+      Notification.requestPermission?.()
+        .then(() => {
+          if (!DEMO) void ensurePushSubscription();
+        })
+        .catch(() => {});
+    } else if (!DEMO) {
+      void ensurePushSubscription();
     }
     setTasks((prev) =>
       prev.map((t) => {
@@ -1158,6 +1167,15 @@ export default function Home() {
     if (runningCount > 0) nav.setAppBadge(runningCount).catch(() => {});
     else nav.clearAppBadge?.().catch(() => {});
   }, [runningCount]);
+
+  // Returning user who already granted notifications → (re)register the push
+  // subscription on load so cross-device badge pushes keep flowing (real app only).
+  useEffect(() => {
+    if (DEMO || !hydrated) return;
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      void ensurePushSubscription();
+    }
+  }, [hydrated]);
 
   // ─── Tracking log ───────────────────────────────────────
   function addLogEntry(text: string) {
