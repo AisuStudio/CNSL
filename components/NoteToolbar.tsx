@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/lib/useIsMobile";
 import type { Editor } from "@tiptap/react";
+import type { MarkdownStorage } from "tiptap-markdown";
 import {
   Link as LinkGlyph,
   Image as ImageGlyph,
@@ -166,7 +167,7 @@ export default function NoteToolbar({
   };
 
   // ── Exports (Copy MD · Save MD · Save RTF) ──
-  const getMarkdown = () => editor.storage.markdown.getMarkdown() as string;
+  const getMarkdown = () => (editor.storage as unknown as { markdown: MarkdownStorage }).markdown.getMarkdown();
   const baseName = () =>
     (title || "").trim().replace(/[^a-z0-9\-]+/gi, "_").replace(/^_+|_+$/g, "").slice(0, 60) ||
     "note";
