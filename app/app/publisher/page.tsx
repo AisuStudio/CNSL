@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureUserBoards } from "@/lib/board";
+import { scheduleFromDb } from "@/lib/serialize";
+import { scheduleTotalSeconds, stepCount, formatDuration } from "@/lib/scheduler";
 import PublisherView from "@/components/PublisherView";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +26,9 @@ export default async function PublisherPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { notesId } = await ensureUserBoards(user.id, user.email ?? undefined);
+  const { trackerId, notesId } = await ensureUserBoards(user.id, user.email ?? undefined);
 
-  const [profile, notes] = await Promise.all([
+  const [profile, notes, schedules] = await Promise.all([
     prisma.profile.findUnique({
       where: { id: user.id },
       select: {
@@ -52,6 +54,11 @@ export default async function PublisherPage() {
       },
       orderBy: { updatedAt: "desc" },
     }),
+    // Published routines hang off the tracker board (Phase 2).
+    prisma.schedule.findMany({
+      where: { boardId: trackerId, published: true },
+      orderBy: { updatedAt: "desc" },
+    }),
   ]);
 
   const handle = profile?.publisherHandle ?? null;
@@ -65,7 +72,7 @@ export default async function PublisherPage() {
     tiktok: profile?.tiktok ?? null,
   };
 
-  const items = notes
+  const noteItems = notes
     .filter((n) => n.topic && n.slug)
     .map((n) => ({
       id: n.id,
@@ -77,6 +84,26 @@ export default async function PublisherPage() {
       date: n.updatedAt.toISOString(),
       url: handle ? `/note/${handle}/${encodeURIComponent(n.topic as string)}/${n.slug}` : null,
     }));
+
+  // Published routines → cards under the "routine" topic; excerpt summarises the
+  // run (steps · total time). Link to the public read-only player.
+  const routineItems = schedules
+    .filter((row) => row.slug)
+    .map((row) => {
+      const s = scheduleFromDb(row);
+      return {
+        id: row.id,
+        title: s.name || "Untitled routine",
+        excerpt: `${stepCount(s)} steps · ${formatDuration(scheduleTotalSeconds(s))}`,
+        topic: "routine",
+        slug: row.slug as string,
+        pageName: s.project ?? "Routines",
+        date: row.updatedAt.toISOString(),
+        url: handle ? `/note/${handle}/routine/${row.slug}` : null,
+      };
+    });
+
+  const items = [...noteItems, ...routineItems];
 
   return <PublisherView handle={handle} profile={profileInfo} items={items} />;
 }

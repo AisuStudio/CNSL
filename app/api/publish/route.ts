@@ -71,6 +71,11 @@ export async function POST(req: NextRequest) {
   if (!noteId || !rawTopic.trim()) {
     return NextResponse.json({ error: "noteId and topic required" }, { status: 400 });
   }
+  // "routine" is reserved: the public player lives at /note/{handle}/routine/{slug},
+  // whose static segment would shadow a note published under this topic.
+  if (topic === "routine") {
+    return NextResponse.json({ error: "topic reserved" }, { status: 400 });
+  }
 
   // The note must belong to this user's notes board. If it isn't persisted yet
   // (brand-new note, /api/state auto-save hasn't run), create it now from the

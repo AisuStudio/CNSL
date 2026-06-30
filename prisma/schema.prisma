@@ -294,9 +294,16 @@ model Schedule {
   sections  Json?    // [{ id, name, order, steps: [{ id, name, description?, durationSeconds, order }] }]
   autoPause Boolean  @default(false) // insert a fixed rest between steps when on
   pauseBetweenSteps Int? // rest length in seconds (used when autoPause is on)
+  // ── Public publishing (/note/{handle}/routine/{slug}) ──
+  // published=true exposes the routine publicly as a read-only player (content
+  // rendered live). slug is frozen on first publish so the link stays stable.
+  // scheduleToDb does NOT write these, so the state-sync upsert never clobbers them.
+  published Boolean  @default(false)
+  slug      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
 
+  @@unique([boardId, slug])
   @@index([boardId])
 }
 

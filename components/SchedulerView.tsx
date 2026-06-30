@@ -21,6 +21,7 @@ import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { PlayIcon, AddIcon, TrashIcon, CopyIcon } from "./icons";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import RoutinePublishModal from "./RoutinePublishModal";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
    peace on the desktop, then hit Play to open the mobile Player.
@@ -159,6 +160,8 @@ export default function SchedulerView({
   const isMobile = useIsMobile();
   // Start with everything collapsed; the user expands the one they're editing.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // The routine currently open in the publish panel (null = closed).
+  const [publishing, setPublishing] = useState<Schedule | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Auto-expand a newly created/imported schedule so its details (Project,
@@ -514,6 +517,15 @@ export default function SchedulerView({
                       <button type="button" style={accentBtn} onClick={() => closeCard(s.id)}>
                         Save
                       </button>
+                      <button
+                        type="button"
+                        style={ghostBtn}
+                        onClick={() => setPublishing(s)}
+                        disabled={stepCount(s) === 0}
+                        title={stepCount(s) === 0 ? "Add a step first" : "Publish as a public routine"}
+                      >
+                        Publish
+                      </button>
                       {!isMobile && (
                         <button type="button" style={ghostBtn} onClick={() => onExportSchedule(s.id)}>
                           Export JSON
@@ -787,6 +799,10 @@ export default function SchedulerView({
             </div>
           ))}
         </div>
+      )}
+
+      {publishing && (
+        <RoutinePublishModal schedule={publishing} onClose={() => setPublishing(null)} />
       )}
     </div>
   );

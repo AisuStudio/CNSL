@@ -23,10 +23,15 @@ export default function SchedulerPlayer({
   schedule,
   onClose,
   onSaveActivity,
+  publicMode = false,
 }: {
   schedule: Schedule;
-  onClose: () => void;
-  onSaveActivity: (a: Activity) => void;
+  onClose?: () => void;
+  onSaveActivity?: (a: Activity) => void;
+  // Public, logged-out playback (/note/{handle}/routine/{slug}): hides the
+  // "Save Activity" actions (no board to write to) and onClose/onSaveActivity
+  // become optional. Everything else (play/pause/next/restart) works as-is.
+  publicMode?: boolean;
 }) {
   const flat = useMemo(() => flattenSteps(schedule), [schedule]);
   // Total includes the auto-pause rests (they're part of the played run).
@@ -195,7 +200,7 @@ export default function SchedulerPlayer({
     setSaved(false);
   }
   function saveActivity() {
-    onSaveActivity({
+    onSaveActivity?.({
       id: newId("act"),
       scheduleId: schedule.id,
       scheduleName: schedule.name || "Untitled",
@@ -211,7 +216,7 @@ export default function SchedulerPlayer({
 
   // Esc closes.
   useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose?.();
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
@@ -265,7 +270,7 @@ export default function SchedulerPlayer({
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onClose?.()}
           aria-label="Close player"
           title="Close"
           style={{
@@ -328,26 +333,28 @@ export default function SchedulerPlayer({
             <div style={{ fontSize: "var(--text-base)", color: muted }}>
               Recorded {formatDuration(recorded)}
             </div>
-            <button
-              type="button"
-              onClick={saveActivity}
-              style={{
-                height: "58px",
-                minWidth: "220px",
-                padding: "0 24px",
-                borderRadius: "12px",
-                border: "none",
-                background: accent,
-                color: "var(--color-bg)",
-                fontWeight: 700,
-                fontSize: "var(--text-logo)",
-                fontFamily: "var(--font-family)",
-                cursor: "pointer",
-                marginTop: "8px",
-              }}
-            >
-              {saved ? "Saved ✓" : "Save Activity"}
-            </button>
+            {!publicMode && (
+              <button
+                type="button"
+                onClick={saveActivity}
+                style={{
+                  height: "58px",
+                  minWidth: "220px",
+                  padding: "0 24px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: accent,
+                  color: "var(--color-bg)",
+                  fontWeight: 700,
+                  fontSize: "var(--text-logo)",
+                  fontFamily: "var(--font-family)",
+                  cursor: "pointer",
+                  marginTop: "8px",
+                }}
+              >
+                {saved ? "Saved ✓" : "Save Activity"}
+              </button>
+            )}
           </>
         ) : (
           <>
@@ -454,7 +461,7 @@ export default function SchedulerPlayer({
         <button type="button" onClick={restart} style={ctrlBtn}>
           Restart
         </button>
-        {!finished && (
+        {!finished && !publicMode && (
           <button
             type="button"
             onClick={saveActivity}
