@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { scheduleFromDb } from "@/lib/serialize";
+import MonoTheme from "@/components/MonoTheme";
 import PublicRoutinePlayer from "./PublicRoutinePlayer";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,13 @@ export default async function PublicRoutinePage({
   const schedule = await findPublished(p);
   if (!schedule) notFound();
   return (
-    <PublicRoutinePlayer schedule={schedule} backHref={`/note/${p.handle}`} />
+    <>
+      {/* Match the published surfaces (note reader / publisher page): mono theme
+          recolours the player's --color-* tokens to the lavender palette. */}
+      <MonoTheme />
+      {/* Close → the Publisher page. (For a logged-out visitor middleware
+          redirects /app/publisher → the landing, never a 404.) */}
+      <PublicRoutinePlayer schedule={schedule} backHref="/app/publisher" />
+    </>
   );
 }
