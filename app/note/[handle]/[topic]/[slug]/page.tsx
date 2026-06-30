@@ -120,15 +120,18 @@ export default async function PublicNotePage({
 
         {/* No page-level title: the note body provides its own heading, so a
             separate <h1> here just duplicated it. Byline stays. */}
-        <p
+        <Link
+          href="/app/publisher"
           style={{
+            display: "block",
             color: "var(--color-text-muted)",
             fontSize: "var(--text-sm)",
             margin: "0 0 28px",
+            textDecoration: "none",
           }}
         >
           @{author} · {note.topic}
-        </p>
+        </Link>
 
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
