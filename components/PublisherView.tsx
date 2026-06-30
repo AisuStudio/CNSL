@@ -58,7 +58,7 @@ function NoteCard({ item }: { item: PublishedItem }) {
       <span
         style={{
           fontSize: "var(--text-xs)",
-          color: "var(--color-accent)",
+          color: "var(--color-text-muted)",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.06em",
