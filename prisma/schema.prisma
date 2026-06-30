@@ -310,6 +310,24 @@ model Activity {
   @@index([boardId])
 }
 
+// ─── Web Push subscriptions (running-timer badge push) ──
+// One row per device subscription. The server pushes the running-timer count to
+// a user's OTHER devices (skips the originating deviceId). See lib/webpush.ts +
+// data/phase-push.sql.
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  deviceId  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+}
+
 // ─── Chat (board kind='chat') — Phase 2 ─────────────────
 /// A conversation: 1:1 direct message (kind='dm') or a project channel
 /// (kind='channel', future). Participants are explicit rows
