@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Clock, ChevronRight, FileText } from "lucide-react";
 import CnslLogo from "./CnslLogo";
+import MonoTheme from "./MonoTheme";
 
 export type PublishedItem = {
   id: string;
@@ -220,6 +221,7 @@ export default function PublisherView({
         gap: "36px",
       }}
     >
+      <MonoTheme />
       {/* Masthead */}
       <header
         style={{
