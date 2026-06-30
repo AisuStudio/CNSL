@@ -2,73 +2,84 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight, FileText } from "lucide-react";
 import CnslLogo from "./CnslLogo";
-import { CONTENT, type ContentItem, type Article, type Routine } from "@/lib/publisher-data";
+
+export type PublishedItem = {
+  id: string;
+  title: string;
+  excerpt: string;
+  topic: string;
+  slug: string;
+  pageName: string;
+  date: string;
+  url: string | null;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtDuration(minutes: number) {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m ? `${h}h ${m}min` : `${h}h`;
-}
 
 function unique<T>(arr: T[]): T[] {
   return [...new Set(arr)];
 }
 
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 // ── Card ─────────────────────────────────────────────────────────────────────
 
-function ContentCard({ item }: { item: ContentItem }) {
-  const isArticle = item.type === "article";
-  return (
-    <Link href={`/app/publisher/${item.slug}`} style={{ textDecoration: "none", display: "flex" }}>
-      <article
+function NoteCard({ item }: { item: PublishedItem }) {
+  const inner = (
+    <article
+      style={{
+        background: "var(--color-surface)",
+        borderRadius: "var(--radius-container)",
+        padding: "18px 16px 14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        cursor: item.url ? "pointer" : "default",
+        transition: "background 120ms ease",
+        width: "100%",
+      }}
+      onMouseEnter={(e) => {
+        if (item.url)
+          (e.currentTarget as HTMLElement).style.background =
+            "color-mix(in srgb, var(--color-surface) 80%, var(--color-border))";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.background = "var(--color-surface)";
+      }}
+    >
+      <span
         style={{
-          background: "var(--color-surface)",
-          borderRadius: "var(--radius-container)",
-          padding: "18px 16px 14px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-          cursor: "pointer",
-          transition: "background 120ms ease",
-          width: "100%",
+          fontSize: "var(--text-xs)",
+          color: "var(--color-accent)",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
         }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLElement).style.background =
-            "color-mix(in srgb, var(--color-surface) 80%, var(--color-border))")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLElement).style.background = "var(--color-surface)")
-        }
       >
-        <span
-          style={{
-            fontSize: "var(--text-xs)",
-            color: "var(--color-accent)",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-          }}
-        >
-          {item.topic}
-        </span>
+        {item.topic}
+      </span>
 
-        <h3
-          style={{
-            margin: 0,
-            fontSize: "var(--text-base)",
-            fontWeight: 700,
-            color: "var(--color-text-primary)",
-            lineHeight: 1.3,
-          }}
-        >
-          {item.title}
-        </h3>
+      <h3
+        style={{
+          margin: 0,
+          fontSize: "var(--text-base)",
+          fontWeight: 700,
+          color: "var(--color-text-primary)",
+          lineHeight: 1.3,
+        }}
+      >
+        {item.title}
+      </h3>
 
+      {item.excerpt && (
         <p
           style={{
             margin: 0,
@@ -82,40 +93,45 @@ function ContentCard({ item }: { item: ContentItem }) {
             flex: 1,
           }}
         >
-          {isArticle ? item.excerpt : item.description}
+          {item.excerpt}
         </p>
+      )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
-          <Clock size={11} strokeWidth={1.75} color="var(--color-text-muted)" />
-          <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-            {isArticle
-              ? `${(item as Article).readMinutes} min read`
-              : fmtDuration((item as Routine).totalMinutes)}
-          </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
+        <Clock size={11} strokeWidth={1.75} color="var(--color-text-muted)" />
+        <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+          {fmtDate(item.date)}
+        </span>
+        {item.url && (
           <ChevronRight
             size={12}
             strokeWidth={1.75}
             color="var(--color-text-muted)"
             style={{ marginLeft: "auto" }}
           />
-        </div>
-      </article>
+        )}
+      </div>
+    </article>
+  );
+
+  if (!item.url) return <div style={{ display: "flex" }}>{inner}</div>;
+  return (
+    <Link href={item.url} style={{ textDecoration: "none", display: "flex" }}>
+      {inner}
     </Link>
   );
 }
 
 // ── Page section ──────────────────────────────────────────────────────────────
 
-function PageSection({ pageName, items }: { pageName: string; items: ContentItem[] }) {
+function PageSection({ pageName, items }: { pageName: string; items: PublishedItem[] }) {
   const topics = unique(items.map((i) => i.topic));
   const [activeTopic, setActiveTopic] = useState<string>("all");
 
-  const visible =
-    activeTopic === "all" ? items : items.filter((i) => i.topic === activeTopic);
+  const visible = activeTopic === "all" ? items : items.filter((i) => i.topic === activeTopic);
 
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Page header */}
       <div
         style={{
           display: "flex",
@@ -139,7 +155,6 @@ function PageSection({ pageName, items }: { pageName: string; items: ContentItem
           {items.length}
         </span>
 
-        {/* Topic pills — inline after page name */}
         <div style={{ display: "flex", gap: "5px", marginLeft: "8px", flexWrap: "wrap" }}>
           {["all", ...topics].map((t) => {
             const isActive = activeTopic === t;
@@ -168,7 +183,6 @@ function PageSection({ pageName, items }: { pageName: string; items: ContentItem
         </div>
       </div>
 
-      {/* Cards */}
       <div
         style={{
           display: "grid",
@@ -177,7 +191,7 @@ function PageSection({ pageName, items }: { pageName: string; items: ContentItem
         }}
       >
         {visible.map((item) => (
-          <ContentCard key={item.slug} item={item} />
+          <NoteCard key={item.id} item={item} />
         ))}
       </div>
     </section>
@@ -186,19 +200,14 @@ function PageSection({ pageName, items }: { pageName: string; items: ContentItem
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-const TYPE_FILTERS = ["All", "Articles", "Routines"] as const;
-type TypeFilter = (typeof TYPE_FILTERS)[number];
-
-export default function PublisherView() {
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("All");
-
-  const filtered = CONTENT.filter((item) => {
-    if (typeFilter === "Articles") return item.type === "article";
-    if (typeFilter === "Routines") return item.type === "routine";
-    return true;
-  });
-
-  const pages = unique(filtered.map((i) => i.pageName));
+export default function PublisherView({
+  handle,
+  items,
+}: {
+  handle: string | null;
+  items: PublishedItem[];
+}) {
+  const pages = unique(items.map((i) => i.pageName));
 
   return (
     <div
@@ -223,7 +232,13 @@ export default function PublisherView() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <CnslLogo size={28} />
-          <span style={{ fontSize: "var(--text-base)", fontWeight: 700, color: "var(--color-text-primary)" }}>
+          <span
+            style={{
+              fontSize: "var(--text-base)",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+            }}
+          >
             CNSL
           </span>
         </div>
@@ -236,44 +251,41 @@ export default function PublisherView() {
             lineHeight: 1.15,
           }}
         >
-          dominik-heilig
+          {handle ?? "Publisher"}
         </h1>
       </header>
 
-      {/* Content type filter */}
-      <nav aria-label="Content type" style={{ display: "flex", gap: "6px" }}>
-        {TYPE_FILTERS.map((f) => {
-          const isActive = typeFilter === f;
-          return (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setTypeFilter(f)}
-              style={{
-                height: "28px",
-                padding: "0 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "none",
-                background: isActive ? "var(--color-text-primary)" : "var(--color-surface)",
-                color: isActive ? "var(--color-bg)" : "var(--color-text-secondary)",
-                fontSize: "var(--text-sm)",
-                fontWeight: isActive ? 700 : 400,
-                cursor: "pointer",
-                transition: "all 120ms ease",
-              }}
-            >
-              {f}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Empty states */}
+      {!handle && (
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)", margin: 0 }}>
+          Noch kein Publisher-Handle gesetzt. Veröffentliche eine Note im Notepad um deinen Handle zu wählen.
+        </p>
+      )}
 
-      {/* Pages with nested topics */}
+      {handle && items.length === 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "12px",
+            padding: "48px 0",
+            color: "var(--color-text-muted)",
+          }}
+        >
+          <FileText size={32} strokeWidth={1.25} />
+          <p style={{ margin: 0, fontSize: "var(--text-sm)" }}>
+            Noch keine veröffentlichten Artikel. Im Notepad auf "Publish" klicken.
+          </p>
+        </div>
+      )}
+
+      {/* Pages with nested topic pills */}
       {pages.map((pageName) => (
         <PageSection
           key={pageName}
           pageName={pageName}
-          items={filtered.filter((i) => i.pageName === pageName)}
+          items={items.filter((i) => i.pageName === pageName)}
         />
       ))}
     </div>
