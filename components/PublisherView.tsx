@@ -213,15 +213,22 @@ export default function PublisherView({
   return (
     <div
       style={{
-        padding: "40px 24px 60px",
+        minHeight: "100dvh",
+        background: "var(--color-surface)",
+        padding: "40px 20px",
+      }}
+    >
+      <MonoTheme />
+    <div
+      style={{
         maxWidth: 900,
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
         gap: "36px",
+        paddingBottom: "60px",
       }}
     >
-      <MonoTheme />
       {/* Masthead */}
       <header
         style={{
@@ -290,6 +297,7 @@ export default function PublisherView({
           items={items.filter((i) => i.pageName === pageName)}
         />
       ))}
+    </div>
     </div>
   );
 }
