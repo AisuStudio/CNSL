@@ -267,7 +267,7 @@ export default function SchedulerPlayer({
       }}
     >
       {/* Close — upper right */}
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
         <button
           type="button"
           onClick={() => onClose?.()}
@@ -293,6 +293,7 @@ export default function SchedulerPlayer({
       <div
         style={{
           height: "40px",
+          flexShrink: 0,
           borderRadius: "10px",
           background: accent,
           color: "var(--color-bg)",
@@ -322,7 +323,7 @@ export default function SchedulerPlayer({
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          gap: "10px",
+          gap: "8px",
         }}
       >
         {finished ? (
@@ -365,7 +366,7 @@ export default function SchedulerPlayer({
 
             <div style={hr} />
 
-            <div style={{ fontSize: "32px", fontWeight: 700, color: text }}>
+            <div style={{ fontSize: "32px", lineHeight: 1, fontWeight: 700, color: text }}>
               {current?.step.name || "(unnamed step)"}
             </div>
             {current?.step.description && (
@@ -385,9 +386,11 @@ export default function SchedulerPlayer({
                 color: accent,
                 // Glanceable from a few metres during training, ~2× the original.
                 // Designer-validated target is 220px (caps there so it never gets
-                // too heavy); 60vw lands at 220 on a 375px phone (iPhone 11 Pro)
-                // and scales down gently on narrower screens.
-                fontSize: "clamp(150px, 60vw, 220px)",
+                // too heavy). Sized by BOTH axes: min(60vw, 30dvh) so it also
+                // shrinks on short viewports (mobile browser chrome) — a pure-vw
+                // size stays huge on short screens and overflows the centered
+                // stage upward, colliding the section label with the header pill.
+                fontSize: "clamp(110px, min(60vw, 30dvh), 220px)",
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
                 fontVariationSettings: `'wght' ${timeWeight}`,
@@ -399,7 +402,7 @@ export default function SchedulerPlayer({
 
             {/* Following step — same size as the current step, Regular weight (the
                 current step is bold), and skips synthetic auto-pause rests. */}
-            <div style={{ fontSize: "32px", fontWeight: 400, color: text }}>
+            <div style={{ fontSize: "32px", lineHeight: 1, fontWeight: 400, color: text }}>
               {nextReal ? `${nextReal.step.name || "(unnamed)"}` : "Last step"}
             </div>
 
