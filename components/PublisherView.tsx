@@ -268,7 +268,22 @@ export default function PublisherView({
           paddingBottom: "28px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {/* Brand = home link. In a standalone/chromeless PWA there's no browser
+            back button, so this is the only way back to the app. → /app
+            (middleware routes logged-in users to the app, others to the
+            landing/login). */}
+        <Link
+          href="/app"
+          aria-label="Back to the CNSL app"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            width: "fit-content",
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
           <CnslLogo size={28} />
           <span
             style={{
@@ -279,7 +294,7 @@ export default function PublisherView({
           >
             CNSL
           </span>
-        </div>
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           {profile.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
