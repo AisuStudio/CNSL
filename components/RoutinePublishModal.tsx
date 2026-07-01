@@ -19,7 +19,11 @@ export default function RoutinePublishModal({
   const [loading, setLoading] = useState(true);
   const [initialHandle, setInitialHandle] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
+  // First publish sets author name + slug together (see PublishModal): type your
+  // name (the public author) and the URL slug is derived from it.
+  const [authorName, setAuthorName] = useState("");
   const [handle, setHandle] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [check, setCheck] = useState<{ available: boolean } | null>(null);
   const [checking, setChecking] = useState(false);
   const [checkFailed, setCheckFailed] = useState(false);
@@ -29,9 +33,14 @@ export default function RoutinePublishModal({
   const [copied, setCopied] = useState(false);
 
   const handleLocked = !!initialHandle;
-  const normHandle = handleLocked ? initialHandle ?? "" : slugify(handle);
+  // Empty input stays empty (slugify("") would yield the "untitled" fallback).
+  const normHandle = handleLocked
+    ? initialHandle ?? ""
+    : handle.trim()
+      ? slugify(handle)
+      : "";
 
-  // Bootstrap: current handle + this routine's publish state.
+  // Bootstrap: current handle + author name + this routine's publish state.
   useEffect(() => {
     let live = true;
     fetch(`/api/publish/routine?scheduleId=${encodeURIComponent(schedule.id)}`)
@@ -40,6 +49,7 @@ export default function RoutinePublishModal({
         if (!live) return;
         setInitialHandle(d.handle ?? null);
         setHandle(d.handle ?? "");
+        setAuthorName(d.displayName ?? "");
         setPublished(!!d.published);
         if (d.url) setResultUrl(d.url);
       })
@@ -49,6 +59,12 @@ export default function RoutinePublishModal({
       live = false;
     };
   }, [schedule.id]);
+
+  // Slug auto-follows the author name until the user edits the slug by hand.
+  useEffect(() => {
+    if (handleLocked || slugTouched) return;
+    setHandle(authorName.trim() ? slugify(authorName) : "");
+  }, [authorName, slugTouched, handleLocked]);
 
   // Debounced availability check while choosing a brand-new handle.
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,6 +122,7 @@ export default function RoutinePublishModal({
         body: JSON.stringify({
           scheduleId: schedule.id,
           handle: handleLocked ? undefined : normHandle,
+          displayName: handleLocked ? undefined : authorName.trim(),
           // Sent so the server can upsert a routine that hasn't been synced yet.
           schedule,
         }),
@@ -249,29 +266,46 @@ export default function RoutinePublishModal({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <label style={labelStyle}>Publisher name</label>
-            <input
-              value={handleLocked ? normHandle : handle}
-              onChange={(e) => setHandle(e.target.value)}
-              disabled={handleLocked}
-              placeholder="e.g. aisu-studio"
-              autoCapitalize="none"
-              autoCorrect="off"
-              style={{ ...inputStyle, opacity: handleLocked ? 0.7 : 1 }}
-            />
-            {handleLocked ? (
+          {handleLocked ? (
+            <div>
+              <label style={labelStyle}>Publisher name</label>
+              <input
+                value={normHandle}
+                disabled
+                style={{ ...inputStyle, opacity: 0.7 }}
+              />
               <p style={{ ...labelStyle, fontWeight: 400, margin: "6px 0 0" }}>
                 Set once — can&apos;t be changed.
               </p>
-            ) : (
-              handle.trim() && (
+            </div>
+          ) : (
+            <div>
+              <label style={labelStyle}>Author name</label>
+              <input
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                placeholder="e.g. Dominik Heilig"
+                style={inputStyle}
+              />
+              <label style={{ ...labelStyle, margin: "12px 0 6px" }}>Slug (URL)</label>
+              <input
+                value={handle}
+                onChange={(e) => {
+                  setHandle(e.target.value);
+                  setSlugTouched(true);
+                }}
+                placeholder="e.g. dominik-heilig"
+                autoCapitalize="none"
+                autoCorrect="off"
+                style={inputStyle}
+              />
+              {handle.trim() && (
                 <p style={{ margin: "6px 0 0", fontSize: "var(--text-sm)", color: handleStatus.tone }}>
                   {handleStatus.text}
                 </p>
-              )
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Routine</label>
