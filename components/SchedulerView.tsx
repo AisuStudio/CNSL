@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   type Schedule,
   type Section,
@@ -14,13 +14,14 @@ import {
   parseDuration,
   blankSection,
   blankStep,
+  moveStep,
   DEFAULT_PAUSE_SECONDS,
 } from "@/lib/scheduler";
 import { formatDate } from "@/lib/mock-data";
 import { newId } from "@/lib/storage";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { PlayIcon, AddIcon, TrashIcon, CopyIcon } from "./icons";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import RoutinePublishModal from "./RoutinePublishModal";
 
 /* Scheduler — Editor. Build a Schedule (Project → Schedule → Section → Step) in
@@ -309,6 +310,39 @@ export default function SchedulerView({
     const copy: Step = { ...st, id: newId("step"), order: sec.steps.length };
     onUpdateSchedule(mapSection(s, sec.id, (x) => ({ ...x, steps: [...x.steps, copy] })));
   }
+
+  // ── drag-and-drop step reordering (desktop; HTML5 DnD) ──
+  // `dragStepId` is the step being dragged; `dropHint` is where it would land,
+  // expressed as "insert before this step id" (null = append to the section).
+  const [dragStepId, setDragStepId] = useState<string | null>(null);
+  const [dropHint, setDropHint] = useState<{ sectionId: string; beforeStepId: string | null } | null>(null);
+
+  // Pointer in a row's top half → drop before it; bottom half → drop before the
+  // next step (or append when it's the last one).
+  function onRowDragOver(e: React.DragEvent, sec: Section, st: Step, stIdx: number) {
+    if (!dragStepId || dragStepId === st.id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    const beforeStepId = after ? sec.steps[stIdx + 1]?.id ?? null : st.id;
+    setDropHint((prev) =>
+      prev && prev.sectionId === sec.id && prev.beforeStepId === beforeStepId
+        ? prev
+        : { sectionId: sec.id, beforeStepId }
+    );
+  }
+  function commitDrop(s: Schedule) {
+    if (dragStepId && dropHint) {
+      onUpdateSchedule(moveStep(s, dragStepId, dropHint.sectionId, dropHint.beforeStepId));
+    }
+    setDragStepId(null);
+    setDropHint(null);
+  }
+  // Thin accent rule marking where the dragged step will land.
+  const insertLine = () => (
+    <div aria-hidden style={{ height: "2px", background: accent, borderRadius: "2px", margin: "-3px 0" }} />
+  );
 
   return (
     <div
@@ -662,17 +696,51 @@ export default function SchedulerView({
                       </div>
 
                       {/* Steps */}
-                      {sec.steps.map((st) => (
+                      {sec.steps.map((st, stIdx) => (
+                        <Fragment key={st.id}>
+                          {dropHint?.sectionId === sec.id && dropHint.beforeStepId === st.id &&
+                            insertLine()}
                         <div
-                          key={st.id}
                           className="sched-row"
+                          onDragOver={(e) => onRowDragOver(e, sec, st, stIdx)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            commitDrop(s);
+                          }}
                           style={{
                             display: "flex",
                             gap: "8px",
                             alignItems: isMobile ? "stretch" : "center",
                             flexDirection: isMobile ? "column" : "row",
+                            opacity: dragStepId === st.id ? 0.4 : 1,
                           }}
                         >
+                          {/* Drag handle — desktop only (HTML5 DnD doesn't fire
+                              on touch; mobile reordering is a follow-up). */}
+                          {!isMobile && (
+                            <button
+                              type="button"
+                              draggable
+                              onDragStart={(e) => {
+                                setDragStepId(st.id);
+                                e.dataTransfer.effectAllowed = "move";
+                                try {
+                                  e.dataTransfer.setData("text/plain", st.id);
+                                } catch {
+                                  /* some browsers disallow setData in tests — ignore */
+                                }
+                              }}
+                              onDragEnd={() => {
+                                setDragStepId(null);
+                                setDropHint(null);
+                              }}
+                              aria-label="Drag to reorder step"
+                              title="Drag to reorder"
+                              style={{ ...iconBtn, width: "22px", cursor: "grab" }}
+                            >
+                              <GripVertical size={16} color={muted} aria-hidden />
+                            </button>
+                          )}
                           <input
                             value={st.name}
                             onChange={(e) =>
@@ -744,7 +812,11 @@ export default function SchedulerView({
                             </>
                           )}
                         </div>
+                        </Fragment>
                       ))}
+                      {/* Append target: dropping below the last step lands here. */}
+                      {dropHint?.sectionId === sec.id && dropHint.beforeStepId === null &&
+                        insertLine()}
 
                       <button type="button" style={{ ...ghostBtn, alignSelf: "flex-start" }} onClick={() => addStep(s, sec)}>
                         <AddIcon color={text} /> Add step

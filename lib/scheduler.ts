@@ -82,6 +82,52 @@ export function stepCount(schedule: Schedule): number {
   return schedule.sections.reduce((n, sec) => n + sec.steps.length, 0);
 }
 
+// ─── Reordering (drag-and-drop) ──────────────────────────────────────────────
+// Move a step to a new position — within its section or into another one. The
+// destination is expressed as "insert before this step id" (null/unknown =
+// append to the target section), which sidesteps the classic remove-then-insert
+// off-by-one entirely.
+//
+// Crucially this renumbers every step's `order` to its array index: the editor
+// renders steps in array order, but the player (flattenSteps) sorts by `order`.
+// Keeping the two in lockstep is what makes a reordered routine actually play
+// in the new order. Returns the same schedule (no-op) when the move is a no-op
+// or the ids don't resolve, so callers can assign unconditionally.
+export function moveStep(
+  schedule: Schedule,
+  stepId: string,
+  toSectionId: string,
+  beforeStepId: string | null
+): Schedule {
+  // Dropping a step directly onto itself (or just after itself) changes nothing.
+  if (stepId === beforeStepId) return schedule;
+
+  // Pull the dragged step out of whichever section holds it.
+  let moved: Step | undefined;
+  const without = schedule.sections.map((sec) => {
+    if (!sec.steps.some((st) => st.id === stepId)) return sec;
+    moved = sec.steps.find((st) => st.id === stepId);
+    return { ...sec, steps: sec.steps.filter((st) => st.id !== stepId) };
+  });
+  if (!moved) return schedule; // unknown step id → no-op
+
+  // Re-insert it into the target section at the requested slot.
+  const placed = without.map((sec) => {
+    if (sec.id !== toSectionId) return sec;
+    const steps = [...sec.steps];
+    const at = beforeStepId ? steps.findIndex((st) => st.id === beforeStepId) : -1;
+    steps.splice(at < 0 ? steps.length : at, 0, moved as Step);
+    return { ...sec, steps };
+  });
+
+  // Renumber order → array index in every section (cheap, keeps player in sync).
+  const sections = placed.map((sec) => ({
+    ...sec,
+    steps: sec.steps.map((st, i) => (st.order === i ? st : { ...st, order: i })),
+  }));
+  return { ...schedule, sections, updatedAt: new Date().toISOString() };
+}
+
 // ─── Time formatting (xlsx: "HH:MM:SS") ─────────────────────────────────────
 // "M:SS" under an hour, "H:MM:SS" from an hour up. Negative/NaN clamp to 0.
 export function formatDuration(totalSeconds: number): string {
