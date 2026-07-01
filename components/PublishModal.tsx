@@ -12,12 +12,14 @@ import SidePanel from "./SidePanel";
 export default function PublishModal({
   note,
   initialHandle,
+  initialAuthorName,
   topics,
   onClose,
   onPublished,
 }: {
   note: Note;
   initialHandle: string | null;
+  initialAuthorName?: string | null;
   topics: string[];
   onClose: () => void;
   onPublished: (
@@ -26,10 +28,24 @@ export default function PublishModal({
   ) => void;
 }) {
   const handleLocked = !!initialHandle;
-  // `handle` is the raw text the user types; the actual handle is its slug, so a
-  // natural name like "Aisu Studio" becomes the valid "aisu-studio" automatically.
+  // First publish sets author name + slug together: you type your name (the public
+  // author) and the URL slug is derived from it (Dominik Heilig → dominik-heilig).
+  const [authorName, setAuthorName] = useState(initialAuthorName ?? "");
+  // `handle` is the raw slug text; normHandle is its slugified, URL-safe form. It
+  // auto-follows the author name until the user edits the slug by hand.
   const [handle, setHandle] = useState(initialHandle ?? "");
-  const normHandle = handleLocked ? initialHandle ?? "" : slugify(handle);
+  const [slugTouched, setSlugTouched] = useState(false);
+  // Empty input stays empty (slugify("") would yield the "untitled" fallback).
+  const normHandle = handleLocked
+    ? initialHandle ?? ""
+    : handle.trim()
+      ? slugify(handle)
+      : "";
+
+  useEffect(() => {
+    if (handleLocked || slugTouched) return;
+    setHandle(authorName.trim() ? slugify(authorName) : "");
+  }, [authorName, slugTouched, handleLocked]);
   const [topic, setTopic] = useState(note.topic ?? "");
   const [check, setCheck] = useState<{ available: boolean } | null>(null);
   const [checking, setChecking] = useState(false);
@@ -105,6 +121,7 @@ export default function PublishModal({
         body: JSON.stringify({
           noteId: note.id,
           handle: handleLocked ? undefined : normHandle,
+          displayName: handleLocked ? undefined : authorName.trim(),
           topic: topic.trim(),
           // Sent so the server can upsert a note that hasn't been auto-saved yet.
           title: note.title ?? "",
@@ -221,23 +238,40 @@ export default function PublishModal({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <label style={labelStyle}>Publisher name</label>
-            <input
-              value={handleLocked ? normHandle : handle}
-              onChange={(e) => setHandle(e.target.value)}
-              disabled={handleLocked}
-              placeholder="e.g. aisu-studio"
-              autoCapitalize="none"
-              autoCorrect="off"
-              style={{ ...inputStyle, opacity: handleLocked ? 0.7 : 1 }}
-            />
-            {handleLocked ? (
+          {handleLocked ? (
+            <div>
+              <label style={labelStyle}>Publisher name</label>
+              <input
+                value={normHandle}
+                disabled
+                style={{ ...inputStyle, opacity: 0.7 }}
+              />
               <p style={{ ...labelStyle, fontWeight: 400, margin: "6px 0 0" }}>
                 Set once — can&apos;t be changed.
               </p>
-            ) : (
-              handle.trim() && (
+            </div>
+          ) : (
+            <div>
+              <label style={labelStyle}>Author name</label>
+              <input
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                placeholder="e.g. Dominik Heilig"
+                style={inputStyle}
+              />
+              <label style={{ ...labelStyle, margin: "12px 0 6px" }}>Slug (URL)</label>
+              <input
+                value={handle}
+                onChange={(e) => {
+                  setHandle(e.target.value);
+                  setSlugTouched(true);
+                }}
+                placeholder="e.g. dominik-heilig"
+                autoCapitalize="none"
+                autoCorrect="off"
+                style={inputStyle}
+              />
+              {handle.trim() && (
                 <p
                   style={{
                     margin: "6px 0 0",
@@ -247,9 +281,9 @@ export default function PublishModal({
                 >
                   {handleStatus.text}
                 </p>
-              )
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Topic</label>

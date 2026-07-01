@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const [profile, sched] = await Promise.all([
     prisma.profile.findUnique({
       where: { id: user.id },
-      select: { publisherHandle: true },
+      select: { publisherHandle: true, displayName: true },
     }),
     scheduleId
       ? prisma.schedule.findFirst({
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
   const slug = sched?.slug ?? null;
   return NextResponse.json({
     handle,
+    displayName: profile?.displayName ?? null,
     published,
     slug,
     url: handle && slug && published ? publicUrl(handle, slug) : null,
@@ -110,9 +111,15 @@ export async function POST(req: NextRequest) {
     if (taken && taken.id !== user.id) {
       return NextResponse.json({ error: "handle taken" }, { status: 409 });
     }
+    // Author name + slug are set together on first publish (see /api/publish).
+    // Only seed displayName if it's still empty — never clobber a set name.
+    const reqName = typeof body.displayName === "string" ? body.displayName.trim() : "";
     await prisma.profile.update({
       where: { id: user.id },
-      data: { publisherHandle: requested },
+      data: {
+        publisherHandle: requested,
+        ...(reqName && !profile?.displayName ? { displayName: reqName } : {}),
+      },
     });
     handle = requested;
   }

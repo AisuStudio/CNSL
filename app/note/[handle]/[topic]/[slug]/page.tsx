@@ -102,8 +102,8 @@ export default async function PublicNotePage({
         }}
       >
         <Link
-          href="/"
-          aria-label="CNSL home"
+          href="/app"
+          aria-label="Back to the CNSL app"
           style={{
             display: "flex",
             alignItems: "center",

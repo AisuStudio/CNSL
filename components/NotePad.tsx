@@ -155,6 +155,7 @@ export default function NotePad({
   const canPublishNotes = process.env.NEXT_PUBLIC_DEMO !== "true";
   const [publishOpen, setPublishOpen] = useState(false);
   const [handle, setHandle] = useState<string | null>(null);
+  const [authorName, setAuthorName] = useState<string | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
   useEffect(() => {
     if (!canPublishNotes) return;
@@ -163,6 +164,7 @@ export default function NotePad({
       .then((d) => {
         if (!d) return;
         setHandle(d.handle ?? null);
+        setAuthorName(d.displayName ?? null);
         setTopics(Array.isArray(d.topics) ? d.topics : []);
       })
       .catch(() => {});
@@ -791,6 +793,7 @@ export default function NotePad({
         <PublishModal
           note={selected}
           initialHandle={handle}
+          initialAuthorName={authorName}
           topics={topics}
           onClose={() => setPublishOpen(false)}
           onPublished={(patch, h) => {

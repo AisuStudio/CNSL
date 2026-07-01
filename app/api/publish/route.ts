@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const [profile, topicRows] = await Promise.all([
     prisma.profile.findUnique({
       where: { id: user.id },
-      select: { publisherHandle: true },
+      select: { publisherHandle: true, displayName: true },
     }),
     prisma.note.findMany({
       where: { boardId: notesId, topic: { not: null } },
@@ -55,7 +55,11 @@ export async function GET(req: NextRequest) {
     .map((t) => t.topic)
     .filter((t): t is string => !!t)
     .sort();
-  return NextResponse.json({ handle: profile?.publisherHandle ?? null, topics });
+  return NextResponse.json({
+    handle: profile?.publisherHandle ?? null,
+    displayName: profile?.displayName ?? null,
+    topics,
+  });
 }
 
 // POST /api/publish { noteId, handle?, topic } → publish (sets handle on first use)
@@ -120,9 +124,17 @@ export async function POST(req: NextRequest) {
     if (taken && taken.id !== user.id) {
       return NextResponse.json({ error: "handle taken" }, { status: 409 });
     }
+    // The publisher name and slug are set together on first publish: the author
+    // name (displayName) is what appears on the public page, the handle is its
+    // URL slug. Only seed displayName if it's still empty — never clobber a name
+    // the user already set in Settings.
+    const reqName = typeof body.displayName === "string" ? body.displayName.trim() : "";
     await prisma.profile.update({
       where: { id: user.id },
-      data: { publisherHandle: requested },
+      data: {
+        publisherHandle: requested,
+        ...(reqName && !profile?.displayName ? { displayName: reqName } : {}),
+      },
     });
     handle = requested;
   }
