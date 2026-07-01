@@ -365,7 +365,7 @@ export default function SchedulerPlayer({
 
             <div style={hr} />
 
-            <div style={{ fontSize: "var(--text-logo)", fontWeight: 700, color: text }}>
+            <div style={{ fontSize: "32px", fontWeight: 700, color: text }}>
               {current?.step.name || "(unnamed step)"}
             </div>
             {current?.step.description && (
@@ -399,8 +399,8 @@ export default function SchedulerPlayer({
 
             {/* Following step — same size as the current step, Regular weight (the
                 current step is bold), and skips synthetic auto-pause rests. */}
-            <div style={{ fontSize: "var(--text-logo)", fontWeight: 400, color: muted }}>
-              {nextReal ? `Next: ${nextReal.step.name || "(unnamed)"}` : "Last step"}
+            <div style={{ fontSize: "32px", fontWeight: 400, color: text }}>
+              {nextReal ? `${nextReal.step.name || "(unnamed)"}` : "Last step"}
             </div>
 
             <div style={hr} />
