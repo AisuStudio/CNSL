@@ -485,6 +485,7 @@ export default function SchedulerPlayer({
                 color: accent,
                 fontSize: countdownSize,
                 lineHeight: 1,
+                textAlign: "center", // section/step read left; the hero time stays centered
                 fontVariantNumeric: "tabular-nums",
                 fontVariationSettings: `'wght' ${timeWeight}`,
                 transition: "font-variation-settings 220ms linear",
