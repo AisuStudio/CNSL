@@ -134,6 +134,7 @@ export function noteFromDb(row: DbNote): Note {
     published: row.published,
     topic: row.topic ?? null,
     slug: row.slug ?? null,
+    hiddenFromAuthor: row.hiddenFromAuthor,
   };
 }
 
@@ -147,6 +148,9 @@ export function noteToDb(n: Note, boardId: string, userId: string) {
     taskId: n.taskId ?? null,
     createdById: userId,
     createdAt: n.createdAt ? new Date(n.createdAt) : undefined,
+    // Client-toggled author-page visibility (published/topic/slug stay server-
+    // managed via /api/publish and are intentionally omitted here).
+    hiddenFromAuthor: n.hiddenFromAuthor ?? false,
     // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }

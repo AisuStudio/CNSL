@@ -31,7 +31,7 @@ export default async function PublisherPage() {
       },
     }),
     prisma.note.findMany({
-      where: { boardId: notesId, published: true },
+      where: { boardId: notesId, published: true, hiddenFromAuthor: false },
       select: {
         id: true,
         title: true,

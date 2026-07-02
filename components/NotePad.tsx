@@ -5,7 +5,14 @@ import type { Note } from "@/lib/notes";
 import { isAssignedName } from "@/lib/projects";
 import type { Task } from "@/lib/mock-data";
 import { useIsMobile } from "@/lib/useIsMobile";
-import { FolderPlus, FilePlus, ChevronLeft, Menu, Trash2 } from "lucide-react";
+import {
+  FolderPlus,
+  FilePlus,
+  ChevronLeft,
+  Menu,
+  Trash2,
+  SquareArrowOutUpRight,
+} from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import PublishModal from "./PublishModal";
 
@@ -477,6 +484,30 @@ export default function NotePad({
                   fontFamily: "var(--font-family)",
                 }}
               />
+              {/* Desktop: delete bin sits at the title's height (mobile keeps it in
+                  the toggle row below, next to the actions menu). */}
+              {!isMobile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDelete(selected.id);
+                    setSelectedId(null);
+                  }}
+                  title="Delete note"
+                  aria-label="Delete note"
+                  className="flex items-center justify-center"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--color-text-muted)",
+                    cursor: "pointer",
+                    padding: "4px",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Trash2 size={18} strokeWidth={1.75} aria-hidden />
+                </button>
+              )}
               {isMobile && (
                 /* Mobile: menu for project/task only — publish + delete moved to the row below. */
                 <div style={{ position: "relative", flexShrink: 0 }}>
@@ -595,40 +626,99 @@ export default function NotePad({
                       href={publicUrl}
                       target="_blank"
                       rel="noreferrer"
+                      title="Open published page in a new tab"
+                      aria-label="Open published page in a new tab"
+                      className="flex items-center justify-center"
                       style={{
-                        fontSize: "var(--text-sm)",
                         color: "var(--color-accent)",
-                        textDecoration: "underline",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        flexShrink: 0,
                       }}
                     >
-                      {publicUrl}
+                      <SquareArrowOutUpRight size={16} strokeWidth={1.75} aria-hidden />
                     </a>
+                  )}
+                  {/* Hide from the author page (note stays published + link-reachable) */}
+                  {selected.published && (
+                    <>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!!selected.hiddenFromAuthor}
+                        title={
+                          selected.hiddenFromAuthor
+                            ? "Hidden from your author page"
+                            : "Shown on your author page"
+                        }
+                        onClick={() =>
+                          onUpdate(selected.id, {
+                            hiddenFromAuthor: !selected.hiddenFromAuthor,
+                          })
+                        }
+                        style={{
+                          width: "32px",
+                          height: "18px",
+                          borderRadius: "9px",
+                          border: "none",
+                          marginLeft: "8px",
+                          background: selected.hiddenFromAuthor
+                            ? "color-mix(in srgb, var(--color-card-ink) 20%, transparent)"
+                            : "var(--color-border)",
+                          cursor: "pointer",
+                          position: "relative",
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "2px",
+                            left: selected.hiddenFromAuthor ? "16px" : "2px",
+                            width: "14px",
+                            height: "14px",
+                            borderRadius: "50%",
+                            background: "white",
+                            transition: "left 150ms ease",
+                          }}
+                        />
+                      </button>
+                      <span
+                        style={{
+                          fontSize: "var(--text-sm)",
+                          color: selected.hiddenFromAuthor
+                            ? "var(--color-card-ink)"
+                            : "var(--color-text-muted)",
+                        }}
+                      >
+                        Hidden
+                      </span>
+                    </>
                   )}
                 </>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete(selected.id);
-                  setSelectedId(null);
-                }}
-                title="Delete note"
-                className="flex items-center justify-center"
-                style={{
-                  marginLeft: "auto",
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--color-text-muted)",
-                  cursor: "pointer",
-                  padding: "4px",
-                  flexShrink: 0,
-                }}
-              >
-                <Trash2 size={16} strokeWidth={1.75} aria-hidden />
-              </button>
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDelete(selected.id);
+                    setSelectedId(null);
+                  }}
+                  title="Delete note"
+                  aria-label="Delete note"
+                  className="flex items-center justify-center"
+                  style={{
+                    marginLeft: "auto",
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--color-text-muted)",
+                    cursor: "pointer",
+                    padding: "4px",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Trash2 size={16} strokeWidth={1.75} aria-hidden />
+                </button>
+              )}
             </div>
             {/* A1 — Project + linked task metadata bar. On mobile it's hidden
                 until revealed from the actions menu (Project / Task). */}

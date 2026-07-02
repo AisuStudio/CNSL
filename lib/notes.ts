@@ -17,6 +17,9 @@ export interface Note {
   published?: boolean;
   topic?: string | null;
   slug?: string | null;
+  // Client-toggled: hide a published note from the author page while keeping its
+  // direct link live. Round-trips via the state sync (unlike published/topic/slug).
+  hiddenFromAuthor?: boolean;
 }
 
 // Folder tree (schema ready; no UI in v1).
