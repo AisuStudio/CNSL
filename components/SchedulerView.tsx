@@ -1,6 +1,24 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   type Schedule,
   type Section,
@@ -132,6 +150,146 @@ function Toggle({
         }}
       />
     </button>
+  );
+}
+
+// One draggable step row. Kept at module scope (stable identity) so useSortable's
+// internal refs survive parent re-renders. The whole row moves; the grip is the
+// drag handle (works with mouse, touch and keyboard via the DndContext sensors).
+function SortableStepRow({
+  s,
+  sec,
+  st,
+  isMobile,
+  ui,
+  onUpdateSchedule,
+  onCopy,
+  onRemove,
+}: {
+  s: Schedule;
+  sec: Section;
+  st: Step;
+  isMobile: boolean;
+  ui: {
+    inputStyle: React.CSSProperties;
+    iconBtn: React.CSSProperties;
+    muted: string;
+    text: string;
+    DUR_W: string;
+    ACT_W: string;
+  };
+  onUpdateSchedule: (s: Schedule) => void;
+  onCopy: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: st.id,
+  });
+  const { inputStyle, iconBtn, muted, text, DUR_W, ACT_W } = ui;
+
+  const grip = (
+    <button
+      type="button"
+      {...attributes}
+      {...listeners}
+      aria-label="Drag to reorder step"
+      title="Drag to reorder"
+      style={{
+        ...iconBtn,
+        width: "22px",
+        cursor: "grab",
+        touchAction: "none", // let dnd-kit own the gesture instead of scrolling
+        alignSelf: isMobile ? "flex-start" : "center",
+      }}
+    >
+      <GripVertical size={16} color={muted} aria-hidden />
+    </button>
+  );
+
+  const actions = (extra?: React.CSSProperties) => (
+    <div
+      className="sched-actions"
+      style={{ display: "flex", gap: "2px", flexShrink: 0, ...extra }}
+    >
+      <button type="button" style={iconBtn} onClick={onCopy} title="Duplicate step" aria-label="Duplicate step">
+        <CopyIcon color={text} size={16} />
+      </button>
+      <button type="button" style={iconBtn} onClick={onRemove} title="Remove step" aria-label="Remove step">
+        <TrashIcon color={text} size={16} />
+      </button>
+    </div>
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="sched-row"
+      style={{
+        display: "flex",
+        gap: "8px",
+        alignItems: isMobile ? "stretch" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }}
+    >
+      {/* On mobile the grip + name share the first row (grip can't be full-width). */}
+      {isMobile ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {grip}
+          <input
+            value={st.name}
+            onChange={(e) => onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, name: e.target.value })))}
+            placeholder="Step (e.g. Jumping Jacks)"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+        </div>
+      ) : (
+        <>
+          {grip}
+          <input
+            value={st.name}
+            onChange={(e) => onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, name: e.target.value })))}
+            placeholder="Step (e.g. Jumping Jacks)"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+        </>
+      )}
+      <input
+        value={st.description ?? ""}
+        onChange={(e) =>
+          onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, description: e.target.value || undefined })))
+        }
+        placeholder="Description"
+        style={{ ...inputStyle, flex: 1 }}
+      />
+      {isMobile ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <DurationInput
+            seconds={st.durationSeconds}
+            onCommit={(secs) => onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))}
+            style={{ ...inputStyle, flex: 1, textAlign: "center", fontFamily: "var(--font-family-mono)" }}
+          />
+          {actions({ opacity: 1 })}
+        </div>
+      ) : (
+        <>
+          <DurationInput
+            seconds={st.durationSeconds}
+            onCommit={(secs) => onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))}
+            style={{
+              ...inputStyle,
+              width: DUR_W,
+              textAlign: "center",
+              fontFamily: "var(--font-family-mono)",
+              flexShrink: 0,
+            }}
+          />
+          {actions({ width: ACT_W, justifyContent: "flex-end" })}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -311,38 +469,42 @@ export default function SchedulerView({
     onUpdateSchedule(mapSection(s, sec.id, (x) => ({ ...x, steps: [...x.steps, copy] })));
   }
 
-  // ── drag-and-drop step reordering (desktop; HTML5 DnD) ──
-  // `dragStepId` is the step being dragged; `dropHint` is where it would land,
-  // expressed as "insert before this step id" (null = append to the section).
-  const [dragStepId, setDragStepId] = useState<string | null>(null);
-  const [dropHint, setDropHint] = useState<{ sectionId: string; beforeStepId: string | null } | null>(null);
-
-  // Pointer in a row's top half → drop before it; bottom half → drop before the
-  // next step (or append when it's the last one).
-  function onRowDragOver(e: React.DragEvent, sec: Section, st: Step, stIdx: number) {
-    if (!dragStepId || dragStepId === st.id) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    const rect = e.currentTarget.getBoundingClientRect();
-    const after = e.clientY > rect.top + rect.height / 2;
-    const beforeStepId = after ? sec.steps[stIdx + 1]?.id ?? null : st.id;
-    setDropHint((prev) =>
-      prev && prev.sectionId === sec.id && prev.beforeStepId === beforeStepId
-        ? prev
-        : { sectionId: sec.id, beforeStepId }
-    );
-  }
-  function commitDrop(s: Schedule) {
-    if (dragStepId && dropHint) {
-      onUpdateSchedule(moveStep(s, dragStepId, dropHint.sectionId, dropHint.beforeStepId));
-    }
-    setDragStepId(null);
-    setDropHint(null);
-  }
-  // Thin accent rule marking where the dragged step will land.
-  const insertLine = () => (
-    <div aria-hidden style={{ height: "2px", background: accent, borderRadius: "2px", margin: "-3px 0" }} />
+  // ── drag-and-drop step reordering (@dnd-kit — mouse, touch and keyboard) ──
+  const sensors = useSensors(
+    // Small movement threshold so clicks and text selection still work.
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Touch: brief hold before a drag starts, so vertical scrolling is unaffected.
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+  // The step being dragged — drives the drag-overlay preview.
+  const [activeStep, setActiveStep] = useState<Step | null>(null);
+
+  function sectionOf(sched: Schedule, stepId: string): string | null {
+    return sched.sections.find((sec) => sec.steps.some((st) => st.id === stepId))?.id ?? null;
+  }
+
+  // Translate dnd-kit's active/over into a moveStep() call. Dropping onto a step
+  // inserts before it; moving *down* within the same section drops after it (the
+  // standard sortable feel). moveStep renumbers `order`, keeping the player synced.
+  function handleDragEnd(sched: Schedule, e: DragEndEvent) {
+    setActiveStep(null);
+    const { active, over } = e;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (activeId === overId) return;
+    const toSection = sectionOf(sched, overId);
+    if (!toSection) return;
+    const toSteps = sched.sections.find((sec) => sec.id === toSection)!.steps;
+    const overIdx = toSteps.findIndex((st) => st.id === overId);
+    const activeIdx = toSteps.findIndex((st) => st.id === activeId); // -1 across sections
+    const beforeStepId =
+      activeIdx !== -1 && activeIdx < overIdx ? toSteps[overIdx + 1]?.id ?? null : overId;
+    onUpdateSchedule(moveStep(sched, activeId, toSection, beforeStepId));
+  }
+
+  const stepRowUi = { inputStyle, iconBtn, muted, text, DUR_W, ACT_W };
 
   return (
     <div
@@ -655,7 +817,17 @@ export default function SchedulerView({
                   </div>
                 </div>
 
-                {/* Sections (24px apart) */}
+                {/* Sections — steps drag-reorder within & across sections (@dnd-kit) */}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={(e) => {
+                    const id = String(e.active.id);
+                    setActiveStep(s.sections.flatMap((x) => x.steps).find((st) => st.id === id) ?? null);
+                  }}
+                  onDragEnd={(e) => handleDragEnd(s, e)}
+                  onDragCancel={() => setActiveStep(null)}
+                >
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                   {s.sections.map((sec) => (
                     <div key={sec.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -696,127 +868,26 @@ export default function SchedulerView({
                       </div>
 
                       {/* Steps */}
-                      {sec.steps.map((st, stIdx) => (
-                        <Fragment key={st.id}>
-                          {dropHint?.sectionId === sec.id && dropHint.beforeStepId === st.id &&
-                            insertLine()}
-                        <div
-                          className="sched-row"
-                          onDragOver={(e) => onRowDragOver(e, sec, st, stIdx)}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            commitDrop(s);
-                          }}
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            alignItems: isMobile ? "stretch" : "center",
-                            flexDirection: isMobile ? "column" : "row",
-                            opacity: dragStepId === st.id ? 0.4 : 1,
-                          }}
-                        >
-                          {/* Drag handle — desktop only (HTML5 DnD doesn't fire
-                              on touch; mobile reordering is a follow-up). */}
-                          {!isMobile && (
-                            <button
-                              type="button"
-                              draggable
-                              onDragStart={(e) => {
-                                setDragStepId(st.id);
-                                e.dataTransfer.effectAllowed = "move";
-                                try {
-                                  e.dataTransfer.setData("text/plain", st.id);
-                                } catch {
-                                  /* some browsers disallow setData in tests — ignore */
-                                }
-                              }}
-                              onDragEnd={() => {
-                                setDragStepId(null);
-                                setDropHint(null);
-                              }}
-                              aria-label="Drag to reorder step"
-                              title="Drag to reorder"
-                              style={{ ...iconBtn, width: "22px", cursor: "grab" }}
-                            >
-                              <GripVertical size={16} color={muted} aria-hidden />
-                            </button>
-                          )}
-                          <input
-                            value={st.name}
-                            onChange={(e) =>
-                              onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, name: e.target.value })))
-                            }
-                            placeholder="Step (e.g. Jumping Jacks)"
-                            style={{ ...inputStyle, flex: 1 }}
-                          />
-                          <input
-                            value={st.description ?? ""}
-                            onChange={(e) =>
-                              onUpdateSchedule(
-                                mapStep(s, sec.id, st.id, (x) => ({ ...x, description: e.target.value || undefined }))
-                              )
-                            }
-                            placeholder="Description"
-                            style={{ ...inputStyle, flex: 1 }}
-                          />
-                          {/* On mobile: time + copy/delete share one row */}
-                          {isMobile ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <DurationInput
-                                seconds={st.durationSeconds}
-                                onCommit={(secs) =>
-                                  onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
-                                }
-                                style={{
-                                  ...inputStyle,
-                                  flex: 1,
-                                  textAlign: "center",
-                                  fontFamily: "var(--font-family-mono)",
-                                }}
-                              />
-                              <div className="sched-actions" style={{ display: "flex", gap: "2px", flexShrink: 0, opacity: 1 }}>
-                                <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
-                                  <CopyIcon color={text} size={16} />
-                                </button>
-                                <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
-                                  <TrashIcon color={text} size={16} />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <DurationInput
-                                seconds={st.durationSeconds}
-                                onCommit={(secs) =>
-                                  onUpdateSchedule(mapStep(s, sec.id, st.id, (x) => ({ ...x, durationSeconds: secs })))
-                                }
-                                style={{
-                                  ...inputStyle,
-                                  width: DUR_W,
-                                  textAlign: "center",
-                                  fontFamily: "var(--font-family-mono)",
-                                  flexShrink: 0,
-                                }}
-                              />
-                              <div
-                                className="sched-actions"
-                                style={{ display: "flex", gap: "2px", width: ACT_W, justifyContent: "flex-end", flexShrink: 0 }}
-                              >
-                                <button type="button" style={iconBtn} onClick={() => copyStep(s, sec, st)} title="Duplicate step" aria-label="Duplicate step">
-                                  <CopyIcon color={text} size={16} />
-                                </button>
-                                <button type="button" style={iconBtn} onClick={() => removeStep(s, sec.id, st.id)} title="Remove step" aria-label="Remove step">
-                                  <TrashIcon color={text} size={16} />
-                                </button>
-                              </div>
-                            </>
-                          )}
+                      <SortableContext
+                        items={sec.steps.map((st) => st.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {sec.steps.map((st) => (
+                            <SortableStepRow
+                              key={st.id}
+                              s={s}
+                              sec={sec}
+                              st={st}
+                              isMobile={isMobile}
+                              ui={stepRowUi}
+                              onUpdateSchedule={onUpdateSchedule}
+                              onCopy={() => copyStep(s, sec, st)}
+                              onRemove={() => removeStep(s, sec.id, st.id)}
+                            />
+                          ))}
                         </div>
-                        </Fragment>
-                      ))}
-                      {/* Append target: dropping below the last step lands here. */}
-                      {dropHint?.sectionId === sec.id && dropHint.beforeStepId === null &&
-                        insertLine()}
+                      </SortableContext>
 
                       <button type="button" style={{ ...ghostBtn, alignSelf: "flex-start" }} onClick={() => addStep(s, sec)}>
                         <AddIcon color={text} /> Add step
@@ -824,6 +895,39 @@ export default function SchedulerView({
                     </div>
                   ))}
                 </div>
+
+                  <DragOverlay>
+                    {activeStep ? (
+                      <div
+                        className="sched-row"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          borderRadius: "8px",
+                          background: cardBg,
+                          border: `1px solid ${border}`,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                        }}
+                      >
+                        <GripVertical size={16} color={muted} aria-hidden />
+                        <span style={{ color: text, fontWeight: 600, padding: "8px 4px" }}>
+                          {activeStep.name || "(unnamed step)"}
+                        </span>
+                        <span
+                          style={{
+                            marginLeft: "auto",
+                            color: muted,
+                            fontFamily: "var(--font-family-mono)",
+                            padding: "0 10px",
+                          }}
+                        >
+                          {formatClock(activeStep.durationSeconds)}
+                        </span>
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
 
                 <button type="button" style={{ ...ghostBtn, alignSelf: "flex-start" }} onClick={() => addSection(s)}>
                   <AddIcon color={text} /> Add section
