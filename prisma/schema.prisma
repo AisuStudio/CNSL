@@ -235,6 +235,10 @@ model Note {
   topic       String?
   slug        String?
   listed      Boolean  @default(false)
+  // Client-toggled: keep a published note reachable by its direct link but hide
+  // it from the author page (/note/{handle} + /app/publisher). Round-trips via
+  // the state sync (noteFromDb/noteToDb), unlike the server-managed publish flags.
+  hiddenFromAuthor Boolean @default(false)
 
   @@unique([boardId, topic, slug])
   @@index([boardId])

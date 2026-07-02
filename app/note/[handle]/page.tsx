@@ -41,7 +41,7 @@ async function load(handle: string) {
   const [notes, schedules] = await Promise.all([
     docBoard
       ? prisma.note.findMany({
-          where: { boardId: docBoard.id, published: true },
+          where: { boardId: docBoard.id, published: true, hiddenFromAuthor: false },
           select: {
             id: true,
             title: true,
