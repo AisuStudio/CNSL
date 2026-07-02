@@ -25,7 +25,7 @@ function ToggleSwitch({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "10px",
+        gap: "var(--space-3)",
         cursor: "pointer",
         color: "var(--color-text-muted)",
         fontSize: "var(--text-base)",
@@ -41,7 +41,7 @@ function ToggleSwitch({
         style={{
           width: "44px",
           height: "26px",
-          borderRadius: "999px",
+          borderRadius: "var(--radius-pill)",
           border: "none",
           padding: 0,
           background: on
@@ -100,7 +100,6 @@ export default function SchedulerPlayer({
     () => flat.reduce((sum, f) => sum + (f.step.durationSeconds || 0), 0),
     [flat]
   );
-  const realTotal = useMemo(() => flat.filter((f) => !f.isPause).length, [flat]);
 
   const [idx, setIdx] = useState(0);
   const [remaining, setRemaining] = useState(flat[0]?.step.durationSeconds ?? 0);
@@ -132,12 +131,6 @@ export default function SchedulerPlayer({
   // The "Next" hint shows the next REAL step — synthetic auto-pause rests are
   // skipped so a "Rest" never shows up as the upcoming step.
   const nextReal = flat.slice(idx + 1).find((f) => !f.isPause);
-
-  // Step counter ignores the synthetic rests; during a rest it reads ahead.
-  const doneReal = flat.slice(0, idx + 1).filter((f) => !f.isPause).length;
-  const shortCounter = current?.isPause
-    ? `rest · ${Math.min(doneReal + 1, realTotal)}/${realTotal}`
-    : `${doneReal}/${realTotal}`;
 
   // Hero-time weight: per step, full → empty maps to bold(700) → thin(200) on the
   // New Title variable axis. frac is 1 at the step's start, 0 as it runs out.
@@ -294,14 +287,14 @@ export default function SchedulerPlayer({
     marginInline: "-4px",
     height: 0,
     border: 0,
-    borderTop: "1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)",
+    borderTop: "1px solid var(--color-border)",
   };
 
   const ctrlBtn: React.CSSProperties = {
-    height: "44px",
-    minWidth: "44px",
-    padding: "0 18px",
-    borderRadius: "10px",
+    height: "var(--touch-min)",
+    minWidth: "var(--touch-min)",
+    padding: "0 var(--space-5)",
+    borderRadius: "var(--radius-button)",
     border: "1px solid var(--color-border)",
     background: "transparent",
     color: text,
@@ -321,7 +314,7 @@ export default function SchedulerPlayer({
   const barVal: React.CSSProperties = { fontFamily: "var(--font-family-mono)" };
   const playBtn: React.CSSProperties = {
     height: "58px",
-    borderRadius: "12px",
+    borderRadius: "var(--radius-button)",
     border: "none",
     background: accent,
     color: "var(--color-bg)",
@@ -332,7 +325,7 @@ export default function SchedulerPlayer({
   };
   const nextBtn: React.CSSProperties = {
     height: "58px",
-    borderRadius: "12px",
+    borderRadius: "var(--radius-button)",
     border: "1px solid var(--color-border)",
     background: "transparent",
     color: text,
@@ -354,20 +347,20 @@ export default function SchedulerPlayer({
         fontFamily: "var(--font-family)",
         display: "flex",
         flexDirection: "column",
-        padding: "max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))",
-        gap: "14px",
+        padding: "max(var(--space-4), env(safe-area-inset-top)) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom))",
+        gap: "var(--space-3)",
         overflowY: "auto",
       }}
     >
       {/* ── Header: routine name (left) + big close (no box), then a quiet
           Total/Elapsed bar. flexShrink:0 so the stage never pushes into it. ── */}
-      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
           <span
             style={{
               flex: 1,
               minWidth: 0,
-              fontSize: "var(--text-logo)",
+              fontSize: "var(--text-base)",
               fontWeight: 700,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -382,8 +375,8 @@ export default function SchedulerPlayer({
             aria-label="Close player"
             title="Close"
             style={{
-              width: "36px",
-              height: "36px",
+              width: "var(--touch-min)",
+              height: "var(--touch-min)",
               border: "none",
               background: "transparent",
               color: text,
@@ -425,7 +418,7 @@ export default function SchedulerPlayer({
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "8px",
+          gap: "var(--space-2)",
         }}
       >
         {finished ? (
@@ -435,7 +428,7 @@ export default function SchedulerPlayer({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "12px",
+              gap: "var(--space-3)",
               textAlign: "center",
             }}
           >
@@ -444,7 +437,7 @@ export default function SchedulerPlayer({
               Recorded {formatDuration(recorded)}
             </div>
             {/* Restart + Save Activity only surface once the routine is done. */}
-            <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
               <button type="button" onClick={restart} style={ctrlBtn}>
                 Restart
               </button>
@@ -461,14 +454,9 @@ export default function SchedulerPlayer({
           </div>
         ) : (
           <>
-            {/* Section (left) + progress (right) */}
-            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-              <span style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                {current?.sectionName || "—"}
-              </span>
-              <span style={{ marginLeft: "auto", fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)" }}>
-                {shortCounter}
-              </span>
+            {/* Section — left aligned, quiet */}
+            <div style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {current?.sectionName || "—"}
             </div>
 
             {/* Current step — left aligned, bold */}
@@ -506,11 +494,11 @@ export default function SchedulerPlayer({
             <div style={hr} />
 
             {/* PRIMARY controls — full width, always in the thumb zone. */}
-            <div style={{ display: "flex", gap: "12px", width: "100%", marginTop: "8px" }}>
-              <button type="button" onClick={togglePlay} style={{ ...playBtn, flex: 2 }}>
+            <div style={{ display: "flex", gap: "var(--space-3)", width: "100%", marginTop: "var(--space-2)" }}>
+              <button type="button" onClick={togglePlay} style={{ ...playBtn, flex: 3 }}>
                 {running ? "Pause" : "Play"}
               </button>
-              <button type="button" onClick={goNext} style={{ ...nextBtn, flex: 1 }}>
+              <button type="button" onClick={goNext} style={{ ...nextBtn, flex: 2 }}>
                 Next ▸
               </button>
             </div>
@@ -519,7 +507,7 @@ export default function SchedulerPlayer({
       </div>
 
       {/* ── Mode toggles — switches, spread across the width ── */}
-      <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "4px" }}>
+      <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "var(--space-1)" }}>
         <ToggleSwitch on={autoplay} onChange={setAutoplay} label="Autoplay" />
         <ToggleSwitch on={sound} onChange={setSound} label="Sound" />
       </div>
