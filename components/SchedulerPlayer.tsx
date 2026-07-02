@@ -494,8 +494,10 @@ export default function SchedulerPlayer({
               {timeText}
             </div>
 
-            {/* Following step — left, quiet, skips synthetic auto-pause rests. */}
-            <div style={{ fontSize: "26px", lineHeight: 1.1, fontWeight: 400, color: muted }}>
+            {/* Following step — left, FULL lavender (readable from a distance),
+                regular weight so it still reads lighter than the bold current
+                step. Skips synthetic auto-pause rests. */}
+            <div style={{ fontSize: "26px", lineHeight: 1.1, fontWeight: 400, color: text }}>
               {nextReal ? `${nextReal.step.name || "(unnamed)"}` : "Last step"}
             </div>
 
