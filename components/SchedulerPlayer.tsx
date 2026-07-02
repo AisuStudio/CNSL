@@ -138,6 +138,13 @@ export default function SchedulerPlayer({
   const frac = Math.max(0, Math.min(1, remaining / stepDur));
   const timeWeight = Math.round(200 + frac * 500);
 
+  // The countdown must FIT the width whatever the string length — "1:00" (4),
+  // "44:35" (5) or "1:00:00" (7). Size from the char count: inner width ÷ chars ÷
+  // the New Title digit-advance ratio (~0.48, measured against the actual font).
+  // Capped at 200px and 30dvh so it never overflows the stage on short screens.
+  const timeText = formatDuration(Math.ceil(remaining));
+  const countdownSize = `min(200px, 30dvh, calc((100vw - 2 * var(--space-4)) / ${timeText.length} / 0.48))`;
+
   function setIdxBoth(i: number) {
     idxRef.current = i;
     setIdx(i);
@@ -476,14 +483,14 @@ export default function SchedulerPlayer({
               style={{
                 fontFamily: "var(--font-new-title)",
                 color: accent,
-                fontSize: "clamp(96px, min(56vw, 28dvh), 200px)",
+                fontSize: countdownSize,
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
                 fontVariationSettings: `'wght' ${timeWeight}`,
                 transition: "font-variation-settings 220ms linear",
               }}
             >
-              {formatDuration(Math.ceil(remaining))}
+              {timeText}
             </div>
 
             {/* Following step — left, quiet, skips synthetic auto-pause rests. */}
