@@ -403,18 +403,19 @@ export default function SchedulerPlayer({
 
         <div style={hr} />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-          <div style={barRow}>
-            <span>Total Time</span>
-            <span style={barVal}>{formatClock(total)}</span>
-          </div>
-          <div style={barRow}>
-            <span>Elapsed</span>
-            <span style={barVal}>{formatClock(recorded)}</span>
-          </div>
+        {/* Elapsed first + in lemon — the number you actually watch, kept the
+            brightest signal colour so it reads across the room. */}
+        <div style={{ ...barRow, color: "var(--color-lime)" }}>
+          <span>Elapsed</span>
+          <span style={barVal}>{formatClock(recorded)}</span>
         </div>
 
         <div style={hr} />
+
+        <div style={barRow}>
+          <span>Total Time</span>
+          <span style={barVal}>{formatClock(total)}</span>
+        </div>
       </div>
 
       {/* ── Main stage — left aligned ── */}
@@ -466,6 +467,8 @@ export default function SchedulerPlayer({
               {current?.sectionName || "—"}
             </div>
 
+            <div style={hr} />
+
             {/* Current step — left aligned, bold */}
             <div style={{ fontSize: "32px", lineHeight: 1.1, fontWeight: 700, color: text }}>
               {current?.step.name || "(unnamed step)"}
@@ -482,7 +485,7 @@ export default function SchedulerPlayer({
             <div
               style={{
                 fontFamily: "var(--font-new-title)",
-                color: accent,
+                color: "var(--color-lime)", // hero time in lemon — the primary glance target
                 fontSize: countdownSize,
                 lineHeight: 1,
                 textAlign: "center", // section/step read left; the hero time stays centered
