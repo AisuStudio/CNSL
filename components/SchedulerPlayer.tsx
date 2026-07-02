@@ -6,8 +6,69 @@ import {
   type Activity,
   flattenSteps,
   formatDuration,
+  formatClock,
 } from "@/lib/scheduler";
 import { newId } from "@/lib/storage";
+
+// A pill on/off switch (Autoplay / Sound) — reads clearer than a checkbox.
+function ToggleSwitch({
+  on,
+  onChange,
+  label,
+}: {
+  on: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        cursor: "pointer",
+        color: "var(--color-text-muted)",
+        fontSize: "var(--text-base)",
+      }}
+    >
+      <span>{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
+        onClick={() => onChange(!on)}
+        style={{
+          width: "44px",
+          height: "26px",
+          borderRadius: "999px",
+          border: "none",
+          padding: 0,
+          background: on
+            ? "var(--color-accent)"
+            : "color-mix(in srgb, var(--color-text-primary) 22%, transparent)",
+          position: "relative",
+          cursor: "pointer",
+          transition: "background 0.15s",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "3px",
+            left: on ? "21px" : "3px",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            background: on ? "var(--color-bg)" : "var(--color-text-primary)",
+            transition: "left 0.15s",
+          }}
+        />
+      </button>
+    </label>
+  );
+}
 
 /* Scheduler — Player. A full-screen "Lavender on Black" countdown that plays a
    Schedule step by step. Two modes: Autoplay (counts down and advances itself,
@@ -74,9 +135,9 @@ export default function SchedulerPlayer({
 
   // Step counter ignores the synthetic rests; during a rest it reads ahead.
   const doneReal = flat.slice(0, idx + 1).filter((f) => !f.isPause).length;
-  const counterLabel = current?.isPause
-    ? `rest · next ${Math.min(doneReal + 1, realTotal)}/${realTotal}`
-    : `step ${doneReal}/${realTotal}`;
+  const shortCounter = current?.isPause
+    ? `rest · ${Math.min(doneReal + 1, realTotal)}/${realTotal}`
+    : `${doneReal}/${realTotal}`;
 
   // Hero-time weight: per step, full → empty maps to bold(700) → thin(200) on the
   // New Title variable axis. frac is 1 at the step's start, 0 as it runs out.
@@ -249,6 +310,38 @@ export default function SchedulerPlayer({
     cursor: "pointer",
   };
 
+  // Quiet reference row in the header bar (Total Time / Elapsed).
+  const barRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    fontSize: "var(--text-base)",
+    color: muted,
+  };
+  const barVal: React.CSSProperties = { fontFamily: "var(--font-family-mono)" };
+  const playBtn: React.CSSProperties = {
+    height: "58px",
+    borderRadius: "12px",
+    border: "none",
+    background: accent,
+    color: "var(--color-bg)",
+    fontWeight: 700,
+    fontSize: "var(--text-logo)",
+    fontFamily: "var(--font-family)",
+    cursor: "pointer",
+  };
+  const nextBtn: React.CSSProperties = {
+    height: "58px",
+    borderRadius: "12px",
+    border: "1px solid var(--color-border)",
+    background: "transparent",
+    color: text,
+    fontWeight: 700,
+    fontSize: "var(--text-base)",
+    fontFamily: "var(--font-family)",
+    cursor: "pointer",
+  };
+
   return (
     <div
       style={{
@@ -266,131 +359,136 @@ export default function SchedulerPlayer({
         overflowY: "auto",
       }}
     >
-      {/* Close — upper right */}
-      <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
-        <button
-          type="button"
-          onClick={() => onClose?.()}
-          aria-label="Close player"
-          title="Close"
-          style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "10px",
-            border: "1px solid var(--color-border)",
-            background: "transparent",
-            color: text,
-            fontSize: "18px",
-            lineHeight: 1,
-            cursor: "pointer",
-          }}
-        >
-          ✕
-        </button>
+      {/* ── Header: routine name (left) + big close (no box), then a quiet
+          Total/Elapsed bar. flexShrink:0 so the stage never pushes into it. ── */}
+      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontSize: "var(--text-logo)",
+              fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {schedule.name || "Untitled schedule"}
+          </span>
+          <button
+            type="button"
+            onClick={() => onClose?.()}
+            aria-label="Close player"
+            title="Close"
+            style={{
+              width: "36px",
+              height: "36px",
+              border: "none",
+              background: "transparent",
+              color: text,
+              fontSize: "30px",
+              lineHeight: 1,
+              cursor: "pointer",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={hr} />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          <div style={barRow}>
+            <span>Total Time</span>
+            <span style={barVal}>{formatClock(total)}</span>
+          </div>
+          <div style={barRow}>
+            <span>Elapsed</span>
+            <span style={barVal}>{formatClock(recorded)}</span>
+          </div>
+        </div>
+
+        <div style={hr} />
       </div>
 
-      {/* Schedule name — "Lavender on Black" rounded container, full width, h40 */}
-      <div
-        style={{
-          height: "40px",
-          flexShrink: 0,
-          borderRadius: "10px",
-          background: accent,
-          color: "var(--color-bg)",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          gap: "8px",
-          fontWeight: 700,
-          fontSize: "var(--text-logo)",
-        }}
-      >
-        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {schedule.name || "Untitled schedule"}
-        </span>
-        <span style={{ fontFamily: "var(--font-family-mono)", fontWeight: 400, opacity: 0.85 }}>
-          {formatDuration(total)}
-        </span>
-      </div>
-
-      {/* Main stage */}
+      {/* ── Main stage — left aligned ── */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
           justifyContent: "center",
-          textAlign: "center",
           gap: "8px",
         }}
       >
         {finished ? (
-          <>
-            <div style={{ fontSize: "var(--text-logo)", fontWeight: 700, color: accent }}>
-              Done!
-            </div>
+          <div
+            style={{
+              margin: "auto 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "12px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "var(--text-logo)", fontWeight: 700, color: accent }}>Done!</div>
             <div style={{ fontSize: "var(--text-base)", color: muted }}>
               Recorded {formatDuration(recorded)}
             </div>
-            {!publicMode && (
-              <button
-                type="button"
-                onClick={saveActivity}
-                style={{
-                  height: "58px",
-                  minWidth: "220px",
-                  padding: "0 24px",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: accent,
-                  color: "var(--color-bg)",
-                  fontWeight: 700,
-                  fontSize: "var(--text-logo)",
-                  fontFamily: "var(--font-family)",
-                  cursor: "pointer",
-                  marginTop: "8px",
-                }}
-              >
-                {saved ? "Saved ✓" : "Save Activity"}
+            {/* Restart + Save Activity only surface once the routine is done. */}
+            <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+              <button type="button" onClick={restart} style={ctrlBtn}>
+                Restart
               </button>
-            )}
-          </>
+              {!publicMode && (
+                <button
+                  type="button"
+                  onClick={saveActivity}
+                  style={{ ...ctrlBtn, border: "none", background: accent, color: "var(--color-bg)", fontWeight: 700 }}
+                >
+                  {saved ? "Saved ✓" : "Save Activity"}
+                </button>
+              )}
+            </div>
+          </div>
         ) : (
           <>
-            {/* Section + current step */}
-            <div style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {current?.sectionName || "—"} · {counterLabel}
+            {/* Section (left) + progress (right) */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+              <span style={{ fontSize: "var(--text-sm)", color: muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                {current?.sectionName || "—"}
+              </span>
+              <span style={{ marginLeft: "auto", fontSize: "var(--text-sm)", color: muted, fontFamily: "var(--font-family-mono)" }}>
+                {shortCounter}
+              </span>
             </div>
 
-            <div style={hr} />
-
-            <div style={{ fontSize: "32px", lineHeight: 1, fontWeight: 700, color: text }}>
+            {/* Current step — left aligned, bold */}
+            <div style={{ fontSize: "32px", lineHeight: 1.1, fontWeight: 700, color: text }}>
               {current?.step.name || "(unnamed step)"}
             </div>
             {current?.step.description && (
-              <div style={{ fontSize: "var(--text-base)", color: muted, maxWidth: "32ch" }}>
+              <div style={{ fontSize: "var(--text-base)", color: muted }}>
                 {current.step.description}
               </div>
             )}
 
-            {/* Big countdown — New Title variable. Its weight rides the step's
-                remaining fraction: 700 (bold) at the step's start → 200 (thin) as
-                it runs out. We derive the weight from the raw float `remaining`
-                (not the ceil'd display value) and let a short linear transition
-                bridge the 200ms tick gap, so the thinning looks continuous. */}
+            {/* Big countdown — left aligned. New Title variable; weight rides the
+                step's remaining fraction (700 → 200). Sized by both axes so it
+                shrinks on short viewports. */}
             <div
               style={{
                 fontFamily: "var(--font-new-title)",
                 color: accent,
-                // Glanceable from a few metres during training, ~2× the original.
-                // Designer-validated target is 220px (caps there so it never gets
-                // too heavy). Sized by BOTH axes: min(60vw, 30dvh) so it also
-                // shrinks on short viewports (mobile browser chrome) — a pure-vw
-                // size stays huge on short screens and overflows the centered
-                // stage upward, colliding the section label with the header pill.
-                fontSize: "clamp(110px, min(60vw, 30dvh), 220px)",
+                fontSize: "clamp(96px, min(56vw, 28dvh), 200px)",
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
                 fontVariationSettings: `'wght' ${timeWeight}`,
@@ -400,57 +498,19 @@ export default function SchedulerPlayer({
               {formatDuration(Math.ceil(remaining))}
             </div>
 
-            {/* Following step — same size as the current step, Regular weight (the
-                current step is bold), and skips synthetic auto-pause rests. */}
-            <div style={{ fontSize: "32px", lineHeight: 1, fontWeight: 400, color: text }}>
+            {/* Following step — left, quiet, skips synthetic auto-pause rests. */}
+            <div style={{ fontSize: "26px", lineHeight: 1.1, fontWeight: 400, color: muted }}>
               {nextReal ? `${nextReal.step.name || "(unnamed)"}` : "Last step"}
             </div>
 
             <div style={hr} />
 
-            {/* Real running time — below the lower rule, per the SVG */}
-            <div style={{ fontSize: "var(--text-base)", fontWeight: 700, color: text }}>
-              {formatDuration(recorded)} elapsed
-            </div>
-
-            {/* PRIMARY controls — directly under the countdown, centered (thumb
-                zone), so on a phone they're always visible, never behind the
-                browser's bottom toolbar. */}
-            <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "420px", marginTop: "8px" }}>
-              <button
-                type="button"
-                onClick={togglePlay}
-                style={{
-                  flex: 2,
-                  height: "58px",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: accent,
-                  color: "var(--color-bg)",
-                  fontWeight: 700,
-                  fontSize: "var(--text-logo)",
-                  fontFamily: "var(--font-family)",
-                  cursor: "pointer",
-                }}
-              >
+            {/* PRIMARY controls — full width, always in the thumb zone. */}
+            <div style={{ display: "flex", gap: "12px", width: "100%", marginTop: "8px" }}>
+              <button type="button" onClick={togglePlay} style={{ ...playBtn, flex: 2 }}>
                 {running ? "Pause" : "Play"}
               </button>
-              <button
-                type="button"
-                onClick={goNext}
-                style={{
-                  flex: 1,
-                  height: "58px",
-                  borderRadius: "12px",
-                  border: "1px solid var(--color-border)",
-                  background: "transparent",
-                  color: text,
-                  fontWeight: 700,
-                  fontSize: "var(--text-base)",
-                  fontFamily: "var(--font-family)",
-                  cursor: "pointer",
-                }}
-              >
+              <button type="button" onClick={goNext} style={{ ...nextBtn, flex: 1 }}>
                 Next ▸
               </button>
             </div>
@@ -458,43 +518,10 @@ export default function SchedulerPlayer({
         )}
       </div>
 
-      {/* Secondary actions — Restart + (while playing) Save Activity. The
-          critical Play/Pause/Next live in the centered stage above. */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center", alignItems: "center" }}>
-        <button type="button" onClick={restart} style={ctrlBtn}>
-          Restart
-        </button>
-        {!finished && !publicMode && (
-          <button
-            type="button"
-            onClick={saveActivity}
-            style={{ ...ctrlBtn, fontWeight: 700, borderColor: accent, color: accent }}
-          >
-            {saved ? "Saved ✓" : "Save Activity"}
-          </button>
-        )}
-      </div>
-
-      {/* Mode toggles */}
-      <div style={{ display: "flex", gap: "18px", justifyContent: "center", fontSize: "var(--text-sm)", color: muted, paddingBottom: "4px" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={autoplay}
-            onChange={(e) => setAutoplay(e.target.checked)}
-            style={{ accentColor: accent, width: "16px", height: "16px" }}
-          />
-          Autoplay
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={sound}
-            onChange={(e) => setSound(e.target.checked)}
-            style={{ accentColor: accent, width: "16px", height: "16px" }}
-          />
-          Sound
-        </label>
+      {/* ── Mode toggles — switches, spread across the width ── */}
+      <div style={{ flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "4px" }}>
+        <ToggleSwitch on={autoplay} onChange={setAutoplay} label="Autoplay" />
+        <ToggleSwitch on={sound} onChange={setSound} label="Sound" />
       </div>
     </div>
   );
