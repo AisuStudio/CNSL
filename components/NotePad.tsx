@@ -632,7 +632,9 @@ export default function NotePad({
                       aria-label="Open published page in a new tab"
                       className="flex items-center justify-center"
                       style={{
-                        color: "var(--color-accent)",
+                        // Panel ink (like the title/project text). The accent here
+                        // is lavender on a lavender panel → invisible, so match ink.
+                        color: "var(--color-surface)",
                         flexShrink: 0,
                       }}
                     >
