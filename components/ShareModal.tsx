@@ -51,6 +51,48 @@ export default function ShareModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Public write-only intake (anyone with the link can submit a task).
+  const [intakeEnabled, setIntakeEnabled] = useState(false);
+  const [intakeUrl, setIntakeUrl] = useState<string | null>(null);
+  const [intakeBusy, setIntakeBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!projectId) return;
+    fetch(`/api/intake/config?projectId=${encodeURIComponent(projectId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setIntakeEnabled(!!d.enabled);
+        setIntakeUrl(d.url ?? null);
+      })
+      .catch(() => {});
+  }, [projectId]);
+
+  async function toggleIntake(next: boolean) {
+    setIntakeBusy(true);
+    try {
+      const r = await fetch("/api/intake/config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ projectId, enabled: next }),
+      });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      setIntakeEnabled(!!d.enabled);
+      setIntakeUrl(d.url ?? null);
+    } catch {
+      /* leave state as-is */
+    } finally {
+      setIntakeBusy(false);
+    }
+  }
+
+  const intakeFullUrl =
+    intakeUrl && typeof window !== "undefined"
+      ? `${window.location.origin}${intakeUrl}`
+      : intakeUrl ?? "";
+
   const load = useCallback(async () => {
     try {
       const r = await fetch(`/api/share?projectId=${encodeURIComponent(projectId)}`);
@@ -255,6 +297,83 @@ export default function ShareModal({
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Public write-only intake */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ fontSize: "10px", color: INK, opacity: 0.6, fontWeight: 700 }}>
+          PUBLIC SUBMISSIONS
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={intakeEnabled}
+            disabled={intakeBusy}
+            onClick={() => toggleIntake(!intakeEnabled)}
+            title={intakeEnabled ? "Disable public submissions" : "Enable public submissions"}
+            style={{
+              width: "36px",
+              height: "20px",
+              borderRadius: "10px",
+              border: "none",
+              flexShrink: 0,
+              cursor: intakeBusy ? "default" : "pointer",
+              position: "relative",
+              padding: 0,
+              background: intakeEnabled
+                ? "color-mix(in srgb, var(--color-card-ink) 22%, transparent)"
+                : C1,
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                top: "2px",
+                left: intakeEnabled ? "18px" : "2px",
+                width: "16px",
+                height: "16px",
+                borderRadius: "50%",
+                background: "white",
+                transition: "left 150ms ease",
+              }}
+            />
+          </button>
+          <span style={{ fontSize: "var(--text-sm)", color: INK }}>
+            Anyone with the link can submit a task (write-only)
+          </span>
+        </div>
+        {intakeEnabled && intakeUrl && (
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div
+              style={{
+                ...inputStyle,
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                fontFamily: "var(--font-family-mono)",
+                fontSize: "var(--text-sm)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {intakeFullUrl}
+            </div>
+            <button
+              type="button"
+              style={smallBtn}
+              onClick={() => {
+                navigator.clipboard?.writeText(intakeFullUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        )}
       </div>
     </SidePanel>
   );
