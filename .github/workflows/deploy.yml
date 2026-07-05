@@ -33,7 +33,7 @@ jobs:
           NEXT_PUBLIC_DEMO: "true"
         run: npm run build
       - run: touch out/.nojekyll
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: out
 
