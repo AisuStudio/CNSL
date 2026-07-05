@@ -12,8 +12,27 @@ type Params = { slug: string };
 async function findProject(slug: string) {
   return prisma.project.findFirst({
     where: { intakeSlug: slug, intakeEnabled: true },
-    select: { name: true },
+    select: { id: true, boardId: true, name: true },
   });
+}
+
+// Existing public submissions for this project, so submitters can spot
+// duplicates. Only the epic="Submissions" bucket is exposed (the owner's own
+// backlog stays private); canceled/archived are hidden.
+async function listSubmissions(projectId: string, boardId: string) {
+  const rows = await prisma.task.findMany({
+    where: {
+      boardId,
+      projectId,
+      epic: "Submissions",
+      archived: false,
+      status: { not: "canceled" },
+    },
+    select: { title: true, status: true },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+  return rows.map((r) => ({ title: r.title, status: r.status as string }));
 }
 
 export async function generateMetadata({
@@ -38,6 +57,8 @@ export default async function IntakePage({
   const { slug } = await params;
   const project = await findProject(slug);
   if (!project) notFound();
+
+  const existing = await listSubmissions(project.id, project.boardId);
 
   return (
     <div
@@ -77,10 +98,11 @@ export default async function IntakePage({
           Submit to {project.name}
         </h1>
         <p style={{ margin: "0 0 24px", color: "var(--color-text-muted)", fontSize: "var(--text-base)" }}>
-          Add a task to this project. You can only submit — you won&apos;t see other entries.
+          Add a task to this project. Existing submissions are listed below — please
+          check them first to avoid duplicates.
         </p>
 
-        <IntakeForm slug={slug} projectName={project.name} />
+        <IntakeForm slug={slug} projectName={project.name} existing={existing} />
       </div>
     </div>
   );

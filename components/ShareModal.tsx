@@ -340,7 +340,7 @@ export default function ShareModal({
             />
           </button>
           <span style={{ fontSize: "var(--text-sm)", color: INK }}>
-            Anyone with the link can submit a task (write-only)
+            Anyone with the link can submit a task &amp; see existing submissions
           </span>
         </div>
         {intakeEnabled && intakeUrl && (
