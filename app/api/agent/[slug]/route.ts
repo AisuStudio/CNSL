@@ -168,7 +168,11 @@ export async function PATCH(
       data: {
         userId: board.ownerId,
         text: feedback ? `${head}\n\n${feedback}` : head,
-        processed: true,
+        // A pure status change is just an audit line — nothing to act on, so
+        // it's marked processed (matches TrackingLogView's struck-through
+        // "handled" styling). A feedback report is the opposite: it's meant
+        // to be read and acted on, so it must land as an OPEN entry.
+        processed: !feedback,
         taskId: task.id,
         taskNumber: task.number,
       },
