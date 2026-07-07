@@ -19,19 +19,60 @@ import {
 } from "@/lib/playbook";
 import type { Task } from "@/lib/mock-data";
 import { Info } from "lucide-react";
+import SidePanel from "./SidePanel";
 import NoderCanvas from "./noder/NoderCanvas";
 import NodeInspector from "./noder/NodeInspector";
 import {
   fieldLabel,
-  fieldInput,
   primaryBtn,
   secondaryBtn,
-  sharePanel,
+  tagBtn,
   codeBox,
   linkBtn,
 } from "./noder/style";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+
+// Compact inline fields for the header row (Name/Project moved up next to the
+// "Noder" title — replaces the old full-width labeled row so the canvas gets
+// more vertical room).
+const headerNameInput: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: 600,
+  color: "var(--color-text-primary)",
+  background: "transparent",
+  border: "1px solid var(--color-border-subtle)",
+  borderRadius: "6px",
+  padding: "4px 8px",
+  outline: "none",
+  minWidth: "160px",
+  fontFamily: "var(--font-family)",
+};
+
+const headerProjectInput: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--color-text-muted)",
+  background: "transparent",
+  border: "1px solid var(--color-border-subtle)",
+  borderRadius: "6px",
+  padding: "4px 8px",
+  outline: "none",
+  width: "180px",
+  fontFamily: "var(--font-family)",
+};
+
+const menuItemBtn: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  textAlign: "left",
+  padding: "10px 12px",
+  border: "none",
+  background: "transparent",
+  color: "var(--color-text-primary)",
+  fontSize: "13px",
+  fontFamily: "var(--font-family)",
+  cursor: "pointer",
+};
 
 export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
@@ -46,8 +87,12 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
   const [entryId, setEntryId] = useState<string>("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // What the left column shows instead of the playbook list — "list" itself,
+  // or "share"/"preview" (mutually exclusive with a selected node, which
+  // always wins and shows the Node Inspector there instead).
+  const [leftView, setLeftView] = useState<"list" | "share" | "preview">("list");
 
   const [share, setShare] = useState<{
     published: boolean;
@@ -95,6 +140,7 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
     setEntryId(loadedEntryId);
     setSelectedNodeId(null);
     setShare(null);
+    setLeftView("list");
     if (DEMO) return;
     void (async () => {
       try {
@@ -107,6 +153,11 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Node editing ──────────────────────────────────────────────────────────
+  function selectNode(id: string | null) {
+    setSelectedNodeId(id);
+    if (id) setLeftView("list"); // the left column shows one thing at a time
+  }
+
   function patchNode(id: string, patch: Partial<PlaybookNode>) {
     setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
   }
@@ -233,89 +284,95 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
 
   return (
     <div style={{ padding: "24px", height: "100%", overflow: "auto" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "6px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-          Noder
-        </h1>
-        <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-          Build a flow · save · share a link an agent works through
-        </span>
-        <button
-          type="button"
-          onClick={() => setInfoOpen((v) => !v)}
-          title="How Noder works"
-          aria-expanded={infoOpen}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "24px",
-            height: "24px",
-            padding: 0,
-            marginLeft: "auto",
-            borderRadius: "6px",
-            border: "1px solid var(--color-border-subtle)",
-            background: infoOpen ? "var(--color-accent)" : "transparent",
-            color: infoOpen ? "#fff" : "var(--color-text-muted)",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          <Info size={16} strokeWidth={1.75} color="currentColor" aria-hidden />
-        </button>
+      <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "16px" }}>
+        {/* Left column matches the playbook-list sidebar below (width 240px)
+            so the right column lines up with the canvas, not just the title. */}
+        <div style={{ width: "300px", flexShrink: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>
+            Noder
+          </h1>
+          <button
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            aria-expanded={infoOpen}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 8px",
+              borderRadius: "6px",
+              border: "1px solid var(--color-border-subtle)",
+              background: "transparent",
+              color: "var(--color-text-muted)",
+              fontSize: "12px",
+              fontFamily: "var(--font-family)",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <Info size={14} strokeWidth={1.75} color="currentColor" aria-hidden />
+            how it works
+          </button>
+        </div>
+
+        {selected && (
+          <div style={{ flex: 1, display: "flex", gap: "12px", minWidth: 0 }}>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Playbook name"
+              style={headerNameInput}
+            />
+            <input
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              placeholder="Project scope (blank = whole board)"
+              title="Project scope (blank = whole board)"
+              style={headerProjectInput}
+            />
+          </div>
+        )}
       </div>
 
       {infoOpen && (
-        <div
-          style={{
-            maxWidth: "780px",
-            marginBottom: "16px",
-            padding: "14px 16px",
-            borderRadius: "10px",
-            border: "1px solid var(--color-border-subtle)",
-            background: "var(--color-surface)",
-            color: "var(--color-text-secondary)",
-            fontSize: "13px",
-            lineHeight: 1.6,
-          }}
-        >
-          <p style={{ margin: "0 0 8px", color: "var(--color-text-primary)", fontWeight: 600 }}>
-            How Noder works
-          </p>
-          <p style={{ margin: "0 0 8px" }}>
-            Noder builds <em>playbooks</em> — flows an external agent (like
-            Claude Code) works through and reports back on. CNSL only stores
-            and publishes the flow; it never runs anything itself.
-          </p>
-          <p style={{ margin: "0 0 4px" }}>
-            Each box on the canvas is a node, one of four kinds:
-          </p>
-          <ul style={{ margin: "0 0 8px", paddingLeft: "18px" }}>
-            <li><strong>▢ task</strong> — an existing task the agent should act on (link it via search)</li>
-            <li><strong>◆ skill</strong> — a reusable how-to. Write it inline, or link a published Note for something you&apos;ll reuse across playbooks</li>
-            <li><strong>▶ output</strong> — what the agent writes back: a task status, or a written report</li>
-            <li><strong>? branch</strong> — a yes/no decision that splits the flow into two paths</li>
-          </ul>
-          <p style={{ margin: "0 0 8px" }}>
-            Drag from a node&apos;s dot to another node&apos;s dot to connect
-            them. Click a node to edit its details in the panel on the right.
-          </p>
-          <p style={{ margin: "0 0 8px" }}>
-            <strong style={{ color: "var(--color-text-primary)" }}>Skills as Notes:</strong>{" "}
-            if a skill is worth reusing, write it as a Note instead of typing
-            it into every playbook. It must be <strong>published</strong>{" "}
-            (Publish button in NotePad) — the agent fetches it over a public
-            link, so a private Note won&apos;t be reachable.
-          </p>
-          <p style={{ margin: 0 }}>
-            <strong style={{ color: "var(--color-text-primary)" }}>Share:</strong>{" "}
-            publishing a playbook mints a link the agent fetches to read the
-            flow and the tasks in scope, and writes back to (status, and/or a
-            report that lands in your Tracking Log). Anyone with the link can
-            use it — set <strong>Project scope</strong> to limit what it can
-            see and touch, and revoke/rotate anytime.
-          </p>
-        </div>
+        <SidePanel title="How Noder works" width={420} onClose={() => setInfoOpen(false)}>
+          <div style={{ fontSize: "14px", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 10px" }}>
+              Noder builds <em>playbooks</em> — flows an external agent (like
+              Claude Code) works through and reports back on. CNSL only
+              stores and publishes the flow; it never runs anything itself.
+            </p>
+            <p style={{ margin: "0 0 6px" }}>
+              Each box on the canvas is a node, one of four kinds:
+            </p>
+            <ul style={{ margin: "0 0 10px", paddingLeft: "18px" }}>
+              <li><strong>▢ task</strong> — an existing task the agent should act on (link it via search)</li>
+              <li><strong>◆ skill</strong> — a reusable how-to. Write it inline, or link a published Note for something you&apos;ll reuse across playbooks</li>
+              <li><strong>▶ output</strong> — what the agent writes back: a task status, or a written report</li>
+              <li><strong>? branch</strong> — a yes/no decision that splits the flow into two paths</li>
+            </ul>
+            <p style={{ margin: "0 0 10px" }}>
+              Drag from a node&apos;s dot to another node&apos;s dot to
+              connect them. Click a node to edit its details in the panel on
+              the right.
+            </p>
+            <p style={{ margin: "0 0 10px" }}>
+              <strong>Skills as Notes:</strong> if a skill is worth reusing,
+              write it as a Note instead of typing it into every playbook. It
+              must be <strong>published</strong> (Publish button in NotePad)
+              — the agent fetches it over a public link, so a private Note
+              won&apos;t be reachable.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Share:</strong> publishing a playbook mints a link the
+              agent fetches to read the flow and the tasks in scope, and
+              writes back to (status, and/or a report that lands in your
+              Tracking Log). Anyone with the link can use it — set{" "}
+              <strong>Project scope</strong> to limit what it can see and
+              touch, and revoke/rotate anytime.
+            </p>
+          </div>
+        </SidePanel>
       )}
 
       {DEMO && (
@@ -331,48 +388,220 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
 
       {!DEMO && (
         <div style={{ display: "flex", gap: "24px", marginTop: "16px", alignItems: "flex-start" }}>
-          {/* ── List ── */}
-          <div style={{ width: "240px", flexShrink: 0 }}>
-            <button type="button" onClick={createPlaybook} style={primaryBtn}>
-              + New playbook
-            </button>
-            {loading ? (
-              <p style={{ color: "var(--color-text-muted)" }}>Loading…</p>
-            ) : playbooks.length === 0 ? (
-              <p style={{ color: "var(--color-text-muted)" }}>No playbooks yet.</p>
+          {/* ── List, the Node Inspector while a node is selected, or the
+                 Share view — the left column shows exactly one at a time,
+                 freeing the canvas from sharing a row with a second panel ── */}
+          <div style={{ width: "300px", flexShrink: 0 }}>
+            {selectedNode ? (
+              <NodeInspector
+                node={selectedNode}
+                isEntry={selectedNodeId != null && selectedNodeId === entryId}
+                tasks={tasks}
+                onPatch={(patch) => selectedNodeId && patchNode(selectedNodeId, patch)}
+                onChangeKind={(kind) => selectedNodeId && changeKind(selectedNodeId, kind)}
+                onDelete={() => selectedNodeId && deleteNode(selectedNodeId)}
+                onSetEntry={() => selectedNodeId && setEntryId(selectedNodeId)}
+              />
+            ) : leftView === "share" ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setLeftView("list")}
+                  style={{ ...tagBtn, marginBottom: "12px" }}
+                >
+                  ← Playbooks
+                </button>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+                    Share (agent link)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPublished(!share?.published)}
+                    disabled={sharing}
+                    style={{
+                      ...secondaryBtn,
+                      background: share?.published ? "var(--color-accent)" : "transparent",
+                      color: share?.published ? "var(--color-bg-deep)" : "var(--color-text-primary)",
+                    }}
+                  >
+                    {share?.published ? "Shared — revoke" : "Share"}
+                  </button>
+                </div>
+
+                {share?.published && share.url && (
+                  <div style={{ marginTop: "10px" }}>
+                    <code style={{ ...codeBox, wordBreak: "break-all" }}>{absoluteUrl(share.url)}</code>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+                      <button type="button" onClick={() => navigator?.clipboard?.writeText(absoluteUrl(share.url!))} style={linkBtn}>
+                        Copy
+                      </button>
+                      <button type="button" onClick={() => setPublished(true, true)} disabled={sharing} style={linkBtn}>
+                        Rotate link
+                      </button>
+                    </div>
+                    <p style={{ marginTop: "8px", fontSize: "12px", color: "var(--color-text-muted)" }}>
+                      Anyone with this link can read the playbook + scoped tasks and set
+                      tasks to review/done. Keep it private; rotate to revoke.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : leftView === "preview" ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setLeftView("list")}
+                  style={{ ...tagBtn, marginBottom: "12px" }}
+                >
+                  ← Playbooks
+                </button>
+                <span style={{ ...fieldLabel, display: "block", marginBottom: "8px" }}>
+                  Preview (what the agent receives)
+                </span>
+                <pre
+                  className="cnsl-scroll"
+                  style={{
+                    margin: 0,
+                    padding: "12px",
+                    borderRadius: "8px",
+                    background: "var(--color-bg-deep)",
+                    color: "var(--color-text-primary)",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-mono, monospace)",
+                    whiteSpace: "pre-wrap",
+                    maxHeight: "70vh",
+                    overflow: "auto",
+                  }}
+                >
+                  {previewMd}
+                </pre>
+              </div>
             ) : (
-              <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {playbooks.map((p) => (
-                  <li key={p.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(p.id)}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        padding: "8px 10px",
-                        borderRadius: "8px",
-                        border: "1px solid var(--color-border-subtle)",
-                        background: p.id === selectedId ? "var(--color-bg-deep)" : "transparent",
-                        color: "var(--color-text-primary)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <span style={{ fontWeight: 600 }}>{p.name || "Untitled"}</span>
-                      {p.published && (
-                        <span style={{ marginLeft: "8px", fontSize: "11px", color: "var(--color-accent)" }}>
-                          ● shared
-                        </span>
-                      )}
-                      {p.project && (
-                        <span style={{ display: "block", fontSize: "12px", color: "var(--color-text-muted)" }}>
-                          {p.project}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((v) => !v)}
+                    style={{
+                      ...primaryBtn,
+                      color: "var(--color-bg-deep)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    Playbook <span style={{ fontSize: "16px", lineHeight: 1 }}>{menuOpen ? "▴" : "▾"}</span>
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div
+                        onClick={() => setMenuOpen(false)}
+                        style={{ position: "fixed", inset: 0, zIndex: 9 }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "calc(100% + 4px)",
+                          left: 0,
+                          right: 0,
+                          zIndex: 10,
+                          borderRadius: "8px",
+                          border: "1px solid var(--color-border-subtle)",
+                          background: "var(--color-surface)",
+                          boxShadow: "var(--shadow-modal)",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            createPlaybook();
+                          }}
+                          style={menuItemBtn}
+                        >
+                          + New Playbook
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            void save();
+                          }}
+                          disabled={!selected || saving}
+                          style={{ ...menuItemBtn, opacity: !selected || saving ? 0.5 : 1 }}
+                        >
+                          {saving ? "Saving…" : "Save Playbook"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            selectNode(null);
+                            setLeftView("share");
+                          }}
+                          disabled={!selected}
+                          style={{ ...menuItemBtn, opacity: !selected ? 0.5 : 1 }}
+                        >
+                          Share Playbook
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            selectNode(null);
+                            setLeftView("preview");
+                          }}
+                          disabled={!selected}
+                          style={{ ...menuItemBtn, opacity: !selected ? 0.5 : 1 }}
+                        >
+                          Preview Playbook
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {loading ? (
+                  <p style={{ color: "var(--color-text-muted)" }}>Loading…</p>
+                ) : playbooks.length === 0 ? (
+                  <p style={{ color: "var(--color-text-muted)" }}>No playbooks yet.</p>
+                ) : (
+                  <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {playbooks.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(p.id)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "8px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--color-border-subtle)",
+                            background: p.id === selectedId ? "var(--color-bg-deep)" : "transparent",
+                            color: "var(--color-text-primary)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <span style={{ fontWeight: 600 }}>{p.name || "Untitled"}</span>
+                          {p.published && (
+                            <span style={{ marginLeft: "8px", fontSize: "11px", color: "var(--color-accent)" }}>
+                              ● shared
+                            </span>
+                          )}
+                          {p.project && (
+                            <span style={{ display: "block", fontSize: "12px", color: "var(--color-text-muted)" }}>
+                              {p.project}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </div>
 
@@ -382,107 +611,16 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
               <p style={{ color: "var(--color-text-muted)" }}>Select a playbook, or create one.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", maxWidth: "780px" }}>
-                  <label style={{ flex: 1, minWidth: "200px" }}>
-                    <span style={fieldLabel}>Name</span>
-                    <input value={name} onChange={(e) => setName(e.target.value)} style={fieldInput} />
-                  </label>
-                  <label style={{ flex: 1, minWidth: "200px" }}>
-                    <span style={fieldLabel}>Project scope (blank = whole board)</span>
-                    <input value={project} onChange={(e) => setProject(e.target.value)} style={fieldInput} />
-                  </label>
-                </div>
-
-                {/* ── Canvas + Inspector ── */}
+                {/* ── Canvas ── */}
                 <div style={{ display: "flex", gap: "12px", height: "560px" }}>
                   <NoderCanvas
                     nodes={nodes}
                     entryId={entryId}
                     selectedId={selectedNodeId}
                     onPatchNode={patchNode}
-                    onSelect={setSelectedNodeId}
+                    onSelect={selectNode}
                     onAddNode={addNode}
                   />
-                  <NodeInspector
-                    node={selectedNode}
-                    isEntry={selectedNodeId != null && selectedNodeId === entryId}
-                    tasks={tasks}
-                    onPatch={(patch) => selectedNodeId && patchNode(selectedNodeId, patch)}
-                    onChangeKind={(kind) => selectedNodeId && changeKind(selectedNodeId, kind)}
-                    onDelete={() => selectedNodeId && deleteNode(selectedNodeId)}
-                    onSetEntry={() => selectedNodeId && setEntryId(selectedNodeId)}
-                  />
-                </div>
-
-                {/* Preview */}
-                <details
-                  open={previewOpen}
-                  onToggle={(e) => setPreviewOpen((e.target as HTMLDetailsElement).open)}
-                  style={{ maxWidth: "780px" }}
-                >
-                  <summary style={{ ...fieldLabel, cursor: "pointer", marginBottom: 0 }}>
-                    Preview (what the agent receives) {previewOpen ? "▾" : "▸"}
-                  </summary>
-                  <pre
-                    style={{
-                      margin: "8px 0 0",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      background: "var(--color-bg-deep)",
-                      color: "var(--color-text-primary)",
-                      fontSize: "12px",
-                      fontFamily: "var(--font-mono, monospace)",
-                      whiteSpace: "pre-wrap",
-                      overflowX: "auto",
-                    }}
-                  >
-                    {previewMd}
-                  </pre>
-                </details>
-
-                <div>
-                  <button type="button" onClick={save} disabled={saving} style={{ ...primaryBtn, width: "auto", padding: "8px 20px", opacity: saving ? 0.6 : 1 }}>
-                    {saving ? "Saving…" : "Save"}
-                  </button>
-                </div>
-
-                {/* ── Share ── */}
-                <div style={{ ...sharePanel, maxWidth: "780px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
-                      Share (agent link)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPublished(!share?.published)}
-                      disabled={sharing}
-                      style={{
-                        ...secondaryBtn,
-                        background: share?.published ? "var(--color-accent)" : "transparent",
-                        color: share?.published ? "#fff" : "var(--color-text-primary)",
-                      }}
-                    >
-                      {share?.published ? "Shared — revoke" : "Share"}
-                    </button>
-                  </div>
-
-                  {share?.published && share.url && (
-                    <div style={{ marginTop: "10px" }}>
-                      <code style={codeBox}>{absoluteUrl(share.url)}</code>
-                      <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                        <button type="button" onClick={() => navigator?.clipboard?.writeText(absoluteUrl(share.url!))} style={linkBtn}>
-                          Copy
-                        </button>
-                        <button type="button" onClick={() => setPublished(true, true)} disabled={sharing} style={linkBtn}>
-                          Rotate link
-                        </button>
-                      </div>
-                      <p style={{ marginTop: "8px", fontSize: "12px", color: "var(--color-text-muted)" }}>
-                        Anyone with this link can read the playbook + scoped tasks and set
-                        tasks to review/done. Keep it private; rotate to revoke.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
