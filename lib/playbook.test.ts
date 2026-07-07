@@ -128,6 +128,12 @@ describe("buildAgentFeed", () => {
     const feed = buildAgentFeed(sample(), [], { writeBackUrl: "/api/agent/x" });
     expect(feed).toContain("_(none)_");
   });
+
+  it("documents the feedback write-back alongside status", () => {
+    const feed = buildAgentFeed(sample(), [], { writeBackUrl: "/api/agent/x" });
+    expect(feed).toContain('"feedback"');
+    expect(feed).toContain("Tracking Log");
+  });
 });
 
 describe("nodeOutEdges", () => {

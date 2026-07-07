@@ -4,6 +4,7 @@ import { playbookFromDb } from "@/lib/serialize";
 import {
   buildAgentFeed,
   isAgentSettableStatus,
+  MAX_FEEDBACK_LEN,
   type FeedTask,
 } from "@/lib/playbook";
 
@@ -85,10 +86,16 @@ export async function GET(
   });
 }
 
-// PATCH /api/agent/<slug> { taskId, status } → agent write-back.
-// Only whitelisted transitions (review_input | done) on a task inside the
-// playbook's scope. Every write is recorded in the owner's Log as an [agent]
-// entry (audit trail + it surfaces the change in the UI).
+// PATCH /api/agent/<slug> { taskId, status?, feedback? } → agent write-back.
+// At least one of status/feedback must be given. `status` is a whitelisted
+// transition (review_input | done) on a task inside the playbook's scope.
+// `feedback` is free-text (the [output] "write feedback" kind) — it does NOT
+// touch the task's status, it lands as a LogEntry in the owner's Tracking Log
+// (the same inbox used for manual "what are you working on" notes), so a
+// report an agent produces is actually readable inside CNSL, not just in the
+// agent's own chat transcript. Every write is recorded as an [agent] entry
+// (audit trail + it surfaces the change in the UI) — status and feedback
+// combine into ONE entry when both are sent in the same call.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<Params> }
@@ -104,13 +111,23 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}));
   const taskId = typeof body.taskId === "string" ? body.taskId : "";
   const status = typeof body.status === "string" ? body.status : "";
-  if (!taskId || !status) {
-    return NextResponse.json({ error: "taskId and status required" }, { status: 400 });
+  const feedback = typeof body.feedback === "string" ? body.feedback.trim() : "";
+  if (!taskId || (!status && !feedback)) {
+    return NextResponse.json(
+      { error: "taskId and (status and/or feedback) required" },
+      { status: 400 }
+    );
   }
-  if (!isAgentSettableStatus(status)) {
+  if (status && !isAgentSettableStatus(status)) {
     return NextResponse.json(
       { error: "status not allowed (review_input | done)" },
       { status: 400 }
+    );
+  }
+  if (feedback.length > MAX_FEEDBACK_LEN) {
+    return NextResponse.json(
+      { error: `feedback too long (max ${MAX_FEEDBACK_LEN} chars)` },
+      { status: 413 }
     );
   }
 
@@ -127,24 +144,30 @@ export async function PATCH(
     return NextResponse.json({ error: "task not found in scope" }, { status: 404 });
   }
 
-  const updated = await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      status,
-      completedAt: status === "done" ? new Date() : task.completedAt,
-    },
-  });
+  const updated = status
+    ? await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          status,
+          completedAt: status === "done" ? new Date() : task.completedAt,
+        },
+      })
+    : task;
 
-  // Audit: attribute the change to the agent in the board owner's Log.
+  // Audit + delivery: attribute the write to the agent in the board owner's
+  // Tracking Log. Status and feedback share one entry when both are present.
   const board = await prisma.board.findUnique({
     where: { id: row.boardId },
     select: { ownerId: true },
   });
   if (board) {
+    const head = `[agent] Task #${task.number} "${task.title}"${
+      status ? ` → ${status}` : ""
+    } · playbook "${row.name}"`;
     await prisma.logEntry.create({
       data: {
         userId: board.ownerId,
-        text: `[agent] Task #${task.number} "${task.title}" → ${status} · playbook "${row.name}"`,
+        text: feedback ? `${head}\n\n${feedback}` : head,
         processed: true,
         taskId: task.id,
         taskNumber: task.number,

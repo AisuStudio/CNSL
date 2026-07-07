@@ -26,6 +26,9 @@ export function isAgentSettableStatus(s: string): s is AgentSettableStatus {
   return (AGENT_SETTABLE_STATUS as readonly string[]).includes(s);
 }
 
+// Cap on the "write feedback" output — a report/proposal, not an upload.
+export const MAX_FEEDBACK_LEN = 20_000;
+
 export type OutputKind = "set_status" | "feedback";
 
 export interface PlaybookNode {
@@ -285,8 +288,9 @@ export function buildAgentFeed(
   lines.push("");
   lines.push("## Writing back");
   lines.push(
-    "At an [output] node, PATCH the capability link below. Prefer " +
-      "`review_input` so a human confirms `done`."
+    "At an [output] node, PATCH the capability link below with `status` " +
+      "and/or `feedback` (send at least one; both may be sent together). " +
+      "Prefer `review_input` over `done` so a human confirms."
   );
   lines.push("");
   lines.push("```http");
@@ -294,6 +298,20 @@ export function buildAgentFeed(
   lines.push("Content-Type: application/json");
   lines.push("");
   lines.push(`{ "taskId": "<ID from the table>", "status": "review_input" }`);
+  lines.push("```");
+  lines.push("");
+  lines.push(
+    "For an [output] \"write feedback\" node, send a `feedback` string " +
+      "instead of (or alongside) `status` — a report, a proposal, findings, " +
+      "anything long-form. It's delivered as a note in the Tracking Log " +
+      `(readable inside CNSL, max ${MAX_FEEDBACK_LEN} chars), not just left in your own transcript:`
+  );
+  lines.push("");
+  lines.push("```http");
+  lines.push(`PATCH ${opts.writeBackUrl}`);
+  lines.push("Content-Type: application/json");
+  lines.push("");
+  lines.push(`{ "taskId": "<ID from the table>", "feedback": "<your report as markdown>" }`);
   lines.push("```");
   lines.push("");
   lines.push(
