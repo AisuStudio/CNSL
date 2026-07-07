@@ -18,7 +18,7 @@ import {
   type PlaybookNode,
 } from "@/lib/playbook";
 import type { Task } from "@/lib/mock-data";
-import { InfoIcon } from "./icons";
+import { Info } from "lucide-react";
 import NoderCanvas from "./noder/NoderCanvas";
 import NodeInspector from "./noder/NodeInspector";
 import {
@@ -261,7 +261,7 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
             flexShrink: 0,
           }}
         >
-          <InfoIcon color="currentColor" />
+          <Info size={16} strokeWidth={1.75} color="currentColor" aria-hidden />
         </button>
       </div>
 
