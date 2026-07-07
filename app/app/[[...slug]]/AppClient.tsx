@@ -20,6 +20,7 @@ import StatsView from "@/components/StatsView";
 import SettingsModal from "@/components/SettingsModal";
 import NotePad from "@/components/NotePad";
 import CalendarView from "@/components/CalendarView";
+import NoderView from "@/components/NoderView";
 import EventModal, { blankEvent } from "@/components/EventModal";
 import SchedulerView from "@/components/SchedulerView";
 import SchedulerPlayer from "@/components/SchedulerPlayer";
@@ -1969,6 +1970,7 @@ export default function Home() {
           {!searchActive &&
             tool !== "calendar" &&
             tool !== "scheduler" &&
+            tool !== "noder" &&
             !(
               tool === "tracker" &&
               (view === "project" ||
@@ -2088,6 +2090,7 @@ export default function Home() {
             onEditEvent={openEditEvent}
           />
         )}
+        {!searchActive && tool === "noder" && <NoderView />}
         {!searchActive && tool === "scheduler" && (
           <SchedulerView
             schedules={schedules}

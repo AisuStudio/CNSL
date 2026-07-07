@@ -292,6 +292,18 @@ export function CalIcon({ color = "currentColor" }: { color?: string }) {
   );
 }
 
+export function NoderIcon({ color = "currentColor" }: { color?: string }) {
+  // CNSL custom Noder glyph: interlocking blocks with connector notches — an
+  // automation "node graph" mark. Single even-odd path (holes = the notches).
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M0,0v9h5.5v2H0v9h9v-11h2v11h9v-9h-5.5v-2h5.5V0H0ZM5.5,16.5h-2v-2h2v2ZM16.5,14.5v2h-2v-2h2ZM3.5,5.5v-2h13v2H3.5Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
 export function SchedulerIcon({ color = "currentColor" }: { color?: string }) {
   // CNSL custom scheduler glyph (CNSL_Icon_Scheduler3.svg): a "play through
   // sections" mark — left bracket with a notch + a solid right block.

@@ -200,10 +200,25 @@ curl -X PATCH /api/agent/design-system-review-ab12cd34 \
 neue Playbook-Tests). *Nicht* end-to-end gefahren — braucht die Supabase-Env
 (`DATABASE_URL`) + `phase-playbook.sql`.
 
-**Bewusst noch nicht dabei:** das Toolbox-UI (Kachel/Editor). Ein Playbook ist
-v1 über die API (oder später einen Markdown-Editor) autorbar; der visuelle
-Tree-Builder ist die nächste, separat verifizierbare Schicht — nicht ins
-laufende App-Tree gemischt, solange es hier nicht lauffähig testbar ist.
+**Toolbox-UI — Tool „Noder" (unter Calendar).** Verdrahtet:
+- `components/icons.tsx` — `NoderIcon` (custom Glyph, vom Owner geliefert).
+- `components/Header.tsx` — `"noder"` im `Tool`-Typ.
+- `components/viewDefs.tsx` — `TOOL_DEFS`-Eintrag direkt nach `calendar`.
+- `app/app/[[...slug]]/AppClient.tsx` — rendert `<NoderView />` bei
+  `tool === "noder"` (+ `TableHeader` schließt `noder` aus, wie calendar/scheduler).
+- `components/NoderView.tsx` — eigenständige View gegen `/api/playbook*`
+  (wie ChatView, unabhängig vom Board-State-Sync): Liste · anlegen · Name/Scope/
+  Steps editieren · **Save** · **Freigeben** (Link zeigen/kopieren/rotieren/widerrufen).
+  Linearer Step-Editor v1; Playbooks mit Ja/Nein-Gabeln werden read-only angezeigt
+  (kein Flatten). Im statischen Demo (`NEXT_PUBLIC_DEMO`) inaktiv (braucht Backend).
+
+**Verifiziert (UI):** `tsc` sauber, `vitest` 33/33, `next build` **kompiliert +
+TypeScript ok** (Build-Abbruch nur an der vorbestehenden `/api/demo-request`-Route
+wegen fehlendem `RESEND_API_KEY` — env, nicht dieser Change). Nicht im Browser
+gefahren (braucht die Supabase-Env).
+
+**Noch offen:** der visuelle WYSIWYG-Tree-Builder (Ja/Nein-Gabeln per Canvas) —
+die nächste Schicht auf dem linearen Editor.
 
 ## Offene Entscheidungen
 
