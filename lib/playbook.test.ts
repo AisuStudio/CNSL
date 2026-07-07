@@ -17,9 +17,12 @@ describe("playbook factories", () => {
     expect(pb.published).toBe(false);
   });
 
-  it("blankNode defaults to an instruction", () => {
-    expect(blankNode().type).toBe("instruction");
-    expect(blankNode("condition").type).toBe("condition");
+  it("blankNode defaults to a skill; output seeds its config", () => {
+    expect(blankNode().kind).toBe("skill");
+    expect(blankNode("task").kind).toBe("task");
+    const out = blankNode("output");
+    expect(out.outputKind).toBe("set_status");
+    expect(out.outputStatus).toBe("review_input");
   });
 });
 
@@ -33,7 +36,7 @@ describe("agent-settable status whitelist", () => {
   });
 });
 
-// A tiny hand-built playbook: instruction → condition (yes → step, no → step).
+// A hand-built flow: skill → branch (yes → skill, no → skill) → output.
 function sample(): Playbook {
   return {
     id: "pb_1",
@@ -41,23 +44,37 @@ function sample(): Playbook {
     project: "CNSL",
     entryId: "n1",
     nodes: [
-      { id: "n1", type: "instruction", title: "Bedien dich am Design System", next: "n2" },
-      { id: "n2", type: "condition", title: "Gibt es neue Patterns?", onYes: "n3", onNo: "n4" },
-      { id: "n3", type: "instruction", title: "Binde die neuen Patterns ein" },
-      { id: "n4", type: "instruction", title: "Mach den Barriere-Test" },
+      { id: "n1", kind: "skill", title: "Bedien dich am Design System", next: "n2" },
+      { id: "n2", kind: "branch", title: "", question: "Gibt es neue Patterns?", onTrue: "n3", onFalse: "n4" },
+      { id: "n3", kind: "skill", title: "Binde die neuen Patterns ein", next: "n4" },
+      { id: "n4", kind: "skill", title: "Mach den Barriere-Test", next: "n5" },
+      { id: "n5", kind: "output", title: "", outputKind: "set_status", outputStatus: "review_input" },
     ],
   };
 }
 
 describe("playbookToMarkdown", () => {
-  it("renders the linear step then both fork branches", () => {
+  it("tags each kind and expands both branch arms", () => {
     const md = playbookToMarkdown(sample());
-    expect(md).toContain("Bedien dich am Design System");
-    expect(md).toContain("**?** Gibt es neue Patterns?");
+    expect(md).toContain("[skill] Bedien dich am Design System");
+    expect(md).toContain("? Gibt es neue Patterns?");
     expect(md).toContain("**If yes →**");
     expect(md).toContain("Binde die neuen Patterns ein");
     expect(md).toContain("**If no →**");
     expect(md).toContain("Mach den Barriere-Test");
+    expect(md).toContain("[output] set status → review_input");
+  });
+
+  it("renders a task node with its project/number reference", () => {
+    const pb: Playbook = {
+      id: "pb_t",
+      name: "T",
+      entryId: "a",
+      nodes: [
+        { id: "a", kind: "task", title: "Merge tokens", taskProject: "CNSL", taskNumber: 42 },
+      ],
+    };
+    expect(playbookToMarkdown(pb)).toContain("[task] CNSL #42 — Merge tokens");
   });
 
   it("does not loop forever on a cyclic next", () => {
@@ -66,8 +83,8 @@ describe("playbookToMarkdown", () => {
       name: "Cycle",
       entryId: "a",
       nodes: [
-        { id: "a", type: "instruction", title: "A", next: "b" },
-        { id: "b", type: "instruction", title: "B", next: "a" },
+        { id: "a", kind: "skill", title: "A", next: "b" },
+        { id: "b", kind: "skill", title: "B", next: "a" },
       ],
     };
     const md = playbookToMarkdown(pb);
@@ -77,7 +94,7 @@ describe("playbookToMarkdown", () => {
 });
 
 describe("buildAgentFeed", () => {
-  it("includes scope, steps, the task table with ids, and the write-back contract", () => {
+  it("includes scope, the flow, the task table with ids, and the write-back contract", () => {
     const feed = buildAgentFeed(
       sample(),
       [
@@ -95,9 +112,9 @@ describe("buildAgentFeed", () => {
     );
     expect(feed).toContain("# CNSL Playbook — Design-System-Review");
     expect(feed).toContain("**Scope:** project `CNSL`");
+    expect(feed).toContain("## Flow");
     expect(feed).toContain("`task_42`");
     expect(feed).toContain("Merge duplicate tokens");
-    // description newlines flattened
     expect(feed).toContain("line one line two");
     expect(feed).toContain("PATCH /api/agent/design-system-review-ab12cd34");
     expect(feed).toContain('"status": "review_input"');

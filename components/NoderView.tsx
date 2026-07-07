@@ -1,29 +1,34 @@
 "use client";
 
-// Noder — the agent-automation tool. Author a "playbook" (a tree of instruction
-// and condition nodes with yes/no forks), SAVE it, and FREIGEBEN (share) it via
-// an unguessable capability link that an external agent (Claude Code / any LLM
-// harness) fetches as Markdown and writes results back to. Self-contained: talks
-// to /api/playbook* directly, independent of the board state-sync (like
-// ChatView). Function-first UI — refine later. See data/SPIKE-playbook-tool.md.
+// Noder — the agent-automation tool. Author a "playbook" flow (nodes: task /
+// skill / output / branch), SAVE it, and FREIGEBEN (share) it via an unguessable
+// capability link an external agent (Claude Code / any LLM harness) fetches as
+// Markdown and writes results back to. Self-contained: talks to /api/playbook*
+// directly (like ChatView). Function-first list editor for now; a visual canvas
+// is the next layer. See data/SPIKE-playbook-tool.md.
 
 import { useCallback, useEffect, useState } from "react";
 import {
   blankPlaybook,
   blankNode,
   playbookToMarkdown,
-  type NodeType,
+  type NodeKind,
   type Playbook,
   type PlaybookNode,
 } from "@/lib/playbook";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
-// A short human label for a node in the branch dropdowns.
+const KIND_MARK: Record<NodeKind, string> = {
+  task: "▢",
+  skill: "◆",
+  output: "▶",
+  branch: "?",
+};
+
 function nodeLabel(n: PlaybookNode, index: number): string {
-  const title = n.title.trim();
-  const prefix = n.type === "condition" ? "?" : "•";
-  return `${prefix} ${title || `Node ${index + 1}`}`;
+  const title = (n.kind === "branch" ? n.question : n.title) ?? "";
+  return `${KIND_MARK[n.kind]} ${title.trim() || `Node ${index + 1}`}`;
 }
 
 export default function NoderView() {
@@ -32,14 +37,13 @@ export default function NoderView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Draft state for the selected playbook (the editor works on these, save posts them).
+  // Draft state for the selected playbook.
   const [name, setName] = useState("");
   const [project, setProject] = useState("");
   const [nodes, setNodes] = useState<PlaybookNode[]>([]);
   const [entryId, setEntryId] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  // Share state for the selected playbook.
   const [share, setShare] = useState<{
     published: boolean;
     slug: string | null;
@@ -72,7 +76,6 @@ export default function NoderView() {
     void load();
   }, [load]);
 
-  // Hydrate draft + share state on selection change.
   useEffect(() => {
     if (!selected) return;
     setName(selected.name);
@@ -86,7 +89,7 @@ export default function NoderView() {
         const res = await fetch(`/api/playbook/config?playbookId=${selected.id}`);
         if (res.ok) setShare(await res.json());
       } catch {
-        /* ignore — share panel just stays collapsed */
+        /* ignore */
       }
     })();
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -96,19 +99,29 @@ export default function NoderView() {
     setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
   }
 
-  function changeType(id: string, type: NodeType) {
+  function changeKind(id: string, kind: NodeKind) {
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== id) return n;
-        // Switching type clears the now-irrelevant edges.
-        if (type === "condition") return { ...n, type, next: undefined };
-        return { ...n, type, onYes: undefined, onNo: undefined };
+        const base: PlaybookNode = { ...n, kind };
+        if (kind === "branch") {
+          base.next = undefined;
+        } else {
+          base.onTrue = undefined;
+          base.onFalse = undefined;
+          base.question = undefined;
+        }
+        if (kind === "output" && !base.outputKind) {
+          base.outputKind = "set_status";
+          base.outputStatus = "review_input";
+        }
+        return base;
       })
     );
   }
 
-  function addNode() {
-    const n = blankNode();
+  function addNode(kind: NodeKind = "skill") {
+    const n = blankNode(kind);
     setNodes((prev) => [...prev, n]);
     if (!entryId) setEntryId(n.id);
   }
@@ -117,12 +130,11 @@ export default function NoderView() {
     setNodes((prev) => {
       const next = prev
         .filter((n) => n.id !== id)
-        // Null out any edges that pointed at the removed node.
         .map((n) => ({
           ...n,
           next: n.next === id ? undefined : n.next,
-          onYes: n.onYes === id ? undefined : n.onYes,
-          onNo: n.onNo === id ? undefined : n.onNo,
+          onTrue: n.onTrue === id ? undefined : n.onTrue,
+          onFalse: n.onFalse === id ? undefined : n.onFalse,
         }));
       if (entryId === id) setEntryId(next[0]?.id ?? "");
       return next;
@@ -199,13 +211,9 @@ export default function NoderView() {
   const absoluteUrl = (path: string) =>
     typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
 
-  // Live preview of the tree the agent will receive.
   const previewMd =
-    selected != null
-      ? playbookToMarkdown({ ...selected, nodes, entryId })
-      : "";
+    selected != null ? playbookToMarkdown({ ...selected, nodes, entryId }) : "";
 
-  // Options for the branch dropdowns: every OTHER node + "(end)".
   const branchOptions = (exceptId: string) => [
     { value: "", label: "(end)" },
     ...nodes
@@ -221,7 +229,7 @@ export default function NoderView() {
           Noder
         </h1>
         <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-          Build an automation · save · share a link an agent works through
+          Build a flow · save · share a link an agent works through
         </span>
       </div>
 
@@ -288,7 +296,7 @@ export default function NoderView() {
             {!selected ? (
               <p style={{ color: "var(--color-text-muted)" }}>Select a playbook, or create one.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", maxWidth: "760px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", maxWidth: "780px" }}>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <label style={{ flex: 1, minWidth: "200px" }}>
                     <span style={fieldLabel}>Name</span>
@@ -304,8 +312,8 @@ export default function NoderView() {
                 <div>
                   <span style={fieldLabel}>Nodes</span>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {nodes.map((n, i) => (
-                      <div key={n.id} style={nodeCard}>
+                    {nodes.map((n) => (
+                      <div key={n.id} style={{ ...nodeCard, ...(n.kind === "branch" ? branchCard : null) }}>
                         <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                           <button
                             type="button"
@@ -320,17 +328,24 @@ export default function NoderView() {
                             {entryId === n.id ? "★ start" : "start?"}
                           </button>
                           <select
-                            value={n.type}
-                            onChange={(e) => changeType(n.id, e.target.value as NodeType)}
+                            value={n.kind}
+                            onChange={(e) => changeKind(n.id, e.target.value as NodeKind)}
                             style={selectInput}
+                            title="Node kind"
                           >
-                            <option value="instruction">instruction</option>
-                            <option value="condition">condition (yes/no)</option>
+                            <option value="task">▢ task</option>
+                            <option value="skill">◆ skill (MD)</option>
+                            <option value="output">▶ output</option>
+                            <option value="branch">? branch (yes/no)</option>
                           </select>
                           <input
-                            value={n.title}
-                            onChange={(e) => patchNode(n.id, { title: e.target.value })}
-                            placeholder={n.type === "condition" ? "Question, e.g. New patterns?" : "Step, e.g. Barriere-Test"}
+                            value={n.kind === "branch" ? n.question ?? "" : n.title}
+                            onChange={(e) =>
+                              n.kind === "branch"
+                                ? patchNode(n.id, { question: e.target.value })
+                                : patchNode(n.id, { title: e.target.value })
+                            }
+                            placeholder={placeholderFor(n.kind)}
                             style={{ ...fieldInput, flex: 1, minWidth: "180px" }}
                           />
                           <button type="button" onClick={() => deleteNode(n.id)} title="Delete node" style={tagBtn}>
@@ -338,37 +353,89 @@ export default function NoderView() {
                           </button>
                         </div>
 
-                        <textarea
-                          value={n.body ?? ""}
-                          onChange={(e) => patchNode(n.id, { body: e.target.value || undefined })}
-                          placeholder="Optional detail / instruction for the agent…"
-                          rows={2}
-                          style={{ ...fieldInput, marginTop: "8px", resize: "vertical", fontSize: "13px" }}
-                        />
+                        {/* Per-kind config */}
+                        {n.kind === "task" && (
+                          <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
+                            <label style={edgeLabel}>
+                              <span style={mutedK}>project</span>
+                              <input
+                                value={n.taskProject ?? ""}
+                                onChange={(e) => patchNode(n.id, { taskProject: e.target.value || undefined })}
+                                placeholder="(scope project)"
+                                style={{ ...fieldInput, width: "160px" }}
+                              />
+                            </label>
+                            <label style={edgeLabel}>
+                              <span style={mutedK}>task #</span>
+                              <input
+                                type="number"
+                                value={n.taskNumber ?? ""}
+                                onChange={(e) =>
+                                  patchNode(n.id, {
+                                    taskNumber: e.target.value ? Number(e.target.value) : undefined,
+                                  })
+                                }
+                                placeholder="NR"
+                                style={{ ...fieldInput, width: "90px" }}
+                              />
+                            </label>
+                          </div>
+                        )}
+
+                        {n.kind === "skill" && (
+                          <textarea
+                            value={n.body ?? ""}
+                            onChange={(e) => patchNode(n.id, { body: e.target.value || undefined })}
+                            placeholder="Skill instructions (Markdown) the agent applies…"
+                            rows={3}
+                            style={{ ...fieldInput, marginTop: "8px", resize: "vertical", fontSize: "13px", fontFamily: "var(--font-mono, monospace)" }}
+                          />
+                        )}
+
+                        {n.kind === "output" && (
+                          <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
+                            <label style={edgeLabel}>
+                              <span style={mutedK}>output</span>
+                              <select
+                                value={n.outputKind ?? "set_status"}
+                                onChange={(e) => patchNode(n.id, { outputKind: e.target.value as "set_status" | "feedback" })}
+                                style={selectInput}
+                              >
+                                <option value="set_status">set task status</option>
+                                <option value="feedback">write feedback</option>
+                              </select>
+                            </label>
+                            {(n.outputKind ?? "set_status") === "set_status" && (
+                              <label style={edgeLabel}>
+                                <span style={mutedK}>→</span>
+                                <select
+                                  value={n.outputStatus ?? "review_input"}
+                                  onChange={(e) => patchNode(n.id, { outputStatus: e.target.value as "review_input" | "done" })}
+                                  style={selectInput}
+                                >
+                                  <option value="review_input">review_input</option>
+                                  <option value="done">done</option>
+                                </select>
+                              </label>
+                            )}
+                          </div>
+                        )}
 
                         {/* Edges */}
                         <div style={{ display: "flex", gap: "12px", marginTop: "8px", flexWrap: "wrap" }}>
-                          {n.type === "condition" ? (
+                          {n.kind === "branch" ? (
                             <>
                               <label style={edgeLabel}>
-                                <span style={{ color: "var(--color-text-muted)" }}>if yes →</span>
-                                <select
-                                  value={n.onYes ?? ""}
-                                  onChange={(e) => patchNode(n.id, { onYes: e.target.value || undefined })}
-                                  style={selectInput}
-                                >
+                                <span style={{ color: "var(--color-accent)", fontWeight: 600 }}>if yes →</span>
+                                <select value={n.onTrue ?? ""} onChange={(e) => patchNode(n.id, { onTrue: e.target.value || undefined })} style={selectInput}>
                                   {branchOptions(n.id).map((o) => (
                                     <option key={o.value} value={o.value}>{o.label}</option>
                                   ))}
                                 </select>
                               </label>
                               <label style={edgeLabel}>
-                                <span style={{ color: "var(--color-text-muted)" }}>if no →</span>
-                                <select
-                                  value={n.onNo ?? ""}
-                                  onChange={(e) => patchNode(n.id, { onNo: e.target.value || undefined })}
-                                  style={selectInput}
-                                >
+                                <span style={mutedK}>if no →</span>
+                                <select value={n.onFalse ?? ""} onChange={(e) => patchNode(n.id, { onFalse: e.target.value || undefined })} style={selectInput}>
                                   {branchOptions(n.id).map((o) => (
                                     <option key={o.value} value={o.value}>{o.label}</option>
                                   ))}
@@ -377,12 +444,8 @@ export default function NoderView() {
                             </>
                           ) : (
                             <label style={edgeLabel}>
-                              <span style={{ color: "var(--color-text-muted)" }}>next →</span>
-                              <select
-                                value={n.next ?? ""}
-                                onChange={(e) => patchNode(n.id, { next: e.target.value || undefined })}
-                                style={selectInput}
-                              >
+                              <span style={mutedK}>next →</span>
+                              <select value={n.next ?? ""} onChange={(e) => patchNode(n.id, { next: e.target.value || undefined })} style={selectInput}>
                                 {branchOptions(n.id).map((o) => (
                                   <option key={o.value} value={o.value}>{o.label}</option>
                                 ))}
@@ -393,9 +456,12 @@ export default function NoderView() {
                       </div>
                     ))}
                   </div>
-                  <button type="button" onClick={addNode} style={{ ...secondaryBtn, marginTop: "10px" }}>
-                    + Add node
-                  </button>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => addNode("task")} style={secondaryBtn}>+ Task</button>
+                    <button type="button" onClick={() => addNode("skill")} style={secondaryBtn}>+ Skill</button>
+                    <button type="button" onClick={() => addNode("output")} style={secondaryBtn}>+ Output</button>
+                    <button type="button" onClick={() => addNode("branch")} style={secondaryBtn}>+ Branch</button>
+                  </div>
                 </div>
 
                 {/* Preview */}
@@ -436,7 +502,6 @@ export default function NoderView() {
                       disabled={sharing}
                       style={{
                         ...secondaryBtn,
-                        width: "auto",
                         background: share?.published ? "var(--color-accent)" : "transparent",
                         color: share?.published ? "#fff" : "var(--color-text-primary)",
                       }}
@@ -470,6 +535,19 @@ export default function NoderView() {
       )}
     </div>
   );
+}
+
+function placeholderFor(kind: NodeKind): string {
+  switch (kind) {
+    case "task":
+      return "Task label, e.g. Merge duplicate tokens";
+    case "skill":
+      return "Skill name, e.g. Barriere-Test";
+    case "output":
+      return "Optional label";
+    case "branch":
+      return "Question, e.g. New patterns?";
+  }
 }
 
 // ─── Inline styles (function-first; tokens keep it theme-consistent) ─────────
@@ -510,11 +588,27 @@ const nodeCard: React.CSSProperties = {
   background: "var(--color-surface)",
 };
 
+const branchCard: React.CSSProperties = {
+  borderLeft: "3px solid var(--color-accent)",
+};
+
 const edgeLabel: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "6px",
   fontSize: "13px",
+};
+
+const mutedK: React.CSSProperties = { color: "var(--color-text-muted)" };
+
+const tagBtn: React.CSSProperties = {
+  padding: "4px 8px",
+  borderRadius: "6px",
+  border: "1px solid var(--color-border-subtle)",
+  background: "transparent",
+  color: "var(--color-text-muted)",
+  cursor: "pointer",
+  fontSize: "12px",
 };
 
 const primaryBtn: React.CSSProperties = {
@@ -529,23 +623,14 @@ const primaryBtn: React.CSSProperties = {
 };
 
 const secondaryBtn: React.CSSProperties = {
-  padding: "8px 14px",
+  padding: "7px 12px",
   borderRadius: "8px",
   border: "1px solid var(--color-border-subtle)",
   background: "transparent",
   color: "var(--color-text-primary)",
   cursor: "pointer",
   fontWeight: 600,
-};
-
-const tagBtn: React.CSSProperties = {
-  padding: "4px 8px",
-  borderRadius: "6px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "transparent",
-  color: "var(--color-text-muted)",
-  cursor: "pointer",
-  fontSize: "12px",
+  fontSize: "13px",
 };
 
 const sharePanel: React.CSSProperties = {

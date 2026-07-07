@@ -99,15 +99,18 @@ Step, mit DnD-Editor `moveStep`, Player `flattenSteps`, Publish-Pipeline) ist
 eine flache geordnete Liste; Ja/Nein-Gabeln brauchen Kanten.
 
 ```
-Node:
-  id, type: 'instruction' | 'condition' | 'skill' | 'action'
-  title, body           // Markdown-Instruktion
-  skillRef?             // → Note-id eines wiederverwendbaren Blocks
-  onYes?: nodeId        // nur bei type='condition'
-  onNo?:  nodeId
-  next?:  nodeId        // linearer Anschluss sonst
+Node (kind = task | skill | output | branch):
+  id, kind, title, x?, y?           // x/y für den Canvas
+  task:   taskProject?, taskNumber?  // existierender Task in (geteiltem) Projekt
+  skill:  body (Markdown), skillRef? // wiederverwendbarer How-to-Block (Note)
+  output: outputKind (set_status|feedback), outputStatus?  // Rückschreiben
+  branch: question, onTrue?, onFalse?  // Ja/Nein-Gabel
+  next?                              // linearer Anschluss (nicht-branch)
 Playbook: { id, name, projectScope, entryId, nodes: Node[] }
 ```
+> Umgesetzt in `lib/playbook.ts` (Taxonomie **task | skill | output | branch**).
+> Der Owner-Wunsch: „jede Box ist ein existierender Task, ein MD (skill) oder ein
+> output" — plus `branch` für gute Verzweigungen (true/false), wie im n8n-Vorbild.
 
 ## Sicherheit & Human-in-the-loop
 
@@ -222,8 +225,15 @@ TypeScript ok** (Build-Abbruch nur an der vorbestehenden `/api/demo-request`-Rou
 wegen fehlendem `RESEND_API_KEY` — env, nicht dieser Change). Nicht im Browser
 gefahren (braucht die Supabase-Env).
 
-**Noch offen:** ein echter Canvas-WYSIWYG (gezogene Kanten) als Aufsatz auf den
-Dropdown-Node-Editor; Ausführungs-/Run-Reporting (welcher Zweig genommen wurde).
+**Node-Taxonomie (Owner-Modell):** `task | skill | output | branch` — umgesetzt in
+`lib/playbook.ts` + `buildAgentFeed` (jede Zeile im Agent-Feed ist nach Kind
+getaggt: `[task] … · [skill] … · [output] … · ? branch`). Der Editor
+(`NoderView`) autort alle vier Kinds per Dropdown-Verdrahtung.
+
+**Noch offen:** der echte **n8n-artige Canvas** (gezogene Kanten, React Flow /
+`@xyflow/react`) als Aufsatz auf denselben Node-Store — Konzept-Mockup steht;
+neue Dependency + größerer UI-Build → braucht Go. Danach: Run-Reporting
+(welcher Zweig genommen wurde, als Ergebnis-Note zurück).
 
 ## Offene Entscheidungen
 

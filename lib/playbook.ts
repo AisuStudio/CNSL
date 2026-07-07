@@ -1,22 +1,62 @@
-// Playbook tool — types + pure helpers (no UI, no DB). A Playbook is an authored
-// runbook: an ordered tree of instruction/condition nodes (yes/no forks) that an
-// external agent (Claude Code / any LLM harness) fetches as Markdown, works
-// through, and writes results back over the capability link. CNSL only stores +
-// publishes it — it never runs the agent. See data/SPIKE-playbook-tool.md.
+// Playbook tool ("Noder") — types + pure helpers (no UI, no DB). A Playbook is a
+// FLOW an external agent (Claude Code / any LLM harness) fetches as Markdown,
+// works through, and writes results back to over the capability link. CNSL only
+// stores + publishes it — it never runs the agent.
+//
+// Each node is one of four kinds:
+//   • task    — an existing task in a (shared) project the agent should act on
+//   • skill   — a reusable Markdown instruction block (a "how to", e.g. a Note)
+//   • output  — a result the agent writes back (set a task's status, or feedback)
+//   • branch  — a yes/no decision that splits the flow (true → / false →)
+//
+// Nodes carry x/y so a visual canvas can lay them out; the flow itself is the
+// set of edges (`next` for linear kinds, `onTrue`/`onFalse` for a branch).
+// See data/SPIKE-playbook-tool.md.
 
 import { newId } from "./storage";
 
-export type NodeType = "instruction" | "condition";
+export type NodeKind = "task" | "skill" | "output" | "branch";
+
+// Statuses an agent is allowed to set via the write-back endpoint. Deliberately
+// narrow + review-first: the agent proposes, a human confirms `done`.
+export const AGENT_SETTABLE_STATUS = ["review_input", "done"] as const;
+export type AgentSettableStatus = (typeof AGENT_SETTABLE_STATUS)[number];
+
+export function isAgentSettableStatus(s: string): s is AgentSettableStatus {
+  return (AGENT_SETTABLE_STATUS as readonly string[]).includes(s);
+}
+
+export type OutputKind = "set_status" | "feedback";
 
 export interface PlaybookNode {
   id: string;
-  type: NodeType;
+  kind: NodeKind;
   title: string;
-  body?: string; // markdown instruction, or the question for a condition
-  skillRef?: string; // → a reusable block (Note id); future
-  onYes?: string; // condition only: next node id when true
-  onNo?: string; // condition only: next node id when false
-  next?: string; // instruction: linear next node id
+
+  // kind = "task" — reference an existing task in a (shared) project.
+  taskProject?: string;
+  taskNumber?: number;
+  taskId?: string; // resolved id (optional; number+project is the human ref)
+
+  // kind = "skill" — a reusable Markdown instruction block.
+  body?: string; // inline markdown (also usable as a note on any node)
+  skillRef?: string; // optional → a Note id holding the skill's markdown
+
+  // kind = "output" — what the agent writes back.
+  outputKind?: OutputKind;
+  outputStatus?: AgentSettableStatus; // for outputKind = "set_status"
+
+  // kind = "branch" — a yes/no decision.
+  question?: string;
+  onTrue?: string; // next node id when the answer is yes
+  onFalse?: string; // next node id when the answer is no
+
+  // Linear flow for the non-branch kinds.
+  next?: string;
+
+  // Canvas layout (used by the visual editor; ignored by the Markdown render).
+  x?: number;
+  y?: number;
 }
 
 export interface Playbook {
@@ -33,22 +73,18 @@ export interface Playbook {
   updatedAt?: string;
 }
 
-// Statuses an agent is allowed to set via the write-back endpoint. Deliberately
-// narrow + review-first: the agent proposes, a human confirms `done`.
-export const AGENT_SETTABLE_STATUS = ["review_input", "done"] as const;
-export type AgentSettableStatus = (typeof AGENT_SETTABLE_STATUS)[number];
-
-export function isAgentSettableStatus(s: string): s is AgentSettableStatus {
-  return (AGENT_SETTABLE_STATUS as readonly string[]).includes(s);
-}
-
 // ─── Factories ──────────────────────────────────────────────────────────────
-export function blankNode(type: NodeType = "instruction"): PlaybookNode {
-  return { id: newId("node"), type, title: "" };
+export function blankNode(kind: NodeKind = "skill"): PlaybookNode {
+  const n: PlaybookNode = { id: newId("node"), kind, title: "" };
+  if (kind === "output") {
+    n.outputKind = "set_status";
+    n.outputStatus = "review_input";
+  }
+  return n;
 }
 
 export function blankPlaybook(project?: string): Playbook {
-  const first = blankNode();
+  const first = blankNode("skill");
   return {
     id: newId("pb"),
     name: "",
@@ -67,30 +103,52 @@ export function nodeById(pb: Playbook, id?: string): PlaybookNode | undefined {
 }
 
 // ─── Markdown rendering (what the agent fetches) ─────────────────────────────
-// Walk from the entry node, expanding condition forks as nested "If yes / If no"
-// branches. Cycle-guarded per path so a loop can't blow the stack; a node reached
-// via two branches is rendered under each (intentional — the branches differ).
+// One line per node, tagged by kind so the agent knows what each box means.
+function renderNode(node: PlaybookNode): string {
+  const t = node.title.trim();
+  switch (node.kind) {
+    case "task": {
+      const ref = [node.taskProject, node.taskNumber ? `#${node.taskNumber}` : ""]
+        .filter(Boolean)
+        .join(" ");
+      return `[task] ${ref ? `${ref} — ` : ""}${t || "(task)"}`;
+    }
+    case "skill":
+      return `[skill] ${t || "(skill)"}`;
+    case "output": {
+      const detail =
+        node.outputKind === "set_status"
+          ? `set status → ${node.outputStatus ?? "review_input"}`
+          : "feedback";
+      return `[output] ${detail}${t ? ` — ${t}` : ""}`;
+    }
+    case "branch":
+      return `? ${node.question || t || "(decision)"}`;
+  }
+}
+
+// Walk from the entry node, expanding branch forks as nested "If yes / If no"
+// branches. Cycle-guarded per path so a loop can't blow the stack.
 export function playbookToMarkdown(pb: Playbook): string {
   const lines: string[] = [];
   const walk = (id: string | undefined, depth: number, seen: Set<string>) => {
     const node = nodeById(pb, id);
     if (!node || seen.has(node.id)) return;
     const pad = "  ".repeat(depth);
-    if (node.type === "condition") {
-      lines.push(`${pad}- **?** ${node.title || "(condition)"}`);
-      if (node.body) lines.push(`${pad}  ${node.body}`);
+    if (node.kind === "branch") {
+      lines.push(`${pad}- **${renderNode(node)}**`);
       lines.push(`${pad}  - **If yes →**`);
-      walk(node.onYes, depth + 2, new Set(seen).add(node.id));
+      walk(node.onTrue, depth + 2, new Set(seen).add(node.id));
       lines.push(`${pad}  - **If no →**`);
-      walk(node.onNo, depth + 2, new Set(seen).add(node.id));
+      walk(node.onFalse, depth + 2, new Set(seen).add(node.id));
     } else {
-      lines.push(`${pad}- ${node.title || "(step)"}`);
-      if (node.body) lines.push(`${pad}  ${node.body}`);
+      lines.push(`${pad}- ${renderNode(node)}`);
+      if (node.body) lines.push(`${pad}  ${node.body.replace(/\n/g, `\n${pad}  `)}`);
       walk(node.next, depth, new Set(seen).add(node.id));
     }
   };
   walk(pb.entryId, 0, new Set());
-  return lines.length ? lines.join("\n") : "_(no steps yet)_";
+  return lines.length ? lines.join("\n") : "_(no nodes yet)_";
 }
 
 // Minimal task shape the feed needs (the API route maps DB rows → this, so this
@@ -106,13 +164,13 @@ export interface FeedTask {
 }
 
 const AGENT_CONTEXT =
-  "This is a CNSL playbook: a runbook for an automation agent. Work the steps " +
-  "top-to-bottom; at a condition, choose a branch and STATE which you took and " +
-  "why. When you handle a task, write the result back (see 'Writing back'). " +
-  "CNSL only stores this — you are the executor.";
+  "This is a CNSL playbook (a flow): work the nodes from the start, following " +
+  "`next` and — at a branch — choosing yes/no and STATING which you took and why. " +
+  "Node kinds: [task] an existing task to act on · [skill] a how-to to apply · " +
+  "[output] a result to write back. CNSL only stores this — you are the executor.";
 
 // The full Markdown document served at the capability link: context + how to
-// write back + the playbook + the scoped task list.
+// write back + the flow + the scoped task list.
 export function buildAgentFeed(
   pb: Playbook,
   tasks: FeedTask[],
@@ -129,7 +187,7 @@ export function buildAgentFeed(
     lines.push(pb.description);
   }
   lines.push("");
-  lines.push("## Steps");
+  lines.push("## Flow");
   lines.push(playbookToMarkdown(pb));
   lines.push("");
   lines.push("## Tasks in scope");
@@ -148,7 +206,7 @@ export function buildAgentFeed(
   lines.push("");
   lines.push("## Writing back");
   lines.push(
-    "When you finish a task, PATCH the capability link below. Prefer " +
+    "At an [output] node, PATCH the capability link below. Prefer " +
       "`review_input` so a human confirms `done`."
   );
   lines.push("");
