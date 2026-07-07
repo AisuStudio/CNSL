@@ -96,6 +96,7 @@ export default function StartPage() {
         <div className="start-cols">
           <div className="start-left">
             <ToolsPanel onSignUp={() => setAuthMode("signup")} onLogin={() => setAuthMode("signin")} />
+            <DemoRequestForm />
           </div>
           <div className="start-right">
             {/* Desktop: live self-playing demo. Mobile: static hero image. */}
@@ -226,6 +227,87 @@ function ToolsPanel({ onSignUp, onLogin }: { onSignUp: () => void; onLogin: () =
               Log in
             </button>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DemoRequestForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/demo-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setStatus(res.ok ? "done" : "error");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div
+      className="start-tools"
+      style={{ marginTop: "10px" }}
+    >
+      <div
+        style={{
+          background: "rgba(15, 14, 20, 0.8)",
+          backdropFilter: "blur(9px)",
+          WebkitBackdropFilter: "blur(9px)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-container)",
+          padding: "var(--space-5)",
+        }}
+      >
+        <SectionLabel>Request Demo</SectionLabel>
+        {status === "done" ? (
+          <p style={{ margin: "10px 0 0", fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+            Got it — I'll be in touch.
+          </p>
+        ) : (
+          <form onSubmit={submit} style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              style={{
+                width: "100%",
+                height: "38px",
+                padding: "0 12px",
+                borderRadius: "var(--radius-input)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-bg-deep)",
+                color: "var(--color-text-primary)",
+                fontSize: "var(--text-sm)",
+                fontFamily: "var(--font-family)",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+            {status === "error" && (
+              <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-running)" }}>
+                Something went wrong — try again.
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="start-btn start-btn-ghost"
+              style={{ marginTop: "2px" }}
+            >
+              {status === "loading" ? "Sending…" : "Send →"}
+            </button>
+          </form>
         )}
       </div>
     </div>
