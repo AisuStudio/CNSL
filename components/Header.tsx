@@ -19,6 +19,7 @@ export type Tool =
   | "tracker"
   | "notepad"
   | "calendar"
+  | "noder"
   | "scheduler"
   | "chat"
   | "log";

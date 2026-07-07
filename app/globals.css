@@ -548,6 +548,12 @@ a:focus-visible {
 :root[data-theme="mono"] main {
   background: var(--mono);
 }
+/* Noder opts out of the lavender canvas — it's a fresh spike tool, unstyled
+   for the light-card treatment, so it keeps the dark chrome instead (matches
+   header/sidebar; default --color-text-* tokens already read fine on black). */
+:root[data-theme="mono"] main.cnsl-canvas-dark {
+  background: var(--color-bg-deep);
+}
 :root[data-theme="mono"] .cnsl-row-line {
   --color-text-primary: color-mix(in srgb, var(--mono) 12%, #000); /* topics — near-black */
   --color-text-muted:   color-mix(in srgb, var(--mono) 16%, #000); /* task text + meta — crisp dark, not muddy */
