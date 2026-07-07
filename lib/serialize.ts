@@ -6,6 +6,7 @@ import type { CalendarEvent } from "./calendar";
 import type { Project } from "./projects";
 import type { Schedule, Section, Activity } from "./scheduler";
 import type { Message } from "./chat";
+import type { Playbook, PlaybookNode } from "./playbook";
 import type {
   Task as DbTask,
   TimeEntry as DbTimeEntry,
@@ -16,6 +17,7 @@ import type {
   Schedule as DbSchedule,
   Activity as DbActivity,
   Message as DbMessage,
+  Playbook as DbPlaybook,
   Prisma,
 } from "@prisma/client";
 
@@ -272,6 +274,42 @@ export function activityToDb(a: Activity, boardId: string) {
     completed: a.completed ?? false,
     note: a.note ?? null,
     createdAt: a.createdAt ? new Date(a.createdAt) : undefined,
+    // updatedAt is @updatedAt — Prisma manages it automatically
+  };
+}
+
+// ─── Playbook (agent automation — Spike) ────────────────────────────────────
+// DB row → app Playbook (nodes round-trip as a JSON tree).
+export function playbookFromDb(row: DbPlaybook): Playbook {
+  return {
+    id: row.id,
+    name: row.name,
+    project: row.project ?? undefined,
+    description: row.description ?? undefined,
+    entryId: row.entryId ?? undefined,
+    nodes: Array.isArray(row.nodes)
+      ? (row.nodes as unknown as PlaybookNode[])
+      : [],
+    published: row.published,
+    agentSlug: row.agentSlug ?? undefined,
+    createdAt: row.createdAt?.toISOString(),
+    updatedAt: row.updatedAt?.toISOString(),
+  };
+}
+
+// app Playbook → DB columns (id + boardId handled by the caller's upsert).
+// published + agentSlug are server-managed (via /api/playbook/config) and are
+// intentionally omitted here, so a plain save never clobbers the share state —
+// exactly like scheduleToDb omits published/slug.
+export function playbookToDb(p: Playbook, boardId: string) {
+  return {
+    boardId,
+    name: p.name ?? "",
+    project: p.project ?? null,
+    description: p.description ?? null,
+    entryId: p.entryId ?? null,
+    nodes: (p.nodes ?? []) as unknown as Prisma.InputJsonValue,
+    createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
     // updatedAt is @updatedAt — Prisma manages it automatically
   };
 }

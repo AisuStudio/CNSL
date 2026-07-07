@@ -396,6 +396,34 @@ model Message {
   @@index([conversationId, createdAt])
 }
 
+// ─── Playbook (agent automation) — Spike ────────────────
+/// An authored runbook an external agent (Claude Code / any LLM harness) fetches
+/// as Markdown, works through, and writes results back over the capability link.
+/// CNSL only stores + publishes it — it never runs the agent. Nodes (an
+/// instruction/condition tree with yes/no forks) round-trip as JSON, like
+/// Schedule.sections. `published` + `agentSlug` are server-managed (mirrors Note/
+/// Schedule publish); playbookToDb never writes them, so a save can't clobber the
+/// share state. `agentSlug` is the same unguessable-link pattern as intakeSlug.
+/// See data/SPIKE-playbook-tool.md.
+model Playbook {
+  id          String   @id @default(uuid())
+  boardId     String
+  name        String   @default("")
+  project     String? // scope: which project's tasks the agent may touch (null = whole board)
+  description String?
+  entryId     String? // first node to run
+  nodes       Json? // [{ id, type, title, body?, skillRef?, onYes?, onNo?, next? }]
+  // ── Capability-link publishing (/api/agent/{agentSlug}) ──
+  // published=true exposes the playbook to an agent via an unguessable slug (R/W,
+  // no login) — same pattern as Project.intakeSlug. Revoke by rotating the slug.
+  published   Boolean  @default(false)
+  agentSlug   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([boardId])
+}
+
 // ─── Later (uncomment when building each tool) ──────────
 //
 // model Invite {

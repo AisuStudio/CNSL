@@ -148,6 +148,63 @@ Playbook: { id, name, projectScope, entryId, nodes: Node[] }
   Slash-Command / `CLAUDE.md`-Instruktion generieren, die auf die Runbook-URL
   zeigt (reine Textgenerierung).
 
+## Prototyp auf diesem Branch (Backend-Slice)
+
+Ein erster vertikaler Slice ist implementiert — Fokus: **Speichern** + **Freigeben**.
+Kein UI-Tool in der Toolbox (bewusst, s. u.); die Fähigkeit steckt in echten,
+per `curl` ausübbaren Endpunkten.
+
+**Neue Dateien**
+- `lib/playbook.ts` — Typen + pure Helfer (`Playbook`, `PlaybookNode`,
+  `playbookToMarkdown`, `buildAgentFeed`, Status-Whitelist). Voll getestet in
+  `lib/playbook.test.ts`.
+- `prisma/schema.prisma` — `model Playbook` (Nodes als JSON, `agentSlug` unique).
+- `data/phase-playbook.sql` — additive Migration (einmal im Supabase-SQL-Editor
+  ausführen, DANN deployen; mirror von `phase-scheduler.sql`).
+- `lib/serialize.ts` — `playbookFromDb` / `playbookToDb` (`published`/`agentSlug`
+  server-managed → ein Save clobbert die Freigabe nie).
+- `app/api/playbook/route.ts` — **Speichern**: `GET` (Liste) · `POST { playbook }`
+  (upsert per client-id).
+- `app/api/playbook/config/route.ts` — **Freigeben**: `POST { playbookId, enabled,
+  rotate? }` mintet den `agentSlug` (Capability-Link), `enabled:false` widerruft,
+  `rotate:true` erneuert den Link (alter tot).
+- `app/api/agent/[slug]/route.ts` — der **Agent-Endpunkt**: `GET` liefert das
+  Playbook + gescopte Tasks als Markdown; `PATCH { taskId, status }` schreibt
+  zurück (nur `review_input`/`done`, scope-geprüft, jeder Write als `[agent]`-Log).
+
+**Ausüben (nach `phase-playbook.sql` + Deploy/`prisma db push`)**
+```bash
+# 1) Speichern (eingeloggt, Session-Cookie)
+curl -X POST /api/playbook -H 'content-type: application/json' \
+  -d '{"playbook":{"id":"pb_demo","name":"Design-System-Review","project":"CNSL",
+       "entryId":"n1","nodes":[
+         {"id":"n1","type":"instruction","title":"Bedien dich am Design System","next":"n2"},
+         {"id":"n2","type":"condition","title":"Gibt es neue Patterns?","onYes":"n3","onNo":"n4"},
+         {"id":"n3","type":"instruction","title":"Binde die neuen Patterns ein"},
+         {"id":"n4","type":"instruction","title":"Mach den Barriere-Test"}]}}'
+
+# 2) Freigeben → liefert { url: "/api/agent/design-system-review-ab12cd34" }
+curl -X POST /api/playbook/config -H 'content-type: application/json' \
+  -d '{"playbookId":"pb_demo","enabled":true}'
+
+# 3) Agent liest (kein Login — der Link IST das Credential)
+curl /api/agent/design-system-review-ab12cd34            # → Markdown-Runbook + Tasks
+
+# 4) Agent schreibt zurück
+curl -X PATCH /api/agent/design-system-review-ab12cd34 \
+  -H 'content-type: application/json' \
+  -d '{"taskId":"<ID aus der Tabelle>","status":"review_input"}'
+```
+
+**Verifiziert:** voller `tsc --noEmit` fehlerfrei, `vitest` 33/33 grün (inkl. 7
+neue Playbook-Tests). *Nicht* end-to-end gefahren — braucht die Supabase-Env
+(`DATABASE_URL`) + `phase-playbook.sql`.
+
+**Bewusst noch nicht dabei:** das Toolbox-UI (Kachel/Editor). Ein Playbook ist
+v1 über die API (oder später einen Markdown-Editor) autorbar; der visuelle
+Tree-Builder ist die nächste, separat verifizierbare Schicht — nicht ins
+laufende App-Tree gemischt, solange es hier nicht lauffähig testbar ist.
+
 ## Offene Entscheidungen
 
 1. Playbook als Note-Konvention **oder** eigene Tabelle ab v1?
