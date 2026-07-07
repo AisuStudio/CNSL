@@ -1,10 +1,10 @@
 "use client";
 
 // Noder — the agent-automation tool. Author a "playbook" flow (nodes: task /
-// skill / output / branch) on a visual node-graph canvas, SAVE it, and
-// FREIGEBEN (share) it via an unguessable capability link an external agent
-// (Claude Code / any LLM harness) fetches as Markdown and writes results back
-// to. Self-contained: talks to /api/playbook* directly (like ChatView).
+// skill / output / branch) on a visual node-graph canvas, SAVE it, and SHARE
+// it via an unguessable capability link an external agent (Claude Code / any
+// LLM harness) fetches as Markdown and writes results back to. Self-contained:
+// talks to /api/playbook* directly (like ChatView).
 // See data/SPIKE-playbook-tool.md.
 
 import { useCallback, useEffect, useState } from "react";
@@ -18,6 +18,7 @@ import {
   type PlaybookNode,
 } from "@/lib/playbook";
 import type { Task } from "@/lib/mock-data";
+import { InfoIcon } from "./icons";
 import NoderCanvas from "./noder/NoderCanvas";
 import NodeInspector from "./noder/NodeInspector";
 import {
@@ -46,6 +47,7 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const [share, setShare] = useState<{
     published: boolean;
@@ -238,7 +240,83 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
         <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
           Build a flow · save · share a link an agent works through
         </span>
+        <button
+          type="button"
+          onClick={() => setInfoOpen((v) => !v)}
+          title="How Noder works"
+          aria-expanded={infoOpen}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "24px",
+            height: "24px",
+            padding: 0,
+            marginLeft: "auto",
+            borderRadius: "6px",
+            border: "1px solid var(--color-border-subtle)",
+            background: infoOpen ? "var(--color-accent)" : "transparent",
+            color: infoOpen ? "#fff" : "var(--color-text-muted)",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <InfoIcon color="currentColor" />
+        </button>
       </div>
+
+      {infoOpen && (
+        <div
+          style={{
+            maxWidth: "780px",
+            marginBottom: "16px",
+            padding: "14px 16px",
+            borderRadius: "10px",
+            border: "1px solid var(--color-border-subtle)",
+            background: "var(--color-surface)",
+            color: "var(--color-text-secondary)",
+            fontSize: "13px",
+            lineHeight: 1.6,
+          }}
+        >
+          <p style={{ margin: "0 0 8px", color: "var(--color-text-primary)", fontWeight: 600 }}>
+            How Noder works
+          </p>
+          <p style={{ margin: "0 0 8px" }}>
+            Noder builds <em>playbooks</em> — flows an external agent (like
+            Claude Code) works through and reports back on. CNSL only stores
+            and publishes the flow; it never runs anything itself.
+          </p>
+          <p style={{ margin: "0 0 4px" }}>
+            Each box on the canvas is a node, one of four kinds:
+          </p>
+          <ul style={{ margin: "0 0 8px", paddingLeft: "18px" }}>
+            <li><strong>▢ task</strong> — an existing task the agent should act on (link it via search)</li>
+            <li><strong>◆ skill</strong> — a reusable how-to. Write it inline, or link a published Note for something you&apos;ll reuse across playbooks</li>
+            <li><strong>▶ output</strong> — what the agent writes back: a task status, or a written report</li>
+            <li><strong>? branch</strong> — a yes/no decision that splits the flow into two paths</li>
+          </ul>
+          <p style={{ margin: "0 0 8px" }}>
+            Drag from a node&apos;s dot to another node&apos;s dot to connect
+            them. Click a node to edit its details in the panel on the right.
+          </p>
+          <p style={{ margin: "0 0 8px" }}>
+            <strong style={{ color: "var(--color-text-primary)" }}>Skills as Notes:</strong>{" "}
+            if a skill is worth reusing, write it as a Note instead of typing
+            it into every playbook. It must be <strong>published</strong>{" "}
+            (Publish button in NotePad) — the agent fetches it over a public
+            link, so a private Note won&apos;t be reachable.
+          </p>
+          <p style={{ margin: 0 }}>
+            <strong style={{ color: "var(--color-text-primary)" }}>Share:</strong>{" "}
+            publishing a playbook mints a link the agent fetches to read the
+            flow and the tasks in scope, and writes back to (status, and/or a
+            report that lands in your Tracking Log). Anyone with the link can
+            use it — set <strong>Project scope</strong> to limit what it can
+            see and touch, and revoke/rotate anytime.
+          </p>
+        </div>
+      )}
 
       {DEMO && (
         <p style={{ color: "var(--color-text-muted)", marginTop: "16px" }}>
@@ -368,11 +446,11 @@ export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
                   </button>
                 </div>
 
-                {/* ── Freigeben ── */}
+                {/* ── Share ── */}
                 <div style={{ ...sharePanel, maxWidth: "780px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
-                      Freigeben (agent link)
+                      Share (agent link)
                     </span>
                     <button
                       type="button"
