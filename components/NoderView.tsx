@@ -1,37 +1,38 @@
 "use client";
 
 // Noder — the agent-automation tool. Author a "playbook" flow (nodes: task /
-// skill / output / branch), SAVE it, and FREIGEBEN (share) it via an unguessable
-// capability link an external agent (Claude Code / any LLM harness) fetches as
-// Markdown and writes results back to. Self-contained: talks to /api/playbook*
-// directly (like ChatView). Function-first list editor for now; a visual canvas
-// is the next layer. See data/SPIKE-playbook-tool.md.
+// skill / output / branch) on a visual node-graph canvas, SAVE it, and
+// FREIGEBEN (share) it via an unguessable capability link an external agent
+// (Claude Code / any LLM harness) fetches as Markdown and writes results back
+// to. Self-contained: talks to /api/playbook* directly (like ChatView).
+// See data/SPIKE-playbook-tool.md.
 
 import { useCallback, useEffect, useState } from "react";
 import {
   blankPlaybook,
   blankNode,
   playbookToMarkdown,
+  autoLayoutNodes,
   type NodeKind,
   type Playbook,
   type PlaybookNode,
 } from "@/lib/playbook";
+import type { Task } from "@/lib/mock-data";
+import NoderCanvas from "./noder/NoderCanvas";
+import NodeInspector from "./noder/NodeInspector";
+import {
+  fieldLabel,
+  fieldInput,
+  primaryBtn,
+  secondaryBtn,
+  sharePanel,
+  codeBox,
+  linkBtn,
+} from "./noder/style";
 
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
 
-const KIND_MARK: Record<NodeKind, string> = {
-  task: "▢",
-  skill: "◆",
-  output: "▶",
-  branch: "?",
-};
-
-function nodeLabel(n: PlaybookNode, index: number): string {
-  const title = (n.kind === "branch" ? n.question : n.title) ?? "";
-  return `${KIND_MARK[n.kind]} ${title.trim() || `Node ${index + 1}`}`;
-}
-
-export default function NoderView() {
+export default function NoderView({ tasks = [] }: { tasks?: Task[] }) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,9 @@ export default function NoderView() {
   const [project, setProject] = useState("");
   const [nodes, setNodes] = useState<PlaybookNode[]>([]);
   const [entryId, setEntryId] = useState<string>("");
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const [share, setShare] = useState<{
     published: boolean;
@@ -52,6 +55,7 @@ export default function NoderView() {
   const [sharing, setSharing] = useState(false);
 
   const selected = playbooks.find((p) => p.id === selectedId) ?? null;
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,8 +84,14 @@ export default function NoderView() {
     if (!selected) return;
     setName(selected.name);
     setProject(selected.project ?? "");
-    setNodes(selected.nodes.length ? selected.nodes : [blankNode()]);
-    setEntryId(selected.entryId ?? selected.nodes[0]?.id ?? "");
+    const loadedNodes = selected.nodes.length ? selected.nodes : [blankNode()];
+    const loadedEntryId = selected.entryId ?? loadedNodes[0]?.id ?? "";
+    // Playbooks authored in the old dropdown editor have no x/y — lay them out
+    // once on load; manual dragging is respected forever after.
+    const needsLayout = loadedNodes.some((n) => n.x == null || n.y == null);
+    setNodes(needsLayout ? autoLayoutNodes(loadedNodes, loadedEntryId) : loadedNodes);
+    setEntryId(loadedEntryId);
+    setSelectedNodeId(null);
     setShare(null);
     if (DEMO) return;
     void (async () => {
@@ -122,8 +132,12 @@ export default function NoderView() {
 
   function addNode(kind: NodeKind = "skill") {
     const n = blankNode(kind);
+    const anchor = nodes.find((x) => x.id === selectedNodeId);
+    n.x = anchor ? (anchor.x ?? 0) + 260 : 80;
+    n.y = anchor ? anchor.y ?? 0 : 80 + nodes.length * 30;
     setNodes((prev) => [...prev, n]);
     if (!entryId) setEntryId(n.id);
+    setSelectedNodeId(n.id);
   }
 
   function deleteNode(id: string) {
@@ -139,6 +153,7 @@ export default function NoderView() {
       if (entryId === id) setEntryId(next[0]?.id ?? "");
       return next;
     });
+    if (selectedNodeId === id) setSelectedNodeId(null);
   }
 
   // ─── Persistence ─────────────────────────────────────────────────────────────
@@ -214,14 +229,6 @@ export default function NoderView() {
   const previewMd =
     selected != null ? playbookToMarkdown({ ...selected, nodes, entryId }) : "";
 
-  const branchOptions = (exceptId: string) => [
-    { value: "", label: "(end)" },
-    ...nodes
-      .map((n, i) => ({ node: n, i }))
-      .filter(({ node }) => node.id !== exceptId)
-      .map(({ node, i }) => ({ value: node.id, label: nodeLabel(node, i) })),
-  ];
-
   return (
     <div style={{ padding: "24px", height: "100%", overflow: "auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "6px" }}>
@@ -296,8 +303,8 @@ export default function NoderView() {
             {!selected ? (
               <p style={{ color: "var(--color-text-muted)" }}>Select a playbook, or create one.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", maxWidth: "780px" }}>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", maxWidth: "780px" }}>
                   <label style={{ flex: 1, minWidth: "200px" }}>
                     <span style={fieldLabel}>Name</span>
                     <input value={name} onChange={(e) => setName(e.target.value)} style={fieldInput} />
@@ -308,168 +315,39 @@ export default function NoderView() {
                   </label>
                 </div>
 
-                {/* ── Nodes ── */}
-                <div>
-                  <span style={fieldLabel}>Nodes</span>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {nodes.map((n) => (
-                      <div key={n.id} style={{ ...nodeCard, ...(n.kind === "branch" ? branchCard : null) }}>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                          <button
-                            type="button"
-                            onClick={() => setEntryId(n.id)}
-                            title="Set as start node"
-                            style={{
-                              ...tagBtn,
-                              background: entryId === n.id ? "var(--color-accent)" : "transparent",
-                              color: entryId === n.id ? "#fff" : "var(--color-text-muted)",
-                            }}
-                          >
-                            {entryId === n.id ? "★ start" : "start?"}
-                          </button>
-                          <select
-                            value={n.kind}
-                            onChange={(e) => changeKind(n.id, e.target.value as NodeKind)}
-                            style={selectInput}
-                            title="Node kind"
-                          >
-                            <option value="task">▢ task</option>
-                            <option value="skill">◆ skill (MD)</option>
-                            <option value="output">▶ output</option>
-                            <option value="branch">? branch (yes/no)</option>
-                          </select>
-                          <input
-                            value={n.kind === "branch" ? n.question ?? "" : n.title}
-                            onChange={(e) =>
-                              n.kind === "branch"
-                                ? patchNode(n.id, { question: e.target.value })
-                                : patchNode(n.id, { title: e.target.value })
-                            }
-                            placeholder={placeholderFor(n.kind)}
-                            style={{ ...fieldInput, flex: 1, minWidth: "180px" }}
-                          />
-                          <button type="button" onClick={() => deleteNode(n.id)} title="Delete node" style={tagBtn}>
-                            ✕
-                          </button>
-                        </div>
-
-                        {/* Per-kind config */}
-                        {n.kind === "task" && (
-                          <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
-                            <label style={edgeLabel}>
-                              <span style={mutedK}>project</span>
-                              <input
-                                value={n.taskProject ?? ""}
-                                onChange={(e) => patchNode(n.id, { taskProject: e.target.value || undefined })}
-                                placeholder="(scope project)"
-                                style={{ ...fieldInput, width: "160px" }}
-                              />
-                            </label>
-                            <label style={edgeLabel}>
-                              <span style={mutedK}>task #</span>
-                              <input
-                                type="number"
-                                value={n.taskNumber ?? ""}
-                                onChange={(e) =>
-                                  patchNode(n.id, {
-                                    taskNumber: e.target.value ? Number(e.target.value) : undefined,
-                                  })
-                                }
-                                placeholder="NR"
-                                style={{ ...fieldInput, width: "90px" }}
-                              />
-                            </label>
-                          </div>
-                        )}
-
-                        {n.kind === "skill" && (
-                          <textarea
-                            value={n.body ?? ""}
-                            onChange={(e) => patchNode(n.id, { body: e.target.value || undefined })}
-                            placeholder="Skill instructions (Markdown) the agent applies…"
-                            rows={3}
-                            style={{ ...fieldInput, marginTop: "8px", resize: "vertical", fontSize: "13px", fontFamily: "var(--font-mono, monospace)" }}
-                          />
-                        )}
-
-                        {n.kind === "output" && (
-                          <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap" }}>
-                            <label style={edgeLabel}>
-                              <span style={mutedK}>output</span>
-                              <select
-                                value={n.outputKind ?? "set_status"}
-                                onChange={(e) => patchNode(n.id, { outputKind: e.target.value as "set_status" | "feedback" })}
-                                style={selectInput}
-                              >
-                                <option value="set_status">set task status</option>
-                                <option value="feedback">write feedback</option>
-                              </select>
-                            </label>
-                            {(n.outputKind ?? "set_status") === "set_status" && (
-                              <label style={edgeLabel}>
-                                <span style={mutedK}>→</span>
-                                <select
-                                  value={n.outputStatus ?? "review_input"}
-                                  onChange={(e) => patchNode(n.id, { outputStatus: e.target.value as "review_input" | "done" })}
-                                  style={selectInput}
-                                >
-                                  <option value="review_input">review_input</option>
-                                  <option value="done">done</option>
-                                </select>
-                              </label>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Edges */}
-                        <div style={{ display: "flex", gap: "12px", marginTop: "8px", flexWrap: "wrap" }}>
-                          {n.kind === "branch" ? (
-                            <>
-                              <label style={edgeLabel}>
-                                <span style={{ color: "var(--color-accent)", fontWeight: 600 }}>if yes →</span>
-                                <select value={n.onTrue ?? ""} onChange={(e) => patchNode(n.id, { onTrue: e.target.value || undefined })} style={selectInput}>
-                                  {branchOptions(n.id).map((o) => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                  ))}
-                                </select>
-                              </label>
-                              <label style={edgeLabel}>
-                                <span style={mutedK}>if no →</span>
-                                <select value={n.onFalse ?? ""} onChange={(e) => patchNode(n.id, { onFalse: e.target.value || undefined })} style={selectInput}>
-                                  {branchOptions(n.id).map((o) => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                  ))}
-                                </select>
-                              </label>
-                            </>
-                          ) : (
-                            <label style={edgeLabel}>
-                              <span style={mutedK}>next →</span>
-                              <select value={n.next ?? ""} onChange={(e) => patchNode(n.id, { next: e.target.value || undefined })} style={selectInput}>
-                                {branchOptions(n.id).map((o) => (
-                                  <option key={o.value} value={o.value}>{o.label}</option>
-                                ))}
-                              </select>
-                            </label>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
-                    <button type="button" onClick={() => addNode("task")} style={secondaryBtn}>+ Task</button>
-                    <button type="button" onClick={() => addNode("skill")} style={secondaryBtn}>+ Skill</button>
-                    <button type="button" onClick={() => addNode("output")} style={secondaryBtn}>+ Output</button>
-                    <button type="button" onClick={() => addNode("branch")} style={secondaryBtn}>+ Branch</button>
-                  </div>
+                {/* ── Canvas + Inspector ── */}
+                <div style={{ display: "flex", gap: "12px", height: "560px" }}>
+                  <NoderCanvas
+                    nodes={nodes}
+                    entryId={entryId}
+                    selectedId={selectedNodeId}
+                    onPatchNode={patchNode}
+                    onSelect={setSelectedNodeId}
+                    onAddNode={addNode}
+                  />
+                  <NodeInspector
+                    node={selectedNode}
+                    isEntry={selectedNodeId != null && selectedNodeId === entryId}
+                    tasks={tasks}
+                    onPatch={(patch) => selectedNodeId && patchNode(selectedNodeId, patch)}
+                    onChangeKind={(kind) => selectedNodeId && changeKind(selectedNodeId, kind)}
+                    onDelete={() => selectedNodeId && deleteNode(selectedNodeId)}
+                    onSetEntry={() => selectedNodeId && setEntryId(selectedNodeId)}
+                  />
                 </div>
 
                 {/* Preview */}
-                <div>
-                  <span style={fieldLabel}>Preview (what the agent receives)</span>
+                <details
+                  open={previewOpen}
+                  onToggle={(e) => setPreviewOpen((e.target as HTMLDetailsElement).open)}
+                  style={{ maxWidth: "780px" }}
+                >
+                  <summary style={{ ...fieldLabel, cursor: "pointer", marginBottom: 0 }}>
+                    Preview (what the agent receives) {previewOpen ? "▾" : "▸"}
+                  </summary>
                   <pre
                     style={{
-                      margin: 0,
+                      margin: "8px 0 0",
                       padding: "12px",
                       borderRadius: "8px",
                       background: "var(--color-bg-deep)",
@@ -482,7 +360,7 @@ export default function NoderView() {
                   >
                     {previewMd}
                   </pre>
-                </div>
+                </details>
 
                 <div>
                   <button type="button" onClick={save} disabled={saving} style={{ ...primaryBtn, width: "auto", padding: "8px 20px", opacity: saving ? 0.6 : 1 }}>
@@ -491,7 +369,7 @@ export default function NoderView() {
                 </div>
 
                 {/* ── Freigeben ── */}
-                <div style={sharePanel}>
+                <div style={{ ...sharePanel, maxWidth: "780px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
                       Freigeben (agent link)
@@ -536,127 +414,3 @@ export default function NoderView() {
     </div>
   );
 }
-
-function placeholderFor(kind: NodeKind): string {
-  switch (kind) {
-    case "task":
-      return "Task label, e.g. Merge duplicate tokens";
-    case "skill":
-      return "Skill name, e.g. Barriere-Test";
-    case "output":
-      return "Optional label";
-    case "branch":
-      return "Question, e.g. New patterns?";
-  }
-}
-
-// ─── Inline styles (function-first; tokens keep it theme-consistent) ─────────
-const fieldLabel: React.CSSProperties = {
-  display: "block",
-  fontSize: "12px",
-  fontWeight: 600,
-  color: "var(--color-text-muted)",
-  marginBottom: "6px",
-};
-
-const fieldInput: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 10px",
-  borderRadius: "8px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "var(--color-surface)",
-  color: "var(--color-text-primary)",
-  fontSize: "14px",
-  fontFamily: "var(--font-family)",
-  outline: "none",
-};
-
-const selectInput: React.CSSProperties = {
-  padding: "6px 8px",
-  borderRadius: "8px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "var(--color-surface)",
-  color: "var(--color-text-primary)",
-  fontSize: "13px",
-  fontFamily: "var(--font-family)",
-};
-
-const nodeCard: React.CSSProperties = {
-  padding: "10px",
-  borderRadius: "10px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "var(--color-surface)",
-};
-
-const branchCard: React.CSSProperties = {
-  borderLeft: "3px solid var(--color-accent)",
-};
-
-const edgeLabel: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  fontSize: "13px",
-};
-
-const mutedK: React.CSSProperties = { color: "var(--color-text-muted)" };
-
-const tagBtn: React.CSSProperties = {
-  padding: "4px 8px",
-  borderRadius: "6px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "transparent",
-  color: "var(--color-text-muted)",
-  cursor: "pointer",
-  fontSize: "12px",
-};
-
-const primaryBtn: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 12px",
-  borderRadius: "8px",
-  border: "none",
-  background: "var(--color-accent)",
-  color: "#fff",
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
-const secondaryBtn: React.CSSProperties = {
-  padding: "7px 12px",
-  borderRadius: "8px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "transparent",
-  color: "var(--color-text-primary)",
-  cursor: "pointer",
-  fontWeight: 600,
-  fontSize: "13px",
-};
-
-const sharePanel: React.CSSProperties = {
-  marginTop: "4px",
-  padding: "14px",
-  borderRadius: "10px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "var(--color-bg-deep)",
-};
-
-const codeBox: React.CSSProperties = {
-  display: "block",
-  padding: "8px 10px",
-  borderRadius: "6px",
-  background: "var(--color-surface)",
-  color: "var(--color-text-primary)",
-  fontSize: "12px",
-  wordBreak: "break-all",
-};
-
-const linkBtn: React.CSSProperties = {
-  padding: "6px 12px",
-  borderRadius: "8px",
-  border: "1px solid var(--color-border-subtle)",
-  background: "transparent",
-  color: "var(--color-text-primary)",
-  cursor: "pointer",
-  fontSize: "13px",
-};

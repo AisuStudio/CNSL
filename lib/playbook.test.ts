@@ -5,7 +5,10 @@ import {
   isAgentSettableStatus,
   playbookToMarkdown,
   buildAgentFeed,
+  autoLayoutNodes,
+  nodeOutEdges,
   type Playbook,
+  type PlaybookNode,
 } from "./playbook";
 
 describe("playbook factories", () => {
@@ -124,5 +127,73 @@ describe("buildAgentFeed", () => {
   it("renders '(none)' when no tasks are in scope", () => {
     const feed = buildAgentFeed(sample(), [], { writeBackUrl: "/api/agent/x" });
     expect(feed).toContain("_(none)_");
+  });
+});
+
+describe("nodeOutEdges", () => {
+  it("non-branch: one entry for a set next, none when unset", () => {
+    const withNext: PlaybookNode = { id: "a", kind: "skill", title: "", next: "b" };
+    expect(nodeOutEdges(withNext)).toEqual([{ handle: "out", targetId: "b" }]);
+
+    const noNext: PlaybookNode = { id: "a", kind: "skill", title: "" };
+    expect(nodeOutEdges(noNext)).toEqual([]);
+  });
+
+  it("branch: only includes arms that are actually set", () => {
+    const onlyTrue: PlaybookNode = { id: "a", kind: "branch", title: "", onTrue: "b" };
+    expect(nodeOutEdges(onlyTrue)).toEqual([{ handle: "true", targetId: "b" }]);
+
+    const both: PlaybookNode = { id: "a", kind: "branch", title: "", onTrue: "b", onFalse: "c" };
+    expect(nodeOutEdges(both)).toEqual([
+      { handle: "true", targetId: "b" },
+      { handle: "false", targetId: "c" },
+    ]);
+
+    const neither: PlaybookNode = { id: "a", kind: "branch", title: "" };
+    expect(nodeOutEdges(neither)).toEqual([]);
+  });
+});
+
+describe("autoLayoutNodes", () => {
+  it("lays out a linear chain with increasing x and equal y", () => {
+    const pb = sample();
+    const laid = autoLayoutNodes(pb.nodes, pb.entryId);
+    const n1 = laid.find((n) => n.id === "n1")!;
+    const n2 = laid.find((n) => n.id === "n2")!;
+    expect(n2.x!).toBeGreaterThan(n1.x!);
+    expect(n1.y).toBe(n2.y);
+  });
+
+  it("puts both branch arms in the same column, different rows", () => {
+    const pb = sample();
+    const laid = autoLayoutNodes(pb.nodes, pb.entryId);
+    const n3 = laid.find((n) => n.id === "n3")!; // onTrue arm
+    const n4 = laid.find((n) => n.id === "n4")!; // onFalse arm
+    expect(n3.x).toBe(n4.x);
+    expect(n3.y).not.toBe(n4.y);
+  });
+
+  it("still places a node unreachable from entryId, without colliding at 0,0", () => {
+    const nodes: PlaybookNode[] = [
+      { id: "a", kind: "skill", title: "A" },
+      { id: "orphan", kind: "skill", title: "Orphan" },
+    ];
+    const laid = autoLayoutNodes(nodes, "a");
+    const a = laid.find((n) => n.id === "a")!;
+    const orphan = laid.find((n) => n.id === "orphan")!;
+    expect(orphan.x).toBeDefined();
+    expect(orphan.y).toBeDefined();
+    expect(`${orphan.x},${orphan.y}`).not.toBe(`${a.x},${a.y}`);
+  });
+
+  it("terminates and assigns distinct positions on a cyclic flow", () => {
+    const nodes: PlaybookNode[] = [
+      { id: "a", kind: "skill", title: "A", next: "b" },
+      { id: "b", kind: "skill", title: "B", next: "a" },
+    ];
+    const laid = autoLayoutNodes(nodes, "a");
+    const a = laid.find((n) => n.id === "a")!;
+    const b = laid.find((n) => n.id === "b")!;
+    expect(`${a.x},${a.y}`).not.toBe(`${b.x},${b.y}`);
   });
 });

@@ -1986,7 +1986,7 @@ export default function Home() {
 
           {/* Scrollable content; bottom padding clears the floating footer */}
           <main
-            className="cnsl-scroll flex-1 overflow-auto"
+            className={`cnsl-scroll flex-1 overflow-auto${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
             style={{ paddingBottom: showBlurp ? "104px" : "24px" }}
           >
             {searchActive && (
@@ -2090,7 +2090,7 @@ export default function Home() {
             onEditEvent={openEditEvent}
           />
         )}
-        {!searchActive && tool === "noder" && <NoderView />}
+        {!searchActive && tool === "noder" && <NoderView tasks={activeTasks} />}
         {!searchActive && tool === "scheduler" && (
           <SchedulerView
             schedules={schedules}
