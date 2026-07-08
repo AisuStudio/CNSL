@@ -301,12 +301,19 @@ export async function POST(req: NextRequest) {
             },
           });
         }
+        // #3 — batch the existence check: one findMany for all tasks in this
+        // save instead of one findUnique per task inside the loop (was the
+        // dominant N+1 cost on every autosave, incl. the 30s timer-accrual tick).
+        const existingTasksRows = tasks.length
+          ? await tx.task.findMany({
+              where: { id: { in: tasks.map((t) => t.id) } },
+              select: { id: true, boardId: true, projectId: true, updatedAt: true, trackingStartedAt: true },
+            })
+          : [];
+        const existingTaskById = new Map(existingTasksRows.map((e) => [e.id, e]));
         for (const t of tasks) {
         const pid = resolvePid(t.project);
-        const existing = await tx.task.findUnique({
-          where: { id: t.id },
-          select: { boardId: true, projectId: true, updatedAt: true, trackingStartedAt: true },
-        });
+        const existing = existingTaskById.get(t.id);
         // Scope writes: own board OR a project the user can edit (C4 sharing).
         // Not mine + not editable-shared → skip (viewer / non-member / IDOR).
         if (
@@ -356,6 +363,18 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id, id: { in: deletedLogIds } },
         });
       }
+      // #3 — batch "does this id exist anywhere" check for the create-fallback
+      // below, instead of one findUnique per log entry that misses the update.
+      const existingLogIds = log.length
+        ? new Set(
+            (
+              await tx.logEntry.findMany({
+                where: { id: { in: log.map((l) => l.id) } },
+                select: { id: true },
+              })
+            ).map((r) => r.id)
+          )
+        : new Set<string>();
       for (const l of log) {
         const data = logToDb(l, user.id);
         // userId is already scoped in `where` and isn't updatable via
@@ -366,12 +385,8 @@ export async function POST(req: NextRequest) {
           where: { id: l.id, userId: user.id },
           data: logUpdateData,
         });
-        if (upd.count === 0) {
-          const elsewhere = await tx.logEntry.findUnique({
-            where: { id: l.id },
-            select: { id: true },
-          });
-          if (!elsewhere) await tx.logEntry.create({ data: { id: l.id, ...data } });
+        if (upd.count === 0 && !existingLogIds.has(l.id)) {
+          await tx.logEntry.create({ data: { id: l.id, ...data } });
         }
       }
 
@@ -384,12 +399,16 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+      const existingNotesRows = notes.length
+        ? await tx.note.findMany({
+            where: { id: { in: notes.map((n) => n.id) } },
+            select: { id: true, boardId: true, projectId: true, updatedAt: true },
+          })
+        : [];
+      const existingNoteById = new Map(existingNotesRows.map((e) => [e.id, e]));
       for (const n of notes) {
         const pid = resolvePid(n.project);
-        const existing = await tx.note.findUnique({
-          where: { id: n.id },
-          select: { boardId: true, projectId: true, updatedAt: true },
-        });
+        const existing = existingNoteById.get(n.id);
         // own notes board OR an editable shared project → allowed; else skip.
         if (
           existing &&
@@ -423,12 +442,16 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+      const existingEventsRows = events.length
+        ? await tx.event.findMany({
+            where: { id: { in: events.map((e) => e.id) } },
+            select: { id: true, boardId: true, projectId: true, updatedAt: true },
+          })
+        : [];
+      const existingEventById = new Map(existingEventsRows.map((e) => [e.id, e]));
       for (const e of events) {
         const pid = resolvePid(e.project);
-        const existing = await tx.event.findUnique({
-          where: { id: e.id },
-          select: { boardId: true, projectId: true, updatedAt: true },
-        });
+        const existing = existingEventById.get(e.id);
         if (
           existing &&
           existing.boardId !== trackerId &&
@@ -457,12 +480,16 @@ export async function POST(req: NextRequest) {
           where: { boardId: trackerId, id: { in: deletedProjectIds } },
         });
       }
+      const existingProjectsRows = projects.length
+        ? await tx.project.findMany({
+            where: { id: { in: projects.map((p) => p.id) } },
+            select: { id: true, boardId: true, updatedAt: true },
+          })
+        : [];
+      const existingProjectById = new Map(existingProjectsRows.map((e) => [e.id, e]));
       for (const p of projects) {
         const data = projectToDb(p, trackerId);
-        const existing = await tx.project.findUnique({
-          where: { id: p.id },
-          select: { boardId: true, updatedAt: true },
-        });
+        const existing = existingProjectById.get(p.id);
         // scope writes to THIS board: never touch another board's row.
         if (existing && existing.boardId !== trackerId) continue;
         if (!existing) {
@@ -494,12 +521,16 @@ export async function POST(req: NextRequest) {
           where: { boardId: trackerId, id: { in: deletedScheduleIds } },
         });
       }
+      const existingSchedulesRows = schedules.length
+        ? await tx.schedule.findMany({
+            where: { id: { in: schedules.map((s) => s.id) } },
+            select: { id: true, boardId: true, updatedAt: true },
+          })
+        : [];
+      const existingScheduleById = new Map(existingSchedulesRows.map((e) => [e.id, e]));
       for (const s of schedules) {
         const data = scheduleToDb(s, trackerId);
-        const existing = await tx.schedule.findUnique({
-          where: { id: s.id },
-          select: { boardId: true, updatedAt: true },
-        });
+        const existing = existingScheduleById.get(s.id);
         if (existing && existing.boardId !== trackerId) continue;
         if (!existing) {
           await tx.schedule.create({ data: { id: s.id, ...data } });
@@ -520,12 +551,16 @@ export async function POST(req: NextRequest) {
           where: { boardId: trackerId, id: { in: deletedActivityIds } },
         });
       }
+      const existingActivitiesRows = activities.length
+        ? await tx.activity.findMany({
+            where: { id: { in: activities.map((a) => a.id) } },
+            select: { id: true, boardId: true, updatedAt: true },
+          })
+        : [];
+      const existingActivityById = new Map(existingActivitiesRows.map((e) => [e.id, e]));
       for (const a of activities) {
         const data = activityToDb(a, trackerId);
-        const existing = await tx.activity.findUnique({
-          where: { id: a.id },
-          select: { boardId: true, updatedAt: true },
-        });
+        const existing = existingActivityById.get(a.id);
         if (existing && existing.boardId !== trackerId) continue;
         if (!existing) {
           await tx.activity.create({ data: { id: a.id, ...data } });
