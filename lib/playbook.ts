@@ -86,6 +86,65 @@ export function blankNode(kind: NodeKind = "skill"): PlaybookNode {
   return n;
 }
 
+// ─── Paste-to-create (Log-triage "Create Playbook") ───────────────────────
+// Ask Claude (in an ordinary chat, outside CNSL) to write the JSON below, paste
+// it into the Logger, done — CNSL only parses already-well-formed structure,
+// it never interprets prose itself. Node ids are preserved when given (so
+// next/onTrue/onFalse edges from the pasted JSON stay valid); only missing ids
+// are synthesized. The playbook's own top-level id is always regenerated —
+// pasted ids are never trusted for the DB row.
+const NODE_KINDS: NodeKind[] = ["task", "skill", "output", "branch"];
+
+export function parsePastedPlaybook(raw: string, fallbackProject?: string): Playbook {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Not valid JSON.");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error('Expected a JSON object with "name" and "nodes".');
+  }
+  const input = parsed as Record<string, unknown>;
+  if (!Array.isArray(input.nodes) || input.nodes.length === 0) {
+    throw new Error('Expected a non-empty "nodes" array.');
+  }
+
+  const nodes: PlaybookNode[] = input.nodes.map((raw, i) => {
+    if (!raw || typeof raw !== "object") {
+      throw new Error(`Node ${i} is not an object.`);
+    }
+    const n = raw as Partial<PlaybookNode>;
+    if (!n.kind || !NODE_KINDS.includes(n.kind)) {
+      throw new Error(
+        `Node ${i} has an invalid "kind" (expected one of ${NODE_KINDS.join(", ")}).`
+      );
+    }
+    return { ...n, id: n.id || newId("node"), kind: n.kind, title: n.title ?? "" };
+  });
+
+  const entryId =
+    typeof input.entryId === "string" && nodes.some((n) => n.id === input.entryId)
+      ? input.entryId
+      : nodes[0].id;
+
+  const now = new Date().toISOString();
+  return {
+    id: newId("pb"),
+    name: (typeof input.name === "string" && input.name.trim()) || "Untitled",
+    project:
+      (typeof input.project === "string" && input.project.trim()) ||
+      fallbackProject ||
+      undefined,
+    description: typeof input.description === "string" ? input.description : undefined,
+    entryId,
+    nodes,
+    published: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 export function blankPlaybook(project?: string): Playbook {
   const first = blankNode("skill");
   return {

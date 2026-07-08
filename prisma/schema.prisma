@@ -199,6 +199,8 @@ model LogEntry {
   taskId     String?
   taskNumber Int?
   noteId     String? // triaged into a note instead of/alongside a task
+  playbookId String? // triaged into a playbook (paste-to-create, see lib/playbook.ts)
+  scheduleId String? // triaged into a schedule (paste-to-create, see lib/scheduler.ts normalizeImported)
 }
 
 // ─── Note Pad (board kind='doc') ────────────────────────
@@ -264,6 +266,14 @@ model Project {
   // never writes these, so a board save can't clobber the intake state.
   intakeEnabled Boolean @default(false)
   intakeSlug    String? @unique
+  // ── Agent memory (/api/agent/{notesAgentSlug}) ──
+  // When notesAgentEnabled, an agent (Claude Code or any HTTP-capable harness)
+  // can GET this project's notes as Markdown and POST a new one back — the same
+  // capability-link pattern as Playbook.agentSlug, scoped to the PROJECT rather
+  // than a single note (a project's memory isn't owned by any one note row).
+  // Server-managed via /api/notes-agent/config; never touched by the board sync.
+  notesAgentEnabled Boolean @default(false)
+  notesAgentSlug    String? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt // per-row version (newer-wins sync)
 

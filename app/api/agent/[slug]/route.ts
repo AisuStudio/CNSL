@@ -40,13 +40,115 @@ async function findPublished(slug: string) {
   return prisma.playbook.findFirst({ where: { agentSlug: slug, published: true } });
 }
 
-// GET /api/agent/<slug> → the playbook + scoped task list as Markdown.
-// Public (link-gated, no login) — the unguessable slug IS the credential.
+// A project's notes-memory link is only reachable while enabled — same shape
+// of guard as findPublished, separate credential/model (see notesAgentSlug).
+async function findNotesProject(slug: string) {
+  if (!slug) return null;
+  return prisma.project.findFirst({ where: { notesAgentSlug: slug, notesAgentEnabled: true } });
+}
+
+const NOTES_AGENT_CONTEXT =
+  "This is a CNSL project's shared memory — decisions, handoffs, and notes " +
+  "other sessions (human or agent) left for this project. Read it before " +
+  "starting work here. To leave something for the next session, POST this " +
+  "same URL with { title?, body } — it's appended as a new note, nothing is " +
+  "ever overwritten. CNSL only stores this; you decide what's worth recording.";
+
+// GET → the project's notes as one Markdown feed, newest first.
+async function notesAgentGet(project: { id: string; boardId: string; name: string }, slug: string) {
+  const notes = await prisma.note.findMany({
+    where: { projectId: project.id },
+    orderBy: { updatedAt: "desc" },
+    take: 200,
+  });
+
+  const lines: string[] = [];
+  lines.push(`# CNSL Project Memory — ${project.name}`);
+  lines.push("");
+  lines.push(`> ${NOTES_AGENT_CONTEXT}`);
+  lines.push("");
+  lines.push(`**Write back:** \`POST /api/agent/${slug}\` with \`{ "body": "..." }\`.`);
+  lines.push("");
+  if (notes.length === 0) {
+    lines.push("_(no notes yet — be the first)_");
+  } else {
+    for (const n of notes) {
+      lines.push(`## ${n.title || "Untitled"}`);
+      lines.push(`_${n.updatedAt.toISOString()}_`);
+      lines.push("");
+      lines.push(n.body || "_(empty)_");
+      lines.push("");
+    }
+  }
+  return new NextResponse(lines.join("\n"), {
+    status: 200,
+    headers: { "content-type": "text/markdown; charset=utf-8", "x-robots-tag": "noindex" },
+  });
+}
+
+// POST → append a new note to the project's memory (never overwrites). Logged
+// to the board owner's Tracking Log too, same audit pattern as Playbook's PATCH.
+const MAX_NOTE_BODY_LEN = 20_000;
+async function notesAgentPost(
+  req: NextRequest,
+  project: { id: string; boardId: string; name: string }
+) {
+  if (rateLimited(clientIp(req))) {
+    return NextResponse.json({ error: "rate limited" }, { status: 429 });
+  }
+  const body = await req.json().catch(() => ({}));
+  const noteBody = typeof body.body === "string" ? body.body.trim() : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  if (!noteBody) {
+    return NextResponse.json({ error: "body required" }, { status: 400 });
+  }
+  if (noteBody.length > MAX_NOTE_BODY_LEN) {
+    return NextResponse.json(
+      { error: `body too long (max ${MAX_NOTE_BODY_LEN} chars)` },
+      { status: 413 }
+    );
+  }
+
+  const note = await prisma.note.create({
+    data: {
+      boardId: project.boardId,
+      project: project.name,
+      projectId: project.id,
+      title: title || "Untitled",
+      body: noteBody,
+    },
+  });
+
+  const board = await prisma.board.findUnique({
+    where: { id: project.boardId },
+    select: { ownerId: true },
+  });
+  if (board) {
+    await prisma.logEntry.create({
+      data: {
+        userId: board.ownerId,
+        text: `[agent] New memory note "${note.title}" on project "${project.name}"`,
+        processed: false,
+        noteId: note.id,
+      },
+    });
+  }
+
+  return NextResponse.json({ ok: true, note: { id: note.id, title: note.title } });
+}
+
+// GET /api/agent/<slug> → a Playbook's flow + scoped tasks, OR a Project's
+// notes-memory feed — whichever the slug belongs to. Public (link-gated, no
+// login) — the unguessable slug IS the credential.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
   const { slug } = await params;
+
+  const notesProject = await findNotesProject(slug);
+  if (notesProject) return notesAgentGet(notesProject, slug);
+
   const row = await findPublished(slug);
   if (!row) return new NextResponse("not found", { status: 404 });
 
@@ -183,4 +285,17 @@ export async function PATCH(
     ok: true,
     task: { id: updated.id, number: updated.number, status: updated.status },
   });
+}
+
+// POST /api/agent/<slug> { title?, body } → append a note to a project's
+// memory. Only meaningful for a notes-memory slug — Playbook write-back stays
+// on PATCH (it mutates a task's status, this only ever appends).
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  const { slug } = await params;
+  const project = await findNotesProject(slug);
+  if (!project) return NextResponse.json({ error: "not found" }, { status: 404 });
+  return notesAgentPost(req, project);
 }

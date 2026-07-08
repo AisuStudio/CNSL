@@ -57,6 +57,12 @@ export default function ShareModal({
   const [intakeBusy, setIntakeBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Agent memory (an agent can read this project's notes + append new ones).
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
+  const [memoryUrl, setMemoryUrl] = useState<string | null>(null);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryCopied, setMemoryCopied] = useState(false);
+
   useEffect(() => {
     if (!projectId) return;
     fetch(`/api/intake/config?projectId=${encodeURIComponent(projectId)}`)
@@ -65,6 +71,14 @@ export default function ShareModal({
         if (!d) return;
         setIntakeEnabled(!!d.enabled);
         setIntakeUrl(d.url ?? null);
+      })
+      .catch(() => {});
+    fetch(`/api/notes-agent/config?projectId=${encodeURIComponent(projectId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setMemoryEnabled(!!d.enabled);
+        setMemoryUrl(d.url ?? null);
       })
       .catch(() => {});
   }, [projectId]);
@@ -88,10 +102,34 @@ export default function ShareModal({
     }
   }
 
+  async function toggleMemory(next: boolean) {
+    setMemoryBusy(true);
+    try {
+      const r = await fetch("/api/notes-agent/config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ projectId, enabled: next }),
+      });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      setMemoryEnabled(!!d.enabled);
+      setMemoryUrl(d.url ?? null);
+    } catch {
+      /* leave state as-is */
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
   const intakeFullUrl =
     intakeUrl && typeof window !== "undefined"
       ? `${window.location.origin}${intakeUrl}`
       : intakeUrl ?? "";
+
+  const memoryFullUrl =
+    memoryUrl && typeof window !== "undefined"
+      ? `${window.location.origin}${memoryUrl}`
+      : memoryUrl ?? "";
 
   const load = useCallback(async () => {
     try {
@@ -371,6 +409,83 @@ export default function ShareModal({
               }}
             >
               {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Agent memory (project-scoped notes, capability-link like Playbook's) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ fontSize: "10px", color: INK, opacity: 0.6, fontWeight: 700 }}>
+          AGENT MEMORY
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={memoryEnabled}
+            disabled={memoryBusy}
+            onClick={() => toggleMemory(!memoryEnabled)}
+            title={memoryEnabled ? "Disable agent memory" : "Enable agent memory"}
+            style={{
+              width: "36px",
+              height: "20px",
+              borderRadius: "10px",
+              border: "none",
+              flexShrink: 0,
+              cursor: memoryBusy ? "default" : "pointer",
+              position: "relative",
+              padding: 0,
+              background: memoryEnabled
+                ? "color-mix(in srgb, var(--color-card-ink) 22%, transparent)"
+                : C1,
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                top: "2px",
+                left: memoryEnabled ? "18px" : "2px",
+                width: "16px",
+                height: "16px",
+                borderRadius: "50%",
+                background: "white",
+                transition: "left 150ms ease",
+              }}
+            />
+          </button>
+          <span style={{ fontSize: "var(--text-sm)", color: INK }}>
+            An agent with the link can read this project's notes &amp; append new ones
+          </span>
+        </div>
+        {memoryEnabled && memoryUrl && (
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div
+              style={{
+                ...inputStyle,
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                fontFamily: "var(--font-family-mono)",
+                fontSize: "var(--text-sm)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {memoryFullUrl}
+            </div>
+            <button
+              type="button"
+              style={smallBtn}
+              onClick={() => {
+                navigator.clipboard?.writeText(memoryFullUrl);
+                setMemoryCopied(true);
+                setTimeout(() => setMemoryCopied(false), 1500);
+              }}
+            >
+              {memoryCopied ? "Copied!" : "Copy"}
             </button>
           </div>
         )}

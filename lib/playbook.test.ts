@@ -7,6 +7,7 @@ import {
   buildAgentFeed,
   autoLayoutNodes,
   nodeOutEdges,
+  parsePastedPlaybook,
   type Playbook,
   type PlaybookNode,
 } from "./playbook";
@@ -201,5 +202,69 @@ describe("autoLayoutNodes", () => {
     const a = laid.find((n) => n.id === "a")!;
     const b = laid.find((n) => n.id === "b")!;
     expect(`${a.x},${a.y}`).not.toBe(`${b.x},${b.y}`);
+  });
+});
+
+describe("parsePastedPlaybook", () => {
+  it("parses a well-formed pasted playbook, preserving node ids", () => {
+    const pb = parsePastedPlaybook(
+      JSON.stringify({
+        name: "Design-System-Review",
+        project: "CNSL",
+        entryId: "n1",
+        nodes: [
+          { id: "n1", kind: "skill", title: "Check the design system", next: "n2" },
+          { id: "n2", kind: "branch", question: "New patterns?", onTrue: "n3", onFalse: "n4" },
+          { id: "n3", kind: "skill", title: "Adopt them" },
+          { id: "n4", kind: "output", outputKind: "set_status", outputStatus: "review_input" },
+        ],
+      })
+    );
+    expect(pb.name).toBe("Design-System-Review");
+    expect(pb.project).toBe("CNSL");
+    expect(pb.entryId).toBe("n1");
+    expect(pb.nodes.map((n) => n.id)).toEqual(["n1", "n2", "n3", "n4"]);
+    expect(pb.published).toBe(false);
+    expect(pb.id).toMatch(/^pb_/);
+  });
+
+  it("synthesizes missing node ids and falls back entryId to the first node", () => {
+    const pb = parsePastedPlaybook(
+      JSON.stringify({ name: "Quick", nodes: [{ kind: "skill", title: "Only step" }] })
+    );
+    expect(pb.nodes).toHaveLength(1);
+    expect(pb.nodes[0].id).toBeTruthy();
+    expect(pb.entryId).toBe(pb.nodes[0].id);
+  });
+
+  it("falls back to the triage project when the JSON has none", () => {
+    const pb = parsePastedPlaybook(
+      JSON.stringify({ name: "X", nodes: [{ kind: "skill", title: "Step" }] }),
+      "Fallback Project"
+    );
+    expect(pb.project).toBe("Fallback Project");
+  });
+
+  it("rejects invalid JSON", () => {
+    expect(() => parsePastedPlaybook("not json")).toThrow("Not valid JSON");
+  });
+
+  it("rejects a JSON value that isn't an object", () => {
+    expect(() => parsePastedPlaybook("[1,2,3]")).toThrow('"name" and "nodes"');
+  });
+
+  it("rejects a missing/empty nodes array", () => {
+    expect(() => parsePastedPlaybook(JSON.stringify({ name: "X" }))).toThrow(
+      'non-empty "nodes"'
+    );
+    expect(() => parsePastedPlaybook(JSON.stringify({ name: "X", nodes: [] }))).toThrow(
+      'non-empty "nodes"'
+    );
+  });
+
+  it("rejects a node with an invalid kind", () => {
+    expect(() =>
+      parsePastedPlaybook(JSON.stringify({ name: "X", nodes: [{ kind: "bogus" }] }))
+    ).toThrow('invalid "kind"');
   });
 });

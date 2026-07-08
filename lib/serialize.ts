@@ -110,6 +110,8 @@ export function logFromDb(row: DbLogEntry): LogEntry {
     taskId: row.taskId ?? undefined,
     taskNumber: row.taskNumber ?? undefined,
     noteId: row.noteId ?? undefined,
+    playbookId: row.playbookId ?? undefined,
+    scheduleId: row.scheduleId ?? undefined,
   };
 }
 
@@ -122,6 +124,8 @@ export function logToDb(l: LogEntry, userId: string) {
     taskId: l.taskId ?? null,
     taskNumber: l.taskNumber ?? null,
     noteId: l.noteId ?? null,
+    playbookId: l.playbookId ?? null,
+    scheduleId: l.scheduleId ?? null,
   };
 }
 

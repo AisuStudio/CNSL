@@ -124,6 +124,8 @@ export interface LogEntry {
   taskId?: string; // link to the created task
   taskNumber?: number; // for display ("→ #07")
   noteId?: string; // link to the created note (independent of taskId — an entry can become both)
+  playbookId?: string; // link to the created playbook (paste-to-create)
+  scheduleId?: string; // link to the created schedule (paste-to-create)
 }
 
 // Minutes → "HH:MM"

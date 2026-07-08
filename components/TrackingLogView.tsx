@@ -18,11 +18,15 @@ function EntryRow({
   entry,
   onCreateTask,
   onCreateNote,
+  onCreatePlaybook,
+  onCreateSchedule,
   onDelete,
 }: {
   entry: LogEntry;
   onCreateTask: (entryId: string, project: string, epic: string) => void;
   onCreateNote: (entryId: string, project: string) => void;
+  onCreatePlaybook: (entryId: string, project: string) => void;
+  onCreateSchedule: (entryId: string, project: string) => void;
   onDelete: (entryId: string) => void;
 }) {
   const isMobile = useIsMobile();
@@ -87,6 +91,8 @@ function EntryRow({
               entry.taskId &&
                 `→ Backlog #${String(entry.taskNumber ?? "").padStart(2, "0")}`,
               entry.noteId && "→ Note",
+              entry.playbookId && "→ Playbook",
+              entry.scheduleId && "→ Schedule",
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -146,6 +152,42 @@ function EntryRow({
             >
               Create Note
             </button>
+            <button
+              type="button"
+              onClick={() => onCreatePlaybook(entry.id, "")}
+              title="Paste a Playbook JSON (see data/SPIKE-playbook-tool.md) as the entry text"
+              style={{
+                height: isMobile ? "44px" : "30px",
+                padding: "0 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border-subtle)",
+                background: "transparent",
+                color: "var(--color-surface)",
+                fontSize: "var(--text-sm)",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
+              Create Playbook
+            </button>
+            <button
+              type="button"
+              onClick={() => onCreateSchedule(entry.id, "")}
+              title="Paste a Schedule JSON (Project → Sections → Steps) as the entry text"
+              style={{
+                height: isMobile ? "44px" : "30px",
+                padding: "0 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border-subtle)",
+                background: "transparent",
+                color: "var(--color-surface)",
+                fontSize: "var(--text-sm)",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
+              Create Schedule
+            </button>
           </>
         )}
       </div>
@@ -186,6 +228,9 @@ export default function TrackingLogView({
   projects,
   onCreateTask,
   onCreateNote,
+  onCreatePlaybook,
+  onCreateSchedule,
+  pasteError,
   onDeleteEntry,
   onCopyMarkdown,
   onDownloadMarkdown,
@@ -195,6 +240,9 @@ export default function TrackingLogView({
   projects: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
   onCreateNote: (entryId: string, project: string) => void;
+  onCreatePlaybook: (entryId: string, project: string) => void;
+  onCreateSchedule: (entryId: string, project: string) => void;
+  pasteError?: string | null;
   onDeleteEntry: (entryId: string) => void;
   onCopyMarkdown: (project?: string) => void;
   onDownloadMarkdown: (project?: string) => void;
@@ -263,6 +311,19 @@ export default function TrackingLogView({
         </div>
       </div>
 
+      {pasteError && (
+        <div
+          style={{
+            padding: "8px 16px",
+            color: "var(--color-error, #e0709a)",
+            fontSize: "var(--text-sm)",
+            borderBottom: "1px solid var(--color-border)",
+          }}
+        >
+          {pasteError}
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <div
           style={{
@@ -281,6 +342,8 @@ export default function TrackingLogView({
             entry={entry}
             onCreateTask={onCreateTask}
             onCreateNote={onCreateNote}
+            onCreatePlaybook={onCreatePlaybook}
+            onCreateSchedule={onCreateSchedule}
             onDelete={onDeleteEntry}
           />
         ))

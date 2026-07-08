@@ -38,6 +38,7 @@ import {
   normalizeImported,
 } from "@/lib/scheduler";
 import { type Project, ensureProjects, dedupeProjects, projectByName } from "@/lib/projects";
+import { parsePastedPlaybook, type Playbook } from "@/lib/playbook";
 import type { ProjectColors } from "@/lib/projectColors";
 import {
   initialTasks,
@@ -1250,6 +1251,70 @@ export default function Home() {
     );
   }
 
+  // Triage: turn a log entry into a Playbook or a Schedule. Unlike task/note,
+  // the entry's text isn't the content — it's JSON someone (e.g. Claude, in an
+  // ordinary chat outside CNSL) already wrote in the target format. CNSL only
+  // parses already-well-formed structure, never interprets prose itself.
+  const [logPasteError, setLogPasteError] = useState<string | null>(null);
+
+  // Playbook has its own DB route (not part of the /api/state board sync), so
+  // this does a direct fetch like NoderView does.
+  async function createPlaybookFromEntry(entryId: string, project: string) {
+    const entry = log.find((e) => e.id === entryId);
+    if (!entry || entry.processed) return;
+    setLogPasteError(null);
+    let pb: Playbook;
+    try {
+      pb = parsePastedPlaybook(entry.text, project || undefined);
+    } catch (e) {
+      setLogPasteError(
+        `Create Playbook failed: ${e instanceof Error ? e.message : "invalid playbook JSON"}`
+      );
+      return;
+    }
+    try {
+      const res = await fetch("/api/playbook", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ playbook: pb }),
+      });
+      if (!res.ok) throw new Error(`save failed (${res.status})`);
+      const data = await res.json();
+      setLog((prev) =>
+        prev.map((e) =>
+          e.id === entryId ? { ...e, processed: true, playbookId: data.playbook.id } : e
+        )
+      );
+    } catch (e) {
+      setLogPasteError(`Create Playbook failed: ${e instanceof Error ? e.message : "save failed"}`);
+    }
+  }
+
+  // Schedule rides the normal board-sync (setSchedules → /api/state), like the
+  // existing file-import (importSchedule) — reuses the same tolerant parser.
+  function createScheduleFromEntry(entryId: string, project: string) {
+    const entry = log.find((e) => e.id === entryId);
+    if (!entry || entry.processed) return;
+    setLogPasteError(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(entry.text);
+    } catch {
+      setLogPasteError("Create Schedule failed: not valid JSON.");
+      return;
+    }
+    const sched = normalizeImported(parsed);
+    if (!sched) {
+      setLogPasteError('Create Schedule failed: expected a JSON object with "sections".');
+      return;
+    }
+    if (project) sched.project = project;
+    setSchedules((prev) => [...prev, sched]);
+    setLog((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, processed: true, scheduleId: sched.id } : e))
+    );
+  }
+
   function deleteLogEntry(id: string) {
     setLog((prev) => prev.filter((e) => e.id !== id));
     deletedLogIds.current.add(id); // explicit delete — server removes only these
@@ -2146,6 +2211,9 @@ export default function Home() {
             projects={projects}
             onCreateTask={createTaskFromEntry}
             onCreateNote={createNoteFromEntry}
+            onCreatePlaybook={createPlaybookFromEntry}
+            onCreateSchedule={createScheduleFromEntry}
+            pasteError={logPasteError}
             onDeleteEntry={deleteLogEntry}
             onCopyMarkdown={exportCopyMarkdown}
             onDownloadMarkdown={exportDownloadMarkdown}

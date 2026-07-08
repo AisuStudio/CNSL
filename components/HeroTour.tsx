@@ -492,6 +492,8 @@ export default function HeroTour() {
                         projects={DEMO_PROJECTS}
                         onCreateTask={logCreateTask}
                         onCreateNote={noop}
+                        onCreatePlaybook={noop}
+                        onCreateSchedule={noop}
                         onDeleteEntry={logDelete}
                         onCopyMarkdown={noop}
                         onDownloadMarkdown={noop}
