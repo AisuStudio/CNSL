@@ -6,7 +6,7 @@ import { stateToSlug, slugToState } from "@/components/viewDefs";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
-import Footer from "@/components/Footer";
+import LogCaptureModal from "@/components/LogCaptureModal";
 import BacklogView, { type BacklogFilter, type BacklogSort } from "@/components/BacklogView";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 import KanbanView from "@/components/KanbanView";
@@ -116,6 +116,7 @@ export default function Home() {
   const initial = slugToState(slug, { tool: "tracker", view: "project" });
   const [tool, setTool] = useState<Tool>(initial.tool);
   const [view, setView] = useState<View>(initial.view);
+  const [logCaptureOpen, setLogCaptureOpen] = useState(false);
 
   // tool/view → URL. Update the address bar via the History API (router-integrated
   // since Next 14.1) instead of router.replace. A real navigation here ran the
@@ -1911,8 +1912,6 @@ export default function Home() {
     );
   }
 
-  // Blurp logger (footer capture) shows only in the Projects view + the Log view.
-  const showBlurp = (tool === "tracker" && view === "project") || tool === "log";
 
   return (
     <div className="cnsl-app" data-nav-open={navOpen ? "true" : "false"}>
@@ -1977,6 +1976,7 @@ export default function Home() {
             setNavOpen(false);
           }}
           onOpenSettings={() => setShowSettings(true)}
+          onOpenLogCapture={() => setLogCaptureOpen(true)}
           mobileOpen={navOpen}
         />
         {navOpen && (
@@ -2007,10 +2007,9 @@ export default function Home() {
               />
             )}
 
-          {/* Scrollable content; bottom padding clears the floating footer */}
           <main
             className={`cnsl-scroll flex-1 overflow-auto${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
-            style={{ paddingBottom: showBlurp ? "104px" : "24px" }}
+            style={{ paddingBottom: "24px" }}
           >
             {searchActive && (
               <SearchResultsView
@@ -2154,10 +2153,20 @@ export default function Home() {
           />
         )}
           </main>
-
-          {showBlurp && <Footer onTrack={addLogEntry} />}
         </div>
       </div>
+
+      {logCaptureOpen && (
+        <LogCaptureModal
+          onClose={() => setLogCaptureOpen(false)}
+          onSubmit={addLogEntry}
+          onSeeLogs={() => {
+            setLogCaptureOpen(false);
+            setTool("log");
+            setNavOpen(false);
+          }}
+        />
+      )}
 
       {modalTask && (
         <EditTaskModal

@@ -31,6 +31,7 @@ export default function Sidebar({
   onViewChange,
   onToolChange,
   onOpenSettings,
+  onOpenLogCapture,
   open = true,
   mobileOpen = false,
 }: {
@@ -39,6 +40,9 @@ export default function Sidebar({
   onViewChange: (v: View) => void;
   onToolChange: (t: Tool) => void;
   onOpenSettings?: () => void;
+  // "log" opens a quick-capture popover instead of navigating away from
+  // whatever tool the user is currently in (#log-quick-capture).
+  onOpenLogCapture?: () => void;
   open?: boolean;
   mobileOpen?: boolean; // drawer state on mobile (CSS-driven via data attr)
 }) {
@@ -80,7 +84,11 @@ export default function Sidebar({
             <button
               key={t.key}
               type="button"
-              onClick={() => onToolChange(t.key)}
+              onClick={() =>
+                t.key === "log" && onOpenLogCapture
+                  ? onOpenLogCapture()
+                  : onToolChange(t.key)
+              }
               aria-label={t.label}
               aria-pressed={active}
               title={t.label}
