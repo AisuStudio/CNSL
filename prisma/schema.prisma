@@ -198,6 +198,7 @@ model LogEntry {
   processed  Boolean  @default(false)
   taskId     String?
   taskNumber Int?
+  noteId     String? // triaged into a note instead of/alongside a task
 }
 
 // ─── Note Pad (board kind='doc') ────────────────────────

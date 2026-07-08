@@ -109,6 +109,7 @@ export function logFromDb(row: DbLogEntry): LogEntry {
     processed: row.processed,
     taskId: row.taskId ?? undefined,
     taskNumber: row.taskNumber ?? undefined,
+    noteId: row.noteId ?? undefined,
   };
 }
 
@@ -120,6 +121,7 @@ export function logToDb(l: LogEntry, userId: string) {
     processed: l.processed ?? false,
     taskId: l.taskId ?? null,
     taskNumber: l.taskNumber ?? null,
+    noteId: l.noteId ?? null,
   };
 }
 

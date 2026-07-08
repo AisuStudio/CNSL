@@ -123,6 +123,7 @@ export interface LogEntry {
   processed: boolean; // triaged into a task?
   taskId?: string; // link to the created task
   taskNumber?: number; // for display ("→ #07")
+  noteId?: string; // link to the created note (independent of taskId — an entry can become both)
 }
 
 // Minutes → "HH:MM"

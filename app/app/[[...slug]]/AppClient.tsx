@@ -1226,6 +1226,29 @@ export default function Home() {
     );
   }
 
+  // Triage: turn a log entry into a note (e.g. a reflection/decision rather
+  // than an actionable task). Independent of createTaskFromEntry — noteId and
+  // taskId are separate fields, so an entry could later gain both.
+  function createNoteFromEntry(entryId: string, project: string) {
+    const entry = log.find((e) => e.id === entryId);
+    if (!entry || entry.processed) return;
+    const now = new Date().toISOString();
+    const noteId = newId("note");
+    const note: Note = {
+      id: noteId,
+      folderId: null,
+      title: entry.text,
+      body: "",
+      project: project || undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes((prev) => [note, ...prev]);
+    setLog((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, processed: true, noteId } : e))
+    );
+  }
+
   function deleteLogEntry(id: string) {
     setLog((prev) => prev.filter((e) => e.id !== id));
     deletedLogIds.current.add(id); // explicit delete — server removes only these
@@ -2123,6 +2146,7 @@ export default function Home() {
             log={log}
             projects={projects}
             onCreateTask={createTaskFromEntry}
+            onCreateNote={createNoteFromEntry}
             onDeleteEntry={deleteLogEntry}
             onCopyMarkdown={exportCopyMarkdown}
             onDownloadMarkdown={exportDownloadMarkdown}

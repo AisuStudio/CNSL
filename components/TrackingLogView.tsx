@@ -17,10 +17,12 @@ function fmtTs(iso: string): string {
 function EntryRow({
   entry,
   onCreateTask,
+  onCreateNote,
   onDelete,
 }: {
   entry: LogEntry;
   onCreateTask: (entryId: string, project: string, epic: string) => void;
+  onCreateNote: (entryId: string, project: string) => void;
   onDelete: (entryId: string) => void;
 }) {
   const isMobile = useIsMobile();
@@ -81,7 +83,13 @@ function EntryRow({
               whiteSpace: "nowrap",
             }}
           >
-            → Backlog #{String(entry.taskNumber ?? "").padStart(2, "0")}
+            {[
+              entry.taskId &&
+                `→ Backlog #${String(entry.taskNumber ?? "").padStart(2, "0")}`,
+              entry.noteId && "→ Note",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         )}
         <button
@@ -102,23 +110,43 @@ function EntryRow({
           Delete
         </button>
         {!entry.processed && (
-          <button
-            type="button"
-            onClick={() => onCreateTask(entry.id, "", "")}
-            style={{
-              height: isMobile ? "44px" : "30px",
-              padding: "0 12px",
-              borderRadius: "6px",
-              background: "var(--color-accent)",
-              color: "var(--color-card-ink)",
-              fontWeight: 700,
-              fontSize: "var(--text-sm)",
-              whiteSpace: "nowrap",
-              cursor: "pointer",
-            }}
-          >
-            Create Task
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => onCreateTask(entry.id, "", "")}
+              style={{
+                height: isMobile ? "44px" : "30px",
+                padding: "0 12px",
+                borderRadius: "6px",
+                background: "var(--color-accent)",
+                color: "var(--color-card-ink)",
+                fontWeight: 700,
+                fontSize: "var(--text-sm)",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
+              Create Task
+            </button>
+            <button
+              type="button"
+              onClick={() => onCreateNote(entry.id, "")}
+              style={{
+                height: isMobile ? "44px" : "30px",
+                padding: "0 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-accent)",
+                background: "transparent",
+                color: "var(--color-accent)",
+                fontWeight: 700,
+                fontSize: "var(--text-sm)",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
+              Create Note
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -157,6 +185,7 @@ export default function TrackingLogView({
   log,
   projects,
   onCreateTask,
+  onCreateNote,
   onDeleteEntry,
   onCopyMarkdown,
   onDownloadMarkdown,
@@ -165,6 +194,7 @@ export default function TrackingLogView({
   log: LogEntry[];
   projects: string[];
   onCreateTask: (entryId: string, project: string, epic: string) => void;
+  onCreateNote: (entryId: string, project: string) => void;
   onDeleteEntry: (entryId: string) => void;
   onCopyMarkdown: (project?: string) => void;
   onDownloadMarkdown: (project?: string) => void;
@@ -250,6 +280,7 @@ export default function TrackingLogView({
             key={entry.id}
             entry={entry}
             onCreateTask={onCreateTask}
+            onCreateNote={onCreateNote}
             onDelete={onDeleteEntry}
           />
         ))
