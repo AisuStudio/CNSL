@@ -358,9 +358,13 @@ export async function POST(req: NextRequest) {
       }
       for (const l of log) {
         const data = logToDb(l, user.id);
+        // userId is already scoped in `where` and isn't updatable via
+        // updateMany (Prisma rejects the relation-linked FK scalar there) —
+        // only `create`'s fallback below needs it.
+        const { userId: _logUserId, ...logUpdateData } = data;
         const upd = await tx.logEntry.updateMany({
           where: { id: l.id, userId: user.id },
-          data,
+          data: logUpdateData,
         });
         if (upd.count === 0) {
           const elsewhere = await tx.logEntry.findUnique({

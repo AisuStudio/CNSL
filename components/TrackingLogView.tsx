@@ -13,6 +13,8 @@ function fmtTs(iso: string): string {
   )} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const COLLAPSE_AT = 80;
+
 /* One log entry with inline triage controls. */
 function EntryRow({
   entry,
@@ -30,6 +32,9 @@ function EntryRow({
   onDelete: (entryId: string) => void;
 }) {
   const isMobile = useIsMobile();
+  const [expanded, setExpanded] = useState(false);
+  const isLong = entry.text.length > COLLAPSE_AT;
+  const shownText = isLong && !expanded ? entry.text.slice(0, COLLAPSE_AT) + "…" : entry.text;
 
   return (
     <div
@@ -56,16 +61,35 @@ function EntryRow({
         {fmtTs(entry.ts)}
       </span>
 
-      {/* text */}
+      {/* text — long pastes (Playbook/Schedule JSON) collapse by default */}
       <span
         className="flex-1"
         style={{
           color: "var(--color-surface)",
           fontSize: "var(--text-base)",
           textDecoration: entry.processed ? "line-through" : "none",
+          wordBreak: isLong && expanded ? "break-word" : "normal",
         }}
       >
-        {entry.text}
+        {shownText}
+        {isLong && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              marginLeft: "8px",
+              border: "none",
+              background: "transparent",
+              color: "var(--color-text-muted)",
+              fontSize: "var(--text-sm)",
+              textDecoration: "underline",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            {expanded ? "less" : "more"}
+          </button>
+        )}
       </span>
 
       {/* Controls — Delete is ALWAYS available (#215: processed legacy entries

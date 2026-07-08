@@ -12,7 +12,7 @@ import TrackingLogView from "./TrackingLogView";
 import BacklogView, { type BacklogFilter } from "./BacklogView";
 import StatsView from "./StatsView";
 import ArchiveView from "./ArchiveView";
-import Footer from "./Footer";
+import LogCaptureModal from "./LogCaptureModal";
 import type { Task, LogEntry } from "@/lib/mock-data";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Schedule } from "@/lib/scheduler";
@@ -155,7 +155,12 @@ function makeLog(): LogEntry[] {
   return [
     { id: "htl_1", ts: "2026-06-16T11:05:00.000Z", text: "Fix onboarding copy on the signup screen", processed: false },
     { id: "htl_2", ts: "2026-06-16T10:40:00.000Z", text: "Call with the design team about the new icons", processed: false },
-    { id: "htl_3", ts: "2026-06-16T09:30:00.000Z", text: "Export the press kit for the launch", processed: true, taskNumber: 9 },
+    { id: "htl_3", ts: "2026-06-16T09:30:00.000Z", text: "Export the press kit for the launch", processed: true, taskId: "ht_2", taskNumber: 9 },
+    // One of each triage outcome, already processed — a single screenshot shows
+    // the full range (Task/Note/Playbook/Schedule) without needing interaction.
+    { id: "htl_5", ts: "2026-06-15T20:00:00.000Z", text: "Decision: ship the changelog behind a feature flag first", processed: true, noteId: "htn_2" },
+    { id: "htl_6", ts: "2026-06-15T18:30:00.000Z", text: '{"name":"Design Review","project":"Studio","nodes":[...]}', processed: true, playbookId: "ht_pb_1" },
+    { id: "htl_7", ts: "2026-06-15T17:45:00.000Z", text: '{"name":"Core Routine 30 Min","project":"Personal","sections":[...]}', processed: true, scheduleId: "ht_sched" },
     { id: "htl_4", ts: "2026-06-15T17:15:00.000Z", text: "Idea: weekly digest email", processed: false },
   ];
 }
@@ -191,6 +196,7 @@ export default function HeroTour() {
   const pausedRef = useRef(false); // true while hovering → auto-advance holds
   const isMobileRef = useRef(false); // current viewport-mobile, read by the async driver
   const [navOpen, setNavOpen] = useState(false); // mobile sidebar drawer (demo)
+  const [logCaptureOpen, setLogCaptureOpen] = useState(false); // sidebar quick-capture (demo)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -361,13 +367,20 @@ export default function HeroTour() {
     }));
 
   const logDelete = (id: string) => setLog((l) => l.filter((e) => e.id !== id));
-  const logCreateTask = (id: string) => setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true } : e)));
-  // Blurp console (footer): a new blurp prepends a log entry.
-  const logTrack = (text: string) =>
+  // Triage demo handlers — mirror the real app's four Log-triage outcomes
+  // (Task/Note/Playbook/Schedule) without touching the other demo lists;
+  // TrackingLogView renders the "→ X" label purely from these ids being set.
+  const logCreateTask = (id: string) =>
+    setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true, taskId: "ht_demo", taskNumber: 13 } : e)));
+  const logCreateNote = (id: string) =>
+    setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true, noteId: "htn_1" } : e)));
+  const logCreatePlaybook = (id: string) =>
+    setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true, playbookId: "ht_pb_1" } : e)));
+  const logCreateSchedule = (id: string) =>
+    setLog((l) => l.map((e) => (e.id === id ? { ...e, processed: true, scheduleId: "ht_sched" } : e)));
+  // Quick-capture popover (sidebar Log icon) — mirrors AppClient.tsx.
+  const logCapture = (text: string) =>
     setLog((l) => [{ id: newId("log"), ts: nowIso(), text, processed: false }, ...l]);
-
-  // Blurp footer shows on the tracker Project view and the Log tool (like the app).
-  const showBlurp = (tool === "tracker" && view === "project") || tool === "log";
 
   return (
     <div
@@ -426,6 +439,7 @@ export default function HeroTour() {
                     setTool(t);
                     setNavOpen(false);
                   }}
+                  onOpenLogCapture={() => setLogCaptureOpen(true)}
                   open
                   mobileOpen={navOpen}
                 />
@@ -433,7 +447,7 @@ export default function HeroTour() {
                   <div className="cnsl-nav-backdrop" onClick={() => setNavOpen(false)} aria-hidden="true" />
                 )}
                 <div className="cnsl-content">
-                  <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: showBlurp ? "104px" : "24px" }}>
+                  <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: "24px" }}>
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
                       {view === "today" ? (
                         <BacklogView tasks={todayTasks} onToggleTimer={noop} onEditTask={noop} onArchive={noop} showUrgency={false} />
@@ -491,9 +505,9 @@ export default function HeroTour() {
                         log={log}
                         projects={DEMO_PROJECTS}
                         onCreateTask={logCreateTask}
-                        onCreateNote={noop}
-                        onCreatePlaybook={noop}
-                        onCreateSchedule={noop}
+                        onCreateNote={logCreateNote}
+                        onCreatePlaybook={logCreatePlaybook}
+                        onCreateSchedule={logCreateSchedule}
                         onDeleteEntry={logDelete}
                         onCopyMarkdown={noop}
                         onDownloadMarkdown={noop}
@@ -501,9 +515,19 @@ export default function HeroTour() {
                       />
                     </div>
                   </main>
-                  {showBlurp && <Footer onTrack={logTrack} embedded />}
                 </div>
               </div>
+              {logCaptureOpen && (
+                <LogCaptureModal
+                  onClose={() => setLogCaptureOpen(false)}
+                  onSubmit={logCapture}
+                  onSeeLogs={() => {
+                    setLogCaptureOpen(false);
+                    setTool("log");
+                    setNavOpen(false);
+                  }}
+                />
+              )}
             </div>
             </MobileOverrideContext.Provider>
           </div>
