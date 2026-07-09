@@ -7,6 +7,8 @@ import ProjectView from "./ProjectView";
 import CalendarView from "./CalendarView";
 import SchedulerView from "./SchedulerView";
 import NotePad from "./NotePad";
+import NoderCanvas from "./noder/NoderCanvas";
+import NodeInspector from "./noder/NodeInspector";
 import ChatView from "./ChatView";
 import TrackingLogView from "./TrackingLogView";
 import BacklogView, { type BacklogFilter } from "./BacklogView";
@@ -17,6 +19,7 @@ import type { Task, LogEntry } from "@/lib/mock-data";
 import type { CalendarEvent } from "@/lib/calendar";
 import type { Schedule } from "@/lib/scheduler";
 import type { Note } from "@/lib/notes";
+import { autoLayoutNodes, type PlaybookNode } from "@/lib/playbook";
 import { type Contact, type Conversation, type Message, ME } from "@/lib/chat";
 import { newId } from "@/lib/storage";
 import { MobileOverrideContext } from "@/lib/useIsMobile";
@@ -105,6 +108,20 @@ function makeSchedule(): Schedule {
   };
 }
 
+// A small playbook flow — task → skill → branch → (skill | output) — matching
+// the shape of a real Noder demo (Design Review), auto-laid-out like a fresh
+// import in the real tool.
+function makeNoderNodes(): PlaybookNode[] {
+  const nodes: PlaybookNode[] = [
+    { id: "htnd_task", kind: "task", title: "Clean up design tokens", taskProject: "Studio", taskNumber: 12, next: "htnd_skill" },
+    { id: "htnd_skill", kind: "skill", title: "Review tokens", body: "Check for duplicate or near-duplicate values", next: "htnd_branch" },
+    { id: "htnd_branch", kind: "branch", title: "", question: "Found issues?", onTrue: "htnd_fix", onFalse: "htnd_done" },
+    { id: "htnd_fix", kind: "skill", title: "Propose fixes", body: "List every call site that needs updating" },
+    { id: "htnd_done", kind: "output", title: "Mark done", outputKind: "set_status", outputStatus: "done" },
+  ];
+  return autoLayoutNodes(nodes, "htnd_task");
+}
+
 function makeNotes(): Note[] {
   return [
     {
@@ -178,6 +195,10 @@ export default function HeroTour() {
   const [chat, setChat] = useState(makeChat);
   const [log, setLog] = useState<LogEntry[]>(makeLog);
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
+  const [noderNodes, setNoderNodes] = useState<PlaybookNode[]>(makeNoderNodes);
+  const [noderSelectedId, setNoderSelectedId] = useState<string | null>(null);
+  // A brief cutaway to the Publisher page during the Note Pad phase.
+  const [showPublisher, setShowPublisher] = useState(false);
 
   // Tracker sub-view task lists (mirror the app): active vs archived.
   const activeTasks = tasks.filter((t) => !t.archived);
@@ -188,6 +209,7 @@ export default function HeroTour() {
       ? activeTasks.filter((t) => t.status !== "done" && t.status !== "canceled")
       : activeTasks;
   const doneCount = activeTasks.filter((t) => t.status === "done").length;
+  const noderSelectedNode = noderNodes.find((n) => n.id === noderSelectedId) ?? null;
 
   const hostRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -293,6 +315,19 @@ export default function HeroTour() {
         if (cancelled) break;
         setEvents(makeEvents(today));
 
+        // ── Noder: select a node to show the inspector, then release it ──
+        await holdIfPaused();
+        if (cancelled) break;
+        await switchTool("noder");
+        await sleep(1300);
+        if (cancelled) break;
+        setNoderSelectedId("htnd_branch");
+        await sleep(2000);
+        if (cancelled) break;
+        setNoderSelectedId(null);
+        await sleep(800);
+        if (cancelled) break;
+
         // ── Scheduler: show the routine editor ──
         await holdIfPaused();
         if (cancelled) break;
@@ -300,11 +335,17 @@ export default function HeroTour() {
         await sleep(3400);
         if (cancelled) break;
 
-        // ── Note Pad ──
+        // ── Note Pad — with a brief cutaway to the Publisher page and back ──
         await holdIfPaused();
         if (cancelled) break;
         await switchTool("notepad");
-        await sleep(3200);
+        await sleep(1700);
+        if (cancelled) break;
+        setShowPublisher(true);
+        await sleep(1600);
+        if (cancelled) break;
+        setShowPublisher(false);
+        await sleep(1000);
         if (cancelled) break;
 
         // ── Chat ──
@@ -331,6 +372,9 @@ export default function HeroTour() {
 
   const updateSchedule = (s: Schedule) =>
     setSchedules((prev) => prev.map((x) => (x.id === s.id ? s : x)));
+
+  const noderPatchNode = (id: string, patch: Partial<PlaybookNode>) =>
+    setNoderNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
 
   // Light, working handlers so the demo is genuinely interactive.
   const nowIso = () => new Date().toISOString();
@@ -447,7 +491,10 @@ export default function HeroTour() {
                   <div className="cnsl-nav-backdrop" onClick={() => setNavOpen(false)} aria-hidden="true" />
                 )}
                 <div className="cnsl-content">
-                  <main className="cnsl-scroll flex-1 overflow-auto" style={{ paddingBottom: "24px" }}>
+                  <main
+                    className={`cnsl-scroll flex-1 overflow-auto${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
+                    style={{ paddingBottom: "24px", position: "relative" }}
+                  >
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
                       {view === "today" ? (
                         <BacklogView tasks={todayTasks} onToggleTimer={noop} onEditTask={noop} onArchive={noop} showUrgency={false} />
@@ -463,6 +510,54 @@ export default function HeroTour() {
                     </div>
                     <div style={{ display: tool === "calendar" ? "block" : "none", height: "100%" }}>
                       <CalendarView events={events} onCreateOnDay={noop} onEditEvent={noop} />
+                    </div>
+                    <div style={{ display: tool === "noder" ? "block" : "none", height: "100%" }}>
+                      {tool === "noder" && (
+                      <div style={{ padding: "24px", height: "100%", overflow: "auto" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "16px" }}>
+                          <div style={{ width: "300px", flexShrink: 0 }}>
+                            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--color-text-primary)" }}>
+                              Noder
+                            </h1>
+                          </div>
+                          <div style={{ flex: 1, display: "flex", alignItems: "baseline", gap: "10px", minWidth: 0 }}>
+                            <span style={{ fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" }}>
+                              Design Review
+                            </span>
+                            <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>Studio</span>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "24px", height: "460px" }}>
+                          <div style={{ width: "300px", flexShrink: 0 }}>
+                            {noderSelectedNode ? (
+                              <NodeInspector
+                                node={noderSelectedNode}
+                                isEntry={noderSelectedId === "htnd_task"}
+                                tasks={[]}
+                                onPatch={(patch) => noderSelectedId && noderPatchNode(noderSelectedId, patch)}
+                                onChangeKind={noop}
+                                onDelete={noop}
+                                onSetEntry={noop}
+                              />
+                            ) : (
+                              <p style={{ color: "var(--color-text-muted)", fontSize: "13px" }}>
+                                Click a node to edit it.
+                              </p>
+                            )}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0, display: "flex" }}>
+                            <NoderCanvas
+                              nodes={noderNodes}
+                              entryId="htnd_task"
+                              selectedId={noderSelectedId}
+                              onPatchNode={noderPatchNode}
+                              onSelect={setNoderSelectedId}
+                              onAddNode={noop}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      )}
                     </div>
                     <div style={{ display: tool === "scheduler" ? "block" : "none", height: "100%" }}>
                       <SchedulerView
@@ -488,6 +583,68 @@ export default function HeroTour() {
                         tasks={tasks}
                       />
                     </div>
+                    {/* Publisher cutaway — a brief glimpse of the public author
+                        page and back, shown mid-way through the Note Pad phase.
+                        A compact purpose-built card (not the real page-level
+                        PublisherView, whose 100dvh layout doesn't fit this
+                        scaled-down frame) using the same surface tokens. */}
+                    {tool === "notepad" && showPublisher && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "var(--color-surface)",
+                          padding: "28px 24px",
+                          overflow: "auto",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              background: "var(--color-accent)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              color: "var(--color-bg-deep)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            ST
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--color-text-primary)" }}>
+                              Studio
+                            </div>
+                            <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+                              Published notes
+                            </div>
+                          </div>
+                        </div>
+                        {notes.slice(0, 2).map((n) => (
+                          <div
+                            key={n.id}
+                            style={{
+                              borderRadius: "var(--radius-container)",
+                              padding: "16px",
+                              marginBottom: "10px",
+                              background: "var(--color-bg-deep)",
+                            }}
+                          >
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: "4px" }}>
+                              {n.title || "Untitled"}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+                              {n.project} · {new Date(n.updatedAt ?? Date.now()).toLocaleDateString("en-US", { day: "2-digit", month: "short" })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div style={{ display: tool === "chat" ? "block" : "none", height: "100%" }}>
                       <ChatView
                         contacts={chat.contacts}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import CnslLogo from "@/components/CnslLogo";
 import LegalFooter from "@/components/LegalFooter";
 import HeroTour from "@/components/HeroTour";
-import { LogIcon, TaskTrackerIcon, NotePadIcon, CalIcon, SchedulerIcon, ChatIcon } from "@/components/icons";
+import { LogIcon, TaskTrackerIcon, NotePadIcon, CalIcon, SchedulerIcon, ChatIcon, NoderIcon } from "@/components/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { betaLabelFor } from "@/lib/auth-config";
 
@@ -21,6 +21,7 @@ const TOOLS = [
   { icon: TaskTrackerIcon, label: "Tracker" },
   { icon: NotePadIcon, label: "Note Pad" },
   { icon: CalIcon, label: "Calendar" },
+  { icon: NoderIcon, label: "Noder" },
   { icon: SchedulerIcon, label: "Scheduler" },
   { icon: ChatIcon, label: "Chat" },
 ];
