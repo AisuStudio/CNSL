@@ -44,7 +44,7 @@ export default function LegalFooter({
       }}
     >
       <a
-        href="https://cnsl.aisu.studio/note/dominik-heilig/documentation/cnsl-product-snapshot"
+        href="https://cnsl.aisu.studio/note/dominik-heilig/production-snapshots/product-snapshot-en-v0-66"
         target={newTab ? "_blank" : undefined}
         rel={newTab ? "noopener noreferrer" : undefined}
         style={style}
