@@ -492,8 +492,8 @@ export default function HeroTour() {
                 )}
                 <div className="cnsl-content">
                   <main
-                    className={`cnsl-scroll flex-1 overflow-auto${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
-                    style={{ paddingBottom: "24px", position: "relative" }}
+                    className={`cnsl-scroll flex-1${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
+                    style={{ paddingBottom: "24px", position: "relative", overflowY: "auto" }}
                   >
                     <div style={{ display: tool === "tracker" ? "block" : "none", height: "100%" }}>
                       {view === "today" ? (
@@ -593,6 +593,7 @@ export default function HeroTour() {
                         style={{
                           position: "absolute",
                           inset: 0,
+                          zIndex: 5,
                           background: "var(--color-surface)",
                           padding: "28px 24px",
                           overflow: "auto",

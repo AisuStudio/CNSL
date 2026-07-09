@@ -2073,8 +2073,8 @@ export default function Home() {
             )}
 
           <main
-            className={`cnsl-scroll flex-1 overflow-auto${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
-            style={{ paddingBottom: "24px" }}
+            className={`cnsl-scroll flex-1${tool === "noder" ? " cnsl-canvas-dark" : ""}`}
+            style={{ paddingBottom: "24px", overflowY: "auto" }}
           >
             {searchActive && (
               <SearchResultsView
