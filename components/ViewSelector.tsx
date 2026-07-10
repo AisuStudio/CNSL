@@ -118,7 +118,7 @@ export function FilterDropdown<T extends string>({
                 fontSize: "var(--text-sm)",
                 color: filter.has(o.value)
                   ? "var(--color-accent)"
-                  : "color-mix(in srgb, var(--color-accent) 50%, transparent)",
+                  : "color-mix(in srgb, var(--color-accent) 65%, transparent)",
                 userSelect: "none",
               }}
             >
@@ -190,7 +190,7 @@ export default function ViewSelector({
               background: active ? "var(--color-bg-deep)" : "transparent",
               color: active
                 ? "var(--color-accent)"
-                : "color-mix(in srgb, var(--color-accent) 50%, transparent)",
+                : "color-mix(in srgb, var(--color-accent) 65%, transparent)",
               fontSize: "var(--text-sm)",
               fontWeight: active ? 700 : 500,
               cursor: "pointer",
