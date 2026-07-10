@@ -7,8 +7,6 @@ import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
 import ViewSelector, {
-  FilterDropdown,
-  STATUS_FILTER_OPTIONS,
   type StatusOrArchived,
 } from "@/components/ViewSelector";
 import LogCaptureModal from "@/components/LogCaptureModal";
@@ -55,7 +53,6 @@ import {
   type LogEntry,
   type Urgency,
   type Status,
-  URGENCY_OPTIONS,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { ensurePushSubscription, getDeviceId } from "@/lib/push";
@@ -2078,6 +2075,12 @@ export default function Home() {
             <ViewSelector
               view={view}
               onViewChange={(v) => { setTool("tracker"); setView(v); }}
+              urgencyFilter={urgencyFilter}
+              onUrgencyFilterChange={setUrgencyFilter}
+              urgencyCount={urgencyViewTasks.length}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              statusCount={statusViewTasks.length}
             />
           )}
 
@@ -2131,82 +2134,29 @@ export default function Home() {
                 )}
 
                 {view === "urgency" && (
-                  <>
-                    {/* Sticky filter row — inside <main> so dropdown isn't clipped */}
-                    <div
-                      style={{
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        minHeight: "var(--row-height)",
-                        padding: "0 16px",
-                        background: "var(--color-surface)",
-                        borderBottom: "1px solid var(--color-border)",
-                      }}
-                    >
-                      <FilterDropdown<Urgency>
-                        label="Urgency"
-                        options={URGENCY_OPTIONS}
-                        filter={urgencyFilter}
-                        onChange={setUrgencyFilter}
-                      />
-                      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                        {urgencyViewTasks.length}
-                      </span>
-                    </div>
-                    <BacklogView
-                      tasks={urgencyViewTasks}
-                      showUrgency={urgencyFilter.size > 1}
-                      alwaysDragOrder
-                      onReorder={reorderBacklog}
-                      onToggleTimer={toggleTimer}
-                      onEditTask={openEdit}
-                      onArchive={(id) => setArchived(id, true)}
-                    />
-                  </>
+                  <BacklogView
+                    tasks={urgencyViewTasks}
+                    showUrgency={urgencyFilter.size > 1}
+                    alwaysDragOrder
+                    onReorder={reorderBacklog}
+                    onToggleTimer={toggleTimer}
+                    onEditTask={openEdit}
+                    onArchive={(id) => setArchived(id, true)}
+                  />
                 )}
 
                 {view === "status" && (
-                  <>
-                    <div
-                      style={{
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        minHeight: "var(--row-height)",
-                        padding: "0 16px",
-                        background: "var(--color-surface)",
-                        borderBottom: "1px solid var(--color-border)",
-                      }}
-                    >
-                      <FilterDropdown<StatusOrArchived>
-                        label="Status"
-                        options={STATUS_FILTER_OPTIONS}
-                        filter={statusFilter}
-                        onChange={setStatusFilter}
-                      />
-                      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
-                        {statusViewTasks.length}
-                      </span>
-                    </div>
-                    <BacklogView
-                      tasks={statusViewTasks}
-                      showUrgency
-                      onToggleTimer={toggleTimer}
-                      onEditTask={openEdit}
-                      onArchive={(id) => setArchived(id, true)}
-                      sort={backlogSort}
-                      onSortChange={setBacklogSort}
-                      onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
-                      onSetStatus={(id, status) => updateTask(id, "status", status as Status)}
-                    />
-                  </>
+                  <BacklogView
+                    tasks={statusViewTasks}
+                    showUrgency
+                    onToggleTimer={toggleTimer}
+                    onEditTask={openEdit}
+                    onArchive={(id) => setArchived(id, true)}
+                    sort={backlogSort}
+                    onSortChange={setBacklogSort}
+                    onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
+                    onSetStatus={(id, status) => updateTask(id, "status", status as Status)}
+                  />
                 )}
 
                 {view === "stats" && <StatsView tasks={tasks} />}

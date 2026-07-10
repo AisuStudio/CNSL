@@ -51,7 +51,6 @@ export function FilterDropdown<T extends string>({
   const allSelected = filter.size === options.length;
   const someFiltered = filter.size > 0 && !allSelected;
 
-  // Build a short summary label from selected options
   const summary =
     filter.size === 0
       ? label
@@ -136,19 +135,37 @@ export function FilterDropdown<T extends string>({
   );
 }
 
-// Simple 3-tab strip. Filter dropdowns live inside <main> (sticky rows above task lists)
-// to avoid stacking-context clipping by the scroll container.
+// Tab strip + inline filter dropdown (same row).
+// position:relative + zIndex:20 ensures the dropdown panel paints above <main>
+// (later flex sibling), without clipping issues from overflowY:auto stacking contexts.
 export default function ViewSelector({
   view,
   onViewChange,
+  urgencyFilter,
+  onUrgencyFilterChange,
+  urgencyCount,
+  statusFilter,
+  onStatusFilterChange,
+  statusCount,
 }: {
   view: View;
   onViewChange: (v: View) => void;
+  urgencyFilter?: Set<Urgency>;
+  onUrgencyFilterChange?: (f: Set<Urgency>) => void;
+  urgencyCount?: number;
+  statusFilter?: Set<StatusOrArchived>;
+  onStatusFilterChange?: (f: Set<StatusOrArchived>) => void;
+  statusCount?: number;
 }) {
+  const showUrgencyFilter = view === "urgency" && urgencyFilter && onUrgencyFilterChange;
+  const showStatusFilter  = view === "status"  && statusFilter  && onStatusFilterChange;
+
   return (
     <div
       className="cnsl-on-canvas shrink-0 flex items-center"
       style={{
+        position: "relative",
+        zIndex: 20,
         height: "var(--row-height)",
         borderBottom: "2px solid var(--color-border-subtle)",
         padding: "0 16px",
@@ -182,6 +199,50 @@ export default function ViewSelector({
           </button>
         );
       })}
+
+      {(showUrgencyFilter || showStatusFilter) && (
+        <>
+          <div
+            style={{
+              width: "1px",
+              height: "16px",
+              background: "var(--color-border)",
+              margin: "0 6px",
+              flexShrink: 0,
+            }}
+          />
+          {showUrgencyFilter && (
+            <>
+              <FilterDropdown<Urgency>
+                label="Urgency"
+                options={URGENCY_OPTIONS}
+                filter={urgencyFilter}
+                onChange={onUrgencyFilterChange}
+              />
+              {urgencyCount !== undefined && (
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                  {urgencyCount}
+                </span>
+              )}
+            </>
+          )}
+          {showStatusFilter && (
+            <>
+              <FilterDropdown<StatusOrArchived>
+                label="Status"
+                options={STATUS_FILTER_OPTIONS}
+                filter={statusFilter}
+                onChange={onStatusFilterChange}
+              />
+              {statusCount !== undefined && (
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+                  {statusCount}
+                </span>
+              )}
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
