@@ -1,7 +1,7 @@
 "use client";
 
 import { type View, type Tool } from "./Header";
-import { VIEW_DEFS, TOOL_DEFS } from "./viewDefs";
+import { TOOL_DEFS } from "./viewDefs";
 import { SettingsIcon } from "./icons";
 
 /* Slim, icon-only sidebar (CNSL_MonoSideBar.svg).
@@ -26,18 +26,14 @@ const ITEM: React.CSSProperties = {
 };
 
 export default function Sidebar({
-  view,
   tool,
-  onViewChange,
   onToolChange,
   onOpenSettings,
   onOpenLogCapture,
   open = true,
   mobileOpen = false,
 }: {
-  view: View;
   tool: Tool;
-  onViewChange: (v: View) => void;
   onToolChange: (t: Tool) => void;
   onOpenSettings?: () => void;
   // "log" opens a quick-capture popover instead of navigating away from
@@ -100,37 +96,6 @@ export default function Sidebar({
           );
         })}
 
-        {/* ── Active tool's sub-views (#225). Only the Task Tracker has them. ── */}
-        {tool === "tracker" && (
-          <>
-            <div
-              aria-hidden="true"
-              style={{
-                height: "0.5px",
-                background: "var(--color-text-muted)",
-                margin: "8px 18px",
-              }}
-            />
-
-            {VIEW_DEFS.map((v) => {
-              const active = view === v.key;
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  onClick={() => onViewChange(v.key)}
-                  aria-label={v.label}
-                  aria-pressed={active}
-                  title={v.label}
-                  className="flex items-center justify-center"
-                  style={ITEM}
-                >
-                  <v.Icon color={active ? ACTIVE : INACTIVE} />
-                </button>
-              );
-            })}
-          </>
-        )}
       </div>
 
       {/* Settings pinned to the bottom — always visible regardless of how many

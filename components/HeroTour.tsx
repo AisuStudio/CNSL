@@ -472,13 +472,7 @@ export default function HeroTour() {
               />
               <div className="cnsl-body">
                 <Sidebar
-                  view={view}
                   tool={tool}
-                  onViewChange={(v) => {
-                    setTool("tracker");
-                    setView(v);
-                    setNavOpen(false);
-                  }}
                   onToolChange={(t) => {
                     setTool(t);
                     setNavOpen(false);

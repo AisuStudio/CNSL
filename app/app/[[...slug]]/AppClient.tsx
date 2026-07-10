@@ -6,6 +6,7 @@ import { stateToSlug, slugToState } from "@/components/viewDefs";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import TableHeader from "@/components/TableHeader";
+import ViewSelector, { type StatusOrArchived } from "@/components/ViewSelector";
 import LogCaptureModal from "@/components/LogCaptureModal";
 import BacklogView, { type BacklogFilter, type BacklogSort } from "@/components/BacklogView";
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
@@ -49,6 +50,8 @@ import {
   type Task,
   type LogEntry,
   type Urgency,
+  type Status,
+  URGENCY_OPTIONS,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { ensurePushSubscription, getDeviceId } from "@/lib/push";
@@ -197,9 +200,13 @@ export default function Home() {
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
   // Backlog-only sort (independent of the Tracker's column sort). null = default.
   const [backlogSort, setBacklogSort] = useState<BacklogSort>(null);
-  // Today view: which urgency buckets to display (default: only "today").
-  const [todayUrgencyFilter, setTodayUrgencyFilter] = useState<Set<Urgency>>(
+  // Urgency view: which urgency buckets to display (default: today only).
+  const [urgencyFilter, setUrgencyFilter] = useState<Set<Urgency>>(
     () => new Set<Urgency>(["today"])
+  );
+  // Status view: which statuses (+ "archived") to display.
+  const [statusFilter, setStatusFilter] = useState<Set<StatusOrArchived>>(
+    () => new Set<StatusOrArchived>(["open", "in_progress", "paused", "review_input"])
   );
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
@@ -1891,16 +1898,26 @@ export default function Home() {
   // are stably pushed to the bottom (#118 follow-up).
   // Today = planned for today (urgency = today); done/canceled sink to bottom.
   // (Worked-hours / counters moved to the Stats view.)
-  const todayTasks = useMemo(() => {
-    const t = activeTasks.filter((x) => todayUrgencyFilter.has(x.urgency));
+  // Urgency view: tasks from selected urgency buckets, open first (drag-sortable).
+  const urgencyViewTasks = useMemo(() => {
+    const t = activeTasks.filter((x) => urgencyFilter.has(x.urgency));
     const closed = (s: string) => s === "done" || s === "canceled";
-    // Open tasks in the shared manual order (drag-reorderable); done/canceled
-    // still sink to the bottom.
     return [
       ...sortTasksBy(t.filter((x) => !closed(x.status)), { key: "order", dir: "asc" }),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [activeTasks, tasks, todayUrgencyFilter]);
+  }, [activeTasks, urgencyFilter]);
+
+  // Status view: tasks (incl. archived) matching selected statuses.
+  const statusViewTasks = useMemo(
+    () =>
+      tasks.filter((t) =>
+        t.archived
+          ? statusFilter.has("archived")
+          : !t.archived && statusFilter.has(t.status as StatusOrArchived)
+      ),
+    [tasks, statusFilter]
+  );
 
   // #42: when there's a query, the content area becomes a global results page
   // (overriding the current tool/view).
@@ -2034,13 +2051,7 @@ export default function Home() {
         {/* Sidebar is always present now — it holds both the Task-Tracker views
             AND the tool switcher (moved out of the header, #218). */}
         <Sidebar
-          view={view}
           tool={tool}
-          onViewChange={(v) => {
-            setTool("tracker"); // views are sub-views of the tracker
-            setView(v);
-            setNavOpen(false); // close drawer after picking (mobile)
-          }}
           onToolChange={(t) => {
             setTool(t);
             setNavOpen(false);
@@ -2058,24 +2069,28 @@ export default function Home() {
         )}
 
         <div className="cnsl-content">
-          {/* The TaskLine-based views (project/backlog/today/archive) and the
-              search results have no column grid, so they skip the column header. */}
+          {/* ViewSelector: tab row for the Task Tracker (replaces sidebar sub-views) */}
+          {!searchActive && tool === "tracker" && (
+            <ViewSelector
+              view={view}
+              onViewChange={(v) => { setTool("tracker"); setView(v); }}
+              urgencyFilter={urgencyFilter}
+              onUrgencyFilterChange={setUrgencyFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+            />
+          )}
+
+          {/* TableHeader: column grid or title for non-tracker tools */}
           {!searchActive &&
+            tool !== "tracker" &&
             tool !== "calendar" &&
             tool !== "scheduler" &&
-            tool !== "noder" &&
-            !(
-              tool === "tracker" &&
-              (view === "project" ||
-                view === "backlog" ||
-                view === "archive")
-            ) && (
+            tool !== "noder" && (
               <TableHeader
-                view={tool === "tracker" ? view : tool}
+                view={tool}
                 sort={sort}
                 onSort={toggleSort}
-                urgencyFilter={view === "today" ? todayUrgencyFilter : undefined}
-                onUrgencyFilterChange={view === "today" ? setTodayUrgencyFilter : undefined}
               />
             )}
 
@@ -2095,69 +2110,84 @@ export default function Home() {
             )}
             {!searchActive && tool === "tracker" && (
               <>
-            {view === "backlog" && (
-          <BacklogView
-            tasks={backlogTasks}
-            onToggleTimer={toggleTimer}
-            onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
-            filter={backlogFilter}
-            onFilterChange={setBacklogFilter}
-            sort={backlogSort}
-            onSortChange={setBacklogSort}
-            onReorder={reorderBacklog}
-            onReorderInProject={reorderTaskInProject}
-            onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
-            onSetStatus={(id, status) => updateTask(id, "status", status)}
-          />
-        )}
-        {view === "today" && (
-          <BacklogView
-            tasks={todayTasks}
-            onToggleTimer={toggleTimer}
-            onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
-            showUrgency={todayUrgencyFilter.size !== 1 || !todayUrgencyFilter.has("today")}
-            alwaysDragOrder
-            onReorder={reorderBacklog}
-          />
-        )}
-        {view === "stats" && <StatsView tasks={tasks} />}
-        {view === "kanban" && (
-          <KanbanView
-            tasks={sortedTasks}
-            onEditTask={openEdit}
-            onSetStatus={(id, status) => updateTask(id, "status", status)}
-          />
-        )}
-        {view === "project" && (
-          <ProjectView
-            tasks={sortedTasks}
-            onUpdate={updateTask}
-            onToggleTimer={toggleTimer}
-            onEditTask={openEdit}
-            onArchive={(id) => setArchived(id, true)}
-            onNewInProject={(project) => openCreate(project)}
-            onNewInTopic={(project, topic) => openCreate(project, topic)}
-            onExportProject={(project) => exportCopyMarkdown(project)}
-            onShareProject={(project) => setShareTarget(project)}
-            sharedRole={(project) =>
-              sharedProjects.find((s) => s.name.toLowerCase() === project?.toLowerCase())?.role
-            }
-            isSharedOut={(project) =>
-              sharedOutNames.some((n) => n.toLowerCase() === project?.toLowerCase())
-            }
-          />
-        )}
-        {view === "archive" && (
-          <ArchiveView
-            archived={sortedArchived}
-            doneCount={doneCount}
-            onToggleTimer={toggleTimer}
-            onEditTask={openEdit}
-            onArchiveAllDone={archiveAllDone}
-          />
-        )}
+                {view === "project" && (
+                  <ProjectView
+                    tasks={sortedTasks}
+                    onUpdate={updateTask}
+                    onToggleTimer={toggleTimer}
+                    onEditTask={openEdit}
+                    onArchive={(id) => setArchived(id, true)}
+                    onNewInProject={(project) => openCreate(project)}
+                    onNewInTopic={(project, topic) => openCreate(project, topic)}
+                    onExportProject={(project) => exportCopyMarkdown(project)}
+                    onShareProject={(project) => setShareTarget(project)}
+                    sharedRole={(project) =>
+                      sharedProjects.find((s) => s.name.toLowerCase() === project?.toLowerCase())?.role
+                    }
+                    isSharedOut={(project) =>
+                      sharedOutNames.some((n) => n.toLowerCase() === project?.toLowerCase())
+                    }
+                  />
+                )}
+
+                {view === "urgency" && (
+                  <>
+                    {URGENCY_OPTIONS
+                      .filter((o) => urgencyFilter.has(o.value))
+                      .map(({ value, label }) => {
+                        const group = urgencyViewTasks.filter((t) => t.urgency === value);
+                        return (
+                          <div key={value}>
+                            <div
+                              style={{
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 1,
+                                minHeight: "var(--row-height)",
+                                display: "flex",
+                                alignItems: "center",
+                                padding: "0 16px",
+                                gap: "8px",
+                                background: "color-mix(in srgb, var(--color-accent) 16%, #000)",
+                              }}
+                            >
+                              <span style={{ fontWeight: 700, fontSize: "var(--text-base)", color: "var(--color-accent)" }}>
+                                {label}
+                              </span>
+                              <span style={{ fontWeight: 300, fontSize: "var(--text-sm)", color: "color-mix(in srgb, var(--color-accent) 55%, transparent)" }}>
+                                {group.length}
+                              </span>
+                            </div>
+                            <BacklogView
+                              tasks={group}
+                              showUrgency={false}
+                              alwaysDragOrder
+                              onReorder={reorderBacklog}
+                              onToggleTimer={toggleTimer}
+                              onEditTask={openEdit}
+                              onArchive={(id) => setArchived(id, true)}
+                            />
+                          </div>
+                        );
+                      })}
+                  </>
+                )}
+
+                {view === "status" && (
+                  <BacklogView
+                    tasks={statusViewTasks}
+                    showUrgency
+                    onToggleTimer={toggleTimer}
+                    onEditTask={openEdit}
+                    onArchive={(id) => setArchived(id, true)}
+                    sort={backlogSort}
+                    onSortChange={setBacklogSort}
+                    onSetUrgency={(id, urgency) => updateTask(id, "urgency", urgency)}
+                    onSetStatus={(id, status) => updateTask(id, "status", status as Status)}
+                  />
+                )}
+
+                {view === "stats" && <StatsView tasks={tasks} />}
               </>
             )}
         {!searchActive && tool === "notepad" && (

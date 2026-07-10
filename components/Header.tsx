@@ -6,13 +6,15 @@ import SyncIndicator, { type SyncState } from "./SyncIndicator";
 
 // Task Tracker sub-views (sidebar)
 export type View =
+  | "project"
+  | "urgency"
+  | "status"
+  | "stats"
   | "today"
   | "backlog"
   | "kanban"
-  | "project"
-  | "log"
   | "archive"
-  | "stats";
+  | "log";
 
 // Top-level tools (header switcher)
 export type Tool =

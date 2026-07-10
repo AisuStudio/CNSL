@@ -1,13 +1,8 @@
 // Two levels of navigation:
 //   TOOL_DEFS  → the header tool-switcher (Task Tracker · Note Pad · Log)
-//   VIEW_DEFS  → the slim sidebar = sub-views of the Task Tracker tool
+//   VIEW_DEFS  → ViewSelector tab row under the header (Task Tracker only)
 import {
-  TodayIcon,
-  ListIcon,
-  ProjectIcon,
   TaskTrackerIcon,
-  ArchiveIcon,
-  StatsIcon,
   NotePadIcon,
   CalIcon,
   NoderIcon,
@@ -22,35 +17,33 @@ export const TOOL_DEFS: {
   label: string;
   Icon: (props: { color?: string }) => React.ReactElement;
 }[] = [
-  { key: "tracker", label: "Task Tracker", Icon: TaskTrackerIcon },
-  { key: "notepad", label: "Note Pad", Icon: NotePadIcon },
-  { key: "calendar", label: "Calendar", Icon: CalIcon },
-  { key: "noder", label: "Noder", Icon: NoderIcon },
-  { key: "scheduler", label: "Scheduler", Icon: SchedulerIcon },
-  { key: "chat", label: "Chat", Icon: ChatIcon },
-  { key: "log", label: "Log", Icon: LogIcon },
+  { key: "tracker",   label: "Task Tracker", Icon: TaskTrackerIcon },
+  { key: "notepad",   label: "Note Pad",     Icon: NotePadIcon },
+  { key: "calendar",  label: "Calendar",     Icon: CalIcon },
+  { key: "noder",     label: "Noder",        Icon: NoderIcon },
+  { key: "scheduler", label: "Scheduler",    Icon: SchedulerIcon },
+  { key: "chat",      label: "Chat",         Icon: ChatIcon },
+  { key: "log",       label: "Log",          Icon: LogIcon },
 ];
 
-// Task Tracker sub-views (Kanban paused #151; Log is now a header tool).
-export const VIEW_DEFS: {
-  key: View;
-  label: string;
-  Icon: (props: { color?: string }) => React.ReactElement;
-}[] = [
-  { key: "project", label: "Projects", Icon: ProjectIcon },
-  { key: "today", label: "Today", Icon: TodayIcon },
-  { key: "backlog", label: "Backlog", Icon: ListIcon },
-  { key: "archive", label: "Archive", Icon: ArchiveIcon },
-  { key: "stats", label: "Stats", Icon: StatsIcon },
+// Task Tracker views — shown as tabs in ViewSelector (not in sidebar).
+export const VIEW_DEFS: { key: View; label: string }[] = [
+  { key: "project", label: "Project" },
+  { key: "urgency", label: "Urgency" },
+  { key: "status",  label: "Status"  },
 ];
 
 // ─── URL slug ↔ (tool, view) mapping (/app/<slug>) ──────────
-// Every tool + tracker sub-view key is unique, so a single path segment is
-// enough: a non-tracker tool maps to its own key; a tracker sub-view maps to
-// the sub-view key (tool stays "tracker").
 const TOOL_KEYS = TOOL_DEFS.map((t) => t.key) as string[];
-const VIEW_KEYS = VIEW_DEFS.map((v) => v.key) as string[];
-export const DEFAULT_SLUG = "project"; // tracker + project
+const ACTIVE_VIEW_KEYS = VIEW_DEFS.map((v) => v.key) as string[];
+// Legacy slugs redirect to the new view they map to.
+const LEGACY_SLUG: Record<string, View> = {
+  today:   "urgency",
+  backlog: "urgency",
+  kanban:  "urgency",
+  archive: "status",
+};
+export const DEFAULT_SLUG = "project";
 
 export function stateToSlug(tool: Tool, view: View): string {
   return tool === "tracker" ? view : tool;
@@ -60,13 +53,19 @@ export function slugToState(
   slug: string | undefined,
   current: { tool: Tool; view: View }
 ): { tool: Tool; view: View } {
-  if (slug && VIEW_KEYS.includes(slug)) {
+  // Active view keys
+  if (slug && ACTIVE_VIEW_KEYS.includes(slug)) {
     return { tool: "tracker", view: slug as View };
   }
+  // Legacy slugs → redirect to replacement view
+  if (slug && LEGACY_SLUG[slug]) {
+    return { tool: "tracker", view: LEGACY_SLUG[slug] };
+  }
+  // Hidden but valid view (stats)
+  if (slug === "stats") return { tool: "tracker", view: "stats" };
   if (slug === "tracker") return { tool: "tracker", view: "project" };
   if (slug && TOOL_KEYS.includes(slug)) {
     return { tool: slug as Tool, view: current.view };
   }
-  // no slug / unknown → default landing
   return { tool: "tracker", view: "project" };
 }
