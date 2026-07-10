@@ -53,6 +53,7 @@ import {
   type LogEntry,
   type Urgency,
   type Status,
+  URGENCY_OPTIONS,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { ensurePushSubscription, getDeviceId } from "@/lib/push";
@@ -110,6 +111,75 @@ function dedupeTaskNumbers(arr: Task[]): Task[] {
     seen.add(t.number);
     return t;
   });
+}
+
+// Urgency-group section header + its BacklogView.
+// Needs to be a separate component so it can own the drop-highlight state.
+// The section header is a drop target: dropping a task on it changes the task's
+// urgency to this section's urgency (cross-section drag).
+function UrgencySection({
+  label,
+  tasks,
+  onDropTask,
+  onReorder,
+  onToggleTimer,
+  onEditTask,
+  onArchive,
+}: {
+  label: string;
+  tasks: Task[];
+  onDropTask: (id: string) => void;
+  onReorder: (ids: string[], draggedId: string) => void;
+  onToggleTimer: (id: string) => void;
+  onEditTask: (id: string) => void;
+  onArchive: (id: string) => void;
+}) {
+  const [over, setOver] = useState(false);
+  return (
+    <div>
+      <div
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          const id = e.dataTransfer.getData("text/plain");
+          if (id) onDropTask(id);
+        }}
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          minHeight: "var(--row-height)",
+          padding: "0 16px",
+          background: over
+            ? "color-mix(in srgb, var(--color-accent) 28%, #000)"
+            : "color-mix(in srgb, var(--color-accent) 16%, #000)",
+          boxShadow: over ? "inset 0 0 0 2px var(--color-accent)" : undefined,
+          transition: "background 80ms",
+        }}
+      >
+        <span style={{ fontWeight: 700, color: "var(--color-accent)", fontSize: "var(--text-base)" }}>
+          {label.toUpperCase()}
+        </span>
+        <span style={{ color: "color-mix(in srgb, var(--color-accent) 55%, transparent)", fontSize: "var(--text-sm)", fontWeight: 300 }}>
+          {tasks.length}
+        </span>
+      </div>
+      <BacklogView
+        tasks={tasks}
+        showUrgency={false}
+        alwaysDragOrder
+        onReorder={onReorder}
+        onToggleTimer={onToggleTimer}
+        onEditTask={onEditTask}
+        onArchive={onArchive}
+      />
+    </div>
+  );
 }
 
 export default function Home() {
@@ -2134,15 +2204,23 @@ export default function Home() {
                 )}
 
                 {view === "urgency" && (
-                  <BacklogView
-                    tasks={urgencyViewTasks}
-                    showUrgency={urgencyFilter.size > 1}
-                    alwaysDragOrder
-                    onReorder={reorderBacklog}
-                    onToggleTimer={toggleTimer}
-                    onEditTask={openEdit}
-                    onArchive={(id) => setArchived(id, true)}
-                  />
+                  <>
+                    {URGENCY_OPTIONS
+                      .filter((o) => urgencyFilter.has(o.value))
+                      .map(({ value, label }) => (
+                        <UrgencySection
+                          key={value}
+                          label={label}
+                          tasks={urgencyViewTasks.filter((t) => t.urgency === value)}
+                          onDropTask={(id) => updateTask(id, "urgency", value)}
+                          onReorder={reorderBacklog}
+                          onToggleTimer={toggleTimer}
+                          onEditTask={openEdit}
+                          onArchive={(id) => setArchived(id, true)}
+                        />
+                      ))
+                    }
+                  </>
                 )}
 
                 {view === "status" && (

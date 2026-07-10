@@ -291,6 +291,7 @@ export default function BacklogView({
         draggable
         onDragStart={(e) => {
           setDragId(t.id);
+          e.dataTransfer.setData("text/plain", t.id);
           e.dataTransfer.effectAllowed = "move";
         }}
         onDragOver={(e) => {
