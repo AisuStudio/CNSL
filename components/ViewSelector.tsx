@@ -13,12 +13,12 @@ import type { View } from "./Header";
 
 export type StatusOrArchived = Status | "archived";
 
-const STATUS_FILTER_OPTIONS: { value: StatusOrArchived; label: string }[] = [
+export const STATUS_FILTER_OPTIONS: { value: StatusOrArchived; label: string }[] = [
   ...STATUS_OPTIONS,
   { value: "archived", label: "Archived" },
 ];
 
-function FilterDropdown<T extends string>({
+export function FilterDropdown<T extends string>({
   label,
   options,
   filter,
@@ -49,7 +49,18 @@ function FilterDropdown<T extends string>({
   };
 
   const allSelected = filter.size === options.length;
-  const someSelected = filter.size > 0 && !allSelected;
+  const someFiltered = filter.size > 0 && !allSelected;
+
+  // Build a short summary label from selected options
+  const summary =
+    filter.size === 0
+      ? label
+      : filter.size === options.length
+      ? label
+      : options
+          .filter((o) => filter.has(o.value))
+          .map((o) => o.label)
+          .join(", ");
 
   return (
     <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
@@ -59,37 +70,26 @@ function FilterDropdown<T extends string>({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "4px",
+          gap: "6px",
           padding: "0 10px",
           height: "26px",
           borderRadius: "6px",
           border: "1px solid var(--color-border-subtle)",
-          background: someSelected
+          background: someFiltered
             ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
             : "transparent",
-          color: someSelected ? "var(--color-accent)" : "var(--color-text-muted)",
+          color: someFiltered ? "var(--color-accent)" : "var(--color-text-muted)",
           fontSize: "var(--text-sm)",
           cursor: "pointer",
-          fontWeight: 500,
+          fontWeight: someFiltered ? 600 : 500,
+          maxWidth: "240px",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          textOverflow: "ellipsis",
         }}
       >
-        {label}
-        {someSelected && (
-          <span
-            style={{
-              fontSize: "10px",
-              background: "var(--color-accent)",
-              color: "#000",
-              borderRadius: "9px",
-              padding: "0 5px",
-              lineHeight: "16px",
-              fontWeight: 700,
-            }}
-          >
-            {filter.size}
-          </span>
-        )}
-        <ChevronDown size={12} strokeWidth={2} />
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{summary}</span>
+        <ChevronDown size={12} strokeWidth={2} style={{ flexShrink: 0 }} />
       </button>
       {open && (
         <div
@@ -97,13 +97,13 @@ function FilterDropdown<T extends string>({
             position: "absolute",
             top: "calc(100% + 4px)",
             left: 0,
-            zIndex: 100,
-            background: "var(--color-surface)",
+            zIndex: 200,
+            background: "var(--color-canvas)",
             border: "1px solid var(--color-border)",
             borderRadius: "8px",
             padding: "6px",
             minWidth: "160px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
           }}
         >
           {options.map((o) => (
@@ -118,13 +118,14 @@ function FilterDropdown<T extends string>({
                 borderRadius: "5px",
                 fontSize: "var(--text-sm)",
                 color: "var(--color-text-primary)",
+                userSelect: "none",
               }}
             >
               <input
                 type="checkbox"
                 checked={filter.has(o.value)}
                 onChange={() => toggle(o.value)}
-                style={{ accentColor: "var(--color-accent)", cursor: "pointer" }}
+                style={{ accentColor: "var(--color-accent)", cursor: "pointer", flexShrink: 0 }}
               />
               {o.label}
             </label>
@@ -135,20 +136,14 @@ function FilterDropdown<T extends string>({
   );
 }
 
+// Simple 3-tab strip. Filter dropdowns live inside <main> (sticky rows above task lists)
+// to avoid stacking-context clipping by the scroll container.
 export default function ViewSelector({
   view,
   onViewChange,
-  urgencyFilter,
-  onUrgencyFilterChange,
-  statusFilter,
-  onStatusFilterChange,
 }: {
   view: View;
   onViewChange: (v: View) => void;
-  urgencyFilter: Set<Urgency>;
-  onUrgencyFilterChange: (f: Set<Urgency>) => void;
-  statusFilter: Set<StatusOrArchived>;
-  onStatusFilterChange: (f: Set<StatusOrArchived>) => void;
 }) {
   return (
     <div
@@ -187,25 +182,6 @@ export default function ViewSelector({
           </button>
         );
       })}
-
-      <div style={{ width: "1px", height: "16px", background: "var(--color-border)", margin: "0 4px", flexShrink: 0 }} />
-
-      {view === "urgency" && (
-        <FilterDropdown<Urgency>
-          label="Filter"
-          options={URGENCY_OPTIONS}
-          filter={urgencyFilter}
-          onChange={onUrgencyFilterChange}
-        />
-      )}
-      {view === "status" && (
-        <FilterDropdown<StatusOrArchived>
-          label="Filter"
-          options={STATUS_FILTER_OPTIONS}
-          filter={statusFilter}
-          onChange={onStatusFilterChange}
-        />
-      )}
     </div>
   );
 }
