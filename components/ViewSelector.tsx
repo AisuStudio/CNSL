@@ -116,7 +116,9 @@ export function FilterDropdown<T extends string>({
                 cursor: "pointer",
                 borderRadius: "5px",
                 fontSize: "var(--text-sm)",
-                color: "var(--color-text-primary)",
+                color: filter.has(o.value)
+                  ? "var(--color-accent)"
+                  : "color-mix(in srgb, var(--color-accent) 50%, transparent)",
                 userSelect: "none",
               }}
             >
