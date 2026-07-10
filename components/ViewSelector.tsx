@@ -187,8 +187,8 @@ export default function ViewSelector({
               border: "none",
               background: active ? "var(--color-bg-deep)" : "transparent",
               color: active
-                ? "var(--color-text-primary)"
-                : "var(--color-text-secondary)",
+                ? "var(--color-accent)"
+                : "color-mix(in srgb, var(--color-accent) 50%, transparent)",
               fontSize: "var(--text-sm)",
               fontWeight: active ? 700 : 500,
               cursor: "pointer",
