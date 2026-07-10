@@ -167,6 +167,7 @@ export default function BacklogView({
   alwaysDragOrder,
   onSetUrgency,
   onSetStatus,
+  onDropFromOtherSection,
 }: {
   tasks: Task[];
   onToggleTimer: (id: string) => void;
@@ -191,6 +192,9 @@ export default function BacklogView({
   // When provided, rows expose inline urgency/status dropdowns (edit in place).
   onSetUrgency?: (id: string, urgency: Urgency) => void;
   onSetStatus?: (id: string, status: Status) => void;
+  // Cross-section drop: called when a task from a *different* BacklogView is
+  // dropped here (dragId is null because the drag didn't start in this instance).
+  onDropFromOtherSection?: (id: string) => void;
 }) {
   const [grouped, setGrouped] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -308,7 +312,12 @@ export default function BacklogView({
         }}
         onDrop={(e) => {
           e.preventDefault();
-          onDrop();
+          if (!dragId && onDropFromOtherSection) {
+            const id = e.dataTransfer.getData("text/plain");
+            if (id) onDropFromOtherSection(id);
+          } else {
+            onDrop();
+          }
         }}
         onDragEnd={resetDrag}
         style={{

@@ -174,6 +174,7 @@ function UrgencySection({
         showUrgency={false}
         alwaysDragOrder
         onReorder={onReorder}
+        onDropFromOtherSection={onDropTask}
         onToggleTimer={onToggleTimer}
         onEditTask={onEditTask}
         onArchive={onArchive}
