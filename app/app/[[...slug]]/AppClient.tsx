@@ -48,6 +48,7 @@ import {
   stopTimer,
   type Task,
   type LogEntry,
+  type Urgency,
 } from "@/lib/mock-data";
 import { loadState, saveState, newId } from "@/lib/storage";
 import { ensurePushSubscription, getDeviceId } from "@/lib/push";
@@ -196,6 +197,10 @@ export default function Home() {
   const [backlogFilter, setBacklogFilter] = useState<BacklogFilter>("all");
   // Backlog-only sort (independent of the Tracker's column sort). null = default.
   const [backlogSort, setBacklogSort] = useState<BacklogSort>(null);
+  // Today view: which urgency buckets to display (default: only "today").
+  const [todayUrgencyFilter, setTodayUrgencyFilter] = useState<Set<Urgency>>(
+    () => new Set<Urgency>(["today"])
+  );
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
@@ -1887,7 +1892,7 @@ export default function Home() {
   // Today = planned for today (urgency = today); done/canceled sink to bottom.
   // (Worked-hours / counters moved to the Stats view.)
   const todayTasks = useMemo(() => {
-    const t = activeTasks.filter((x) => x.urgency === "today");
+    const t = activeTasks.filter((x) => todayUrgencyFilter.has(x.urgency));
     const closed = (s: string) => s === "done" || s === "canceled";
     // Open tasks in the shared manual order (drag-reorderable); done/canceled
     // still sink to the bottom.
@@ -1895,7 +1900,7 @@ export default function Home() {
       ...sortTasksBy(t.filter((x) => !closed(x.status)), { key: "order", dir: "asc" }),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [activeTasks, tasks]);
+  }, [activeTasks, tasks, todayUrgencyFilter]);
 
   // #42: when there's a query, the content area becomes a global results page
   // (overriding the current tool/view).
@@ -2110,9 +2115,11 @@ export default function Home() {
             onToggleTimer={toggleTimer}
             onEditTask={openEdit}
             onArchive={(id) => setArchived(id, true)}
-            showUrgency={false}
+            showUrgency={todayUrgencyFilter.size !== 1 || !todayUrgencyFilter.has("today")}
             alwaysDragOrder
             onReorder={reorderBacklog}
+            urgencyFilter={todayUrgencyFilter}
+            onUrgencyFilterChange={setTodayUrgencyFilter}
           />
         )}
         {view === "stats" && <StatsView tasks={tasks} />}
