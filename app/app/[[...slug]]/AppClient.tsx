@@ -2074,6 +2074,8 @@ export default function Home() {
                 view={tool === "tracker" ? view : tool}
                 sort={sort}
                 onSort={toggleSort}
+                urgencyFilter={view === "today" ? todayUrgencyFilter : undefined}
+                onUrgencyFilterChange={view === "today" ? setTodayUrgencyFilter : undefined}
               />
             )}
 
@@ -2118,8 +2120,6 @@ export default function Home() {
             showUrgency={todayUrgencyFilter.size !== 1 || !todayUrgencyFilter.has("today")}
             alwaysDragOrder
             onReorder={reorderBacklog}
-            urgencyFilter={todayUrgencyFilter}
-            onUrgencyFilterChange={setTodayUrgencyFilter}
           />
         )}
         {view === "stats" && <StatsView tasks={tasks} />}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
-import { type Task, type Urgency, type Status, URGENCY_OPTIONS } from "@/lib/mock-data";
+import { useMemo, useState } from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { type Task, type Urgency, type Status } from "@/lib/mock-data";
 import TaskLine from "./TaskLine";
 
 export type BacklogFilter = "all" | "open";
@@ -28,99 +28,6 @@ const byOrder = (x: Task, y: Task) => {
   return xo < yo ? -1 : xo > yo ? 1 : 0;
 };
 
-function UrgencyDropdown({
-  filter,
-  onChange,
-}: {
-  filter: Set<Urgency>;
-  onChange: (f: Set<Urgency>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const toggle = (u: Urgency) => {
-    const next = new Set(filter);
-    if (next.has(u)) next.delete(u);
-    else next.add(u);
-    onChange(next);
-  };
-
-  return (
-    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
-      <button
-        type="button"
-        onClick={() => setOpen((x) => !x)}
-        className="cnsl-on-canvas"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          padding: "0 8px",
-          height: "26px",
-          borderRadius: "6px",
-          border: "1px solid var(--color-border-subtle)",
-          background: "transparent",
-          color: "var(--color-text-primary)",
-          fontSize: "var(--text-sm)",
-          cursor: "pointer",
-        }}
-      >
-        Urgency
-        <ChevronDown size={12} strokeWidth={2} />
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            zIndex: 50,
-            background: "var(--color-canvas)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            padding: "6px",
-            minWidth: "140px",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-          }}
-        >
-          {URGENCY_OPTIONS.map((o) => (
-            <label
-              key={o.value}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "6px 8px",
-                cursor: "pointer",
-                borderRadius: "5px",
-                fontSize: "var(--text-sm)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={filter.has(o.value)}
-                onChange={() => toggle(o.value)}
-                style={{ accentColor: "var(--color-accent)", cursor: "pointer" }}
-              />
-              {o.label}
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* Backlog header: All/Untouched filter (#53) on the left; on the right a
    Flat ↔ By project toggle and (in flat mode) the sort control. */
 function BacklogHeader({
@@ -130,8 +37,6 @@ function BacklogHeader({
   onSortChange,
   grouped,
   onGroupedChange,
-  urgencyFilter,
-  onUrgencyFilterChange,
 }: {
   filter?: BacklogFilter;
   onFilterChange?: (f: BacklogFilter) => void;
@@ -139,8 +44,6 @@ function BacklogHeader({
   onSortChange?: (s: BacklogSort) => void;
   grouped?: boolean;
   onGroupedChange?: (g: boolean) => void;
-  urgencyFilter?: Set<Urgency>;
-  onUrgencyFilterChange?: (f: Set<Urgency>) => void;
 }) {
   const key = sort?.key ?? "";
   const dir = sort?.dir ?? "asc";
@@ -196,10 +99,6 @@ function BacklogHeader({
         scrollbarWidth: "none",
       }}
     >
-      {urgencyFilter && onUrgencyFilterChange && (
-        <UrgencyDropdown filter={urgencyFilter} onChange={onUrgencyFilterChange} />
-      )}
-
       {filter && onFilterChange &&
         toggle(untouched, () => onFilterChange(untouched ? "all" : "open"), "Untouched")}
 
@@ -268,8 +167,6 @@ export default function BacklogView({
   alwaysDragOrder,
   onSetUrgency,
   onSetStatus,
-  urgencyFilter,
-  onUrgencyFilterChange,
 }: {
   tasks: Task[];
   onToggleTimer: (id: string) => void;
@@ -294,9 +191,6 @@ export default function BacklogView({
   // When provided, rows expose inline urgency/status dropdowns (edit in place).
   onSetUrgency?: (id: string, urgency: Urgency) => void;
   onSetStatus?: (id: string, status: Status) => void;
-  // Multi-select urgency filter (Today view: choose which urgency buckets to show).
-  urgencyFilter?: Set<Urgency>;
-  onUrgencyFilterChange?: (f: Set<Urgency>) => void;
 }) {
   const [grouped, setGrouped] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -304,7 +198,7 @@ export default function BacklogView({
   const [overHeader, setOverHeader] = useState<string | null>(null);
 
   const canGroup = !!onReorderInProject;
-  const showHeader = (filter && onFilterChange) || onSortChange || canGroup || !!urgencyFilter;
+  const showHeader = (filter && onFilterChange) || onSortChange || canGroup;
   const flatDragMode =
     !grouped && (alwaysDragOrder || sort?.key === "order") && !!onReorder;
 
@@ -438,8 +332,6 @@ export default function BacklogView({
           onSortChange={grouped ? undefined : onSortChange}
           grouped={canGroup ? grouped : undefined}
           onGroupedChange={canGroup ? setGrouped : undefined}
-          urgencyFilter={urgencyFilter}
-          onUrgencyFilterChange={onUrgencyFilterChange}
         />
       )}
 
