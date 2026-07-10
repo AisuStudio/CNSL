@@ -97,7 +97,7 @@ export function FilterDropdown<T extends string>({
             top: "calc(100% + 4px)",
             left: 0,
             zIndex: 200,
-            background: "var(--color-canvas)",
+            background: "var(--color-bg-deep)",
             border: "1px solid var(--color-border)",
             borderRadius: "8px",
             padding: "6px",
