@@ -11,8 +11,7 @@
 // each tester came in through. Add a new code by adding a line here.
 export const BETA_CODES: Record<string, string> = {
   "LocalHorst:3000": "general",
-  // Example — a dedicated code to hand out with a job application:
-  // "CNSL-BEWERBUNG-2026": "application-2026",
+  "DS-3000": "DigitalService",
 };
 
 // Validate an entered code (trimmed, case-sensitive — codes are mixed-case).
