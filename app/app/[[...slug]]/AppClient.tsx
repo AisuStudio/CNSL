@@ -1742,7 +1742,7 @@ export default function Home() {
     return `${day}${proj}`;
   }
   function exportCopyMarkdown(project?: string) {
-    copyText(toMarkdown(tasks, log, project));
+    copyText(toMarkdown(tasks, log, project, false));
   }
   function exportDownloadMarkdown(project?: string) {
     downloadFile(

@@ -60,7 +60,8 @@ export function toJson(tasks: Task[], log: LogEntry[], project?: string): string
 export function toMarkdown(
   tasks: Task[],
   log: LogEntry[],
-  project?: string
+  project?: string,
+  includeLogs = true
 ): string {
   const ts = project ? tasks.filter((t) => t.project === project) : tasks;
   const s = summarize(ts, log);
@@ -77,7 +78,9 @@ export function toMarkdown(
     if (s.byStatus[o.value]) lines.push(`  - ${o.label}: ${s.byStatus[o.value]}`);
   }
   lines.push(`- Total tracked: **${s.totalTracked}** (${s.totalTrackedMinutes} min)`);
-  lines.push(`- Log entries: ${s.logEntries} (${s.logOpen} open)`);
+  if (includeLogs) {
+    lines.push(`- Log entries: ${s.logEntries} (${s.logOpen} open)`);
+  }
   lines.push("");
   lines.push("## Tasks");
   lines.push(
@@ -93,17 +96,19 @@ export function toMarkdown(
       } | ${formatHM(t.trackedMinutes)} | ${t.description ?? ""} |`
     );
   }
-  lines.push("");
-  lines.push("## Tracking Log");
-  if (log.length === 0) {
-    lines.push("_(empty)_");
-  } else {
-    const sorted = [...log].sort((a, b) => b.ts.localeCompare(a.ts));
-    for (const e of sorted) {
-      const tail = e.processed
-        ? `→ Backlog #${String(e.taskNumber ?? "").padStart(2, "0")}`
-        : "(open)";
-      lines.push(`- \`${e.ts}\` — ${e.text}  ${tail}`);
+  if (includeLogs) {
+    lines.push("");
+    lines.push("## Tracking Log");
+    if (log.length === 0) {
+      lines.push("_(empty)_");
+    } else {
+      const sorted = [...log].sort((a, b) => b.ts.localeCompare(a.ts));
+      for (const e of sorted) {
+        const tail = e.processed
+          ? `→ Backlog #${String(e.taskNumber ?? "").padStart(2, "0")}`
+          : "(open)";
+        lines.push(`- \`${e.ts}\` — ${e.text}  ${tail}`);
+      }
     }
   }
   lines.push("");
