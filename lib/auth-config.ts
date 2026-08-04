@@ -12,6 +12,9 @@
 export const BETA_CODES: Record<string, string> = {
   "LocalHorst:3000": "general",
   "DS-3000": "DigitalService",
+  "TB-10999": "Brettinghams",
+  "ista-2026": "Ista",
+  "wb-2026": "WhyBrilliant",
 };
 
 // Validate an entered code (trimmed, case-sensitive — codes are mixed-case).
