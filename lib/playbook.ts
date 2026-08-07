@@ -304,6 +304,20 @@ export interface FeedTask {
   description?: string;
 }
 
+// Renders the shared "tasks" table used both by a Playbook's scoped list and
+// by a project's notes-memory feed — one table format for any agent feed.
+export function renderTaskTable(tasks: FeedTask[]): string[] {
+  if (tasks.length === 0) return ["_(none)_"];
+  const lines = ["| ID | NR | Project | Topic | Task | Status | Description |", "|---|---|---|---|---|---|---|"];
+  for (const t of tasks) {
+    const desc = (t.description ?? "").replace(/\n/g, " ").slice(0, 200);
+    lines.push(
+      `| \`${t.id}\` | ${String(t.number).padStart(2, "0")} | ${t.project} | ${t.epic} | ${t.title} | ${t.status} | ${desc} |`
+    );
+  }
+  return lines;
+}
+
 const AGENT_CONTEXT =
   "This is a CNSL playbook (a flow): work the nodes from the start, following " +
   "`next` and — at a branch — choosing yes/no and STATING which you took and why. " +
@@ -332,18 +346,7 @@ export function buildAgentFeed(
   lines.push(playbookToMarkdown(pb));
   lines.push("");
   lines.push("## Tasks in scope");
-  if (tasks.length === 0) {
-    lines.push("_(none)_");
-  } else {
-    lines.push("| ID | NR | Project | Topic | Task | Status | Description |");
-    lines.push("|---|---|---|---|---|---|---|");
-    for (const t of tasks) {
-      const desc = (t.description ?? "").replace(/\n/g, " ").slice(0, 200);
-      lines.push(
-        `| \`${t.id}\` | ${String(t.number).padStart(2, "0")} | ${t.project} | ${t.epic} | ${t.title} | ${t.status} | ${desc} |`
-      );
-    }
-  }
+  lines.push(...renderTaskTable(tasks));
   lines.push("");
   lines.push("## Writing back");
   lines.push(

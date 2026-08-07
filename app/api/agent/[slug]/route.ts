@@ -4,6 +4,7 @@ import { playbookFromDb } from "@/lib/serialize";
 import {
   buildAgentFeed,
   isAgentSettableStatus,
+  renderTaskTable,
   MAX_FEEDBACK_LEN,
   type FeedTask,
 } from "@/lib/playbook";
@@ -49,26 +50,49 @@ async function findNotesProject(slug: string) {
 
 const NOTES_AGENT_CONTEXT =
   "This is a CNSL project's shared memory — decisions, handoffs, and notes " +
-  "other sessions (human or agent) left for this project. Read it before " +
-  "starting work here. To leave something for the next session, POST this " +
-  "same URL with { title?, body } — it's appended as a new note, nothing is " +
-  "ever overwritten. CNSL only stores this; you decide what's worth recording.";
+  "other sessions (human or agent) left for this project, plus its current " +
+  "open tasks. Read it before starting work here. To leave something for the " +
+  "next session, POST this same URL with { title?, body } — it's appended as " +
+  "a new note, nothing is ever overwritten. Tasks here are read-only from " +
+  "this link (act on them in CNSL, or via a Playbook's own capability link). " +
+  "CNSL only stores this; you decide what's worth recording.";
 
-// GET → the project's notes as one Markdown feed, newest first.
+// GET → the project's notes as one Markdown feed, newest first, plus its
+// current open tasks (read-only — task write-back stays Playbook-scoped).
 async function notesAgentGet(project: { id: string; boardId: string; name: string }, slug: string) {
-  const notes = await prisma.note.findMany({
-    where: { projectId: project.id },
-    orderBy: { updatedAt: "desc" },
-    take: 200,
-  });
+  const [notes, taskRows] = await Promise.all([
+    prisma.note.findMany({
+      where: { projectId: project.id },
+      orderBy: { updatedAt: "desc" },
+      take: 200,
+    }),
+    prisma.task.findMany({
+      where: { boardId: project.boardId, project: project.name, archived: false, status: { not: "canceled" } },
+      orderBy: { number: "asc" },
+      take: 500,
+    }),
+  ]);
+  const tasks: FeedTask[] = taskRows.map((t) => ({
+    id: t.id,
+    number: t.number,
+    project: t.project,
+    epic: t.epic,
+    title: t.title,
+    status: t.status,
+    description: t.description,
+  }));
 
   const lines: string[] = [];
   lines.push(`# CNSL Project Memory — ${project.name}`);
   lines.push("");
   lines.push(`> ${NOTES_AGENT_CONTEXT}`);
   lines.push("");
-  lines.push(`**Write back:** \`POST /api/agent/${slug}\` with \`{ "body": "..." }\`.`);
+  lines.push(`**Write back (notes only):** \`POST /api/agent/${slug}\` with \`{ "body": "..." }\`.`);
   lines.push("");
+  lines.push("## Open tasks");
+  lines.push(...renderTaskTable(tasks));
+  lines.push("");
+  lines.push("## Notes");
   if (notes.length === 0) {
     lines.push("_(no notes yet — be the first)_");
   } else {
