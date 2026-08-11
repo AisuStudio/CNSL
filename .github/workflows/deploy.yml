@@ -24,6 +24,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Gate the deploy on the tests, before the strip step below removes the
+      # server-only files some of them cover. CI runs these on the PR too; this
+      # is the second gate, so a red main never reaches Pages.
+      - name: Unit tests
+        run: npm test
       - name: Strip server-only files (the static export can't include them)
         # Every `dynamic = "force-dynamic"` route has to go — `output: "export"`
         # has no runtime server to render them. Adding such a page WITHOUT

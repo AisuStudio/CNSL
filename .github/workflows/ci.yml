@@ -1,0 +1,34 @@
+# Typecheck + unit tests on every PR and every push to main.
+#
+# The tests (lib/*.test.ts) existed long before this workflow did — they were
+# just never run by anything except a human remembering to type `npm test`.
+# Note there is no lint step: `npm run lint` still calls `next lint`, which
+# Next 16 removed, and no ESLint config or dependency exists in this repo.
+# Adding one is its own decision, not a side effect of wiring up CI.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # postinstall runs `prisma generate`, so the client exists by now — the
+      # scheduler/boardSync tests import types that depend on it.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
