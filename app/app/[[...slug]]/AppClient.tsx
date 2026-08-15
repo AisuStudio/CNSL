@@ -280,6 +280,10 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState<Set<StatusOrArchived>>(
     () => new Set<StatusOrArchived>(["open", "in_progress", "paused", "review_input"])
   );
+  // Narrow every task view to ONE project (null = all projects). Sits next to
+  // the urgency/status filters and applies across Project · Urgency · Status,
+  // so the roadmap can be read one project at a time.
+  const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [projectColors, setProjectColors] = useState<ProjectColors>({});
@@ -1817,6 +1821,14 @@ export default function Home() {
     for (const p of projectList) s.add(p.name);
     return Array.from(s).filter(Boolean);
   }, [tasks, notes, events, schedules, projectList]);
+  // A project that disappears (renamed, deleted) must not leave the board stuck
+  // on an empty filter — fall back to "All projects".
+  useEffect(() => {
+    if (!projectFilter) return;
+    const key = projectFilter.trim().toLowerCase();
+    if (!projects.some((p) => p.trim().toLowerCase() === key)) setProjectFilter(null);
+  }, [projects, projectFilter]);
+
   const epics = useMemo(
     () => Array.from(new Set(tasks.map((t) => t.epic))).filter(Boolean),
     [tasks]
@@ -1970,25 +1982,43 @@ export default function Home() {
   // are stably pushed to the bottom (#118 follow-up).
   // Today = planned for today (urgency = today); done/canceled sink to bottom.
   // (Worked-hours / counters moved to the Stats view.)
+  // Project narrowing (case-insensitive, like every other name lookup).
+  const matchesProjectFilter = useCallback(
+    (t: Task) =>
+      projectFilter === null ||
+      (t.project ?? "").trim().toLowerCase() === projectFilter.trim().toLowerCase(),
+    [projectFilter]
+  );
+
+  // Project view: the same grouped board, narrowed to one project when set.
+  const projectViewTasks = useMemo(
+    () => sortedTasks.filter(matchesProjectFilter),
+    [sortedTasks, matchesProjectFilter]
+  );
+
   // Urgency view: tasks from selected urgency buckets, open first (drag-sortable).
   const urgencyViewTasks = useMemo(() => {
-    const t = activeTasks.filter((x) => urgencyFilter.has(x.urgency));
+    const t = activeTasks.filter(
+      (x) => urgencyFilter.has(x.urgency) && matchesProjectFilter(x)
+    );
     const closed = (s: string) => s === "done" || s === "canceled";
     return [
       ...sortTasksBy(t.filter((x) => !closed(x.status)), { key: "order", dir: "asc" }),
       ...t.filter((x) => closed(x.status)),
     ];
-  }, [activeTasks, urgencyFilter]);
+  }, [activeTasks, urgencyFilter, matchesProjectFilter]);
 
   // Status view: tasks (incl. archived) matching selected statuses.
   const statusViewTasks = useMemo(
     () =>
-      tasks.filter((t) =>
-        t.archived
-          ? statusFilter.has("archived")
-          : !t.archived && statusFilter.has(t.status as StatusOrArchived)
+      tasks.filter(
+        (t) =>
+          matchesProjectFilter(t) &&
+          (t.archived
+            ? statusFilter.has("archived")
+            : !t.archived && statusFilter.has(t.status as StatusOrArchived))
       ),
-    [tasks, statusFilter]
+    [tasks, statusFilter, matchesProjectFilter]
   );
 
   // #42: when there's a query, the content area becomes a global results page
@@ -2152,6 +2182,9 @@ export default function Home() {
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
               statusCount={statusViewTasks.length}
+              projects={projects}
+              projectFilter={projectFilter}
+              onProjectFilterChange={setProjectFilter}
             />
           )}
 
@@ -2186,7 +2219,7 @@ export default function Home() {
               <>
                 {view === "project" && (
                   <ProjectView
-                    tasks={sortedTasks}
+                    tasks={projectViewTasks}
                     onUpdate={updateTask}
                     onToggleTimer={toggleTimer}
                     onEditTask={openEdit}

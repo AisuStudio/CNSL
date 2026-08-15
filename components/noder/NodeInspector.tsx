@@ -5,7 +5,7 @@
 // onTrue/onFalse selects (those are now purely canvas connections).
 
 import { useState } from "react";
-import type { NodeKind, PlaybookNode } from "@/lib/playbook";
+import { AGENT_RESULT_STATUS, type NodeKind, type PlaybookNode } from "@/lib/playbook";
 import type { Task } from "@/lib/mock-data";
 import {
   fieldLabel,
@@ -205,17 +205,26 @@ export default function NodeInspector({
                 </select>
               </label>
               {(node.outputKind ?? "set_status") === "set_status" && (
-                <label>
+                <div>
                   <span style={fieldLabel}>→ status</span>
-                  <select
-                    value={node.outputStatus ?? "review_input"}
-                    onChange={(e) => onPatch({ outputStatus: e.target.value as "review_input" | "done" })}
-                    style={{ ...selectInput, width: "100%" }}
+                  {/* Review-first: an agent's result always lands in
+                      review_input, so there is nothing to pick here. */}
+                  <div
+                    style={{
+                      ...selectInput,
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "var(--color-text-muted)",
+                      cursor: "default",
+                    }}
                   >
-                    <option value="review_input">review_input</option>
-                    <option value="done">done</option>
-                  </select>
-                </label>
+                    {AGENT_RESULT_STATUS}
+                  </div>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+                    Agent results always land in Review / Input — you confirm done.
+                  </p>
+                </div>
               )}
             </div>
           )}

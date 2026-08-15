@@ -121,8 +121,12 @@ Playbook: { id, name, projectScope, entryId, nodes: Node[] }
   rotieren/widerrufen.
 - **Rotate/Revoke** von Anfang an; **Rate-Limit** (aus `app/api/intake/route.ts`
   kopieren); jeder Agent-Write als `actor: claude` in den Event-Log.
-- **Transition-Whitelist:** der Agent setzt lieber auf `review_input` (Status
-  existiert, `schema.prisma`) als still auf `done` — Mensch bestätigt.
+- **Transition-Whitelist:** der Agent setzt auf `review_input` (Status
+  existiert, `schema.prisma`), nie still auf `done` — Mensch bestätigt.
+  Umgesetzt als **Review-first-Zwang**: `done` wird auf der Leitung noch
+  akzeptiert (alte Playbooks/Agents brechen nicht), aber serverseitig auf
+  `review_input` umgebogen (`resolveAgentStatus`, `lib/playbook.ts`); die
+  Antwort sagt dem Agenten, dass umgebogen wurde.
 - **Ja/Nein-Gabeln sind LLM-bewertet → nicht deterministisch.** Der Agent muss
   melden, *welchen Zweig er warum* nahm.
 
@@ -173,7 +177,8 @@ per `curl` ausübbaren Endpunkten.
   `rotate:true` erneuert den Link (alter tot).
 - `app/api/agent/[slug]/route.ts` — der **Agent-Endpunkt**: `GET` liefert das
   Playbook + gescopte Tasks als Markdown; `PATCH { taskId, status }` schreibt
-  zurück (nur `review_input`/`done`, scope-geprüft, jeder Write als `[agent]`-Log).
+  zurück (nur `review_input`/`done` — beide landen review-first auf
+  `review_input`, scope-geprüft, jeder Write als `[agent]`-Log).
 
 **Ausüben (nach `phase-playbook.sql` + Deploy/`prisma db push`)**
 ```bash

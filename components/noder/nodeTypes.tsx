@@ -5,7 +5,7 @@
 // duplicate components — only the chrome differs, not the box itself.
 
 import { Handle, Position, type Node, type NodeProps, type NodeTypes } from "@xyflow/react";
-import type { NodeKind, PlaybookNode } from "@/lib/playbook";
+import { AGENT_RESULT_STATUS, type NodeKind, type PlaybookNode } from "@/lib/playbook";
 
 const KIND_MARK: Record<NodeKind, string> = {
   task: "▢",
@@ -32,8 +32,10 @@ export function subtitleFor(n: PlaybookNode): string | undefined {
     case "skill":
       return n.body ? n.body.trim().slice(0, 40) + (n.body.trim().length > 40 ? "…" : "") : undefined;
     case "output": {
+      // set_status is review-first — the landing status is fixed, so the box
+      // shows what actually happens, not what the node was authored with.
       const kind = n.outputKind === "feedback" ? "feedback" : "set status";
-      return n.outputKind === "feedback" ? kind : `${kind} → ${n.outputStatus ?? "review_input"}`;
+      return n.outputKind === "feedback" ? kind : `${kind} → ${AGENT_RESULT_STATUS}`;
     }
     case "branch":
       return undefined;

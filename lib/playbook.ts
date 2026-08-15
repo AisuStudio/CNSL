@@ -17,13 +17,30 @@ import { newId } from "./storage";
 
 export type NodeKind = "task" | "skill" | "output" | "branch";
 
-// Statuses an agent is allowed to set via the write-back endpoint. Deliberately
+// Statuses an agent may PROPOSE via the write-back endpoint. Deliberately
 // narrow + review-first: the agent proposes, a human confirms `done`.
 export const AGENT_SETTABLE_STATUS = ["review_input", "done"] as const;
 export type AgentSettableStatus = (typeof AGENT_SETTABLE_STATUS)[number];
 
 export function isAgentSettableStatus(s: string): s is AgentSettableStatus {
   return (AGENT_SETTABLE_STATUS as readonly string[]).includes(s);
+}
+
+// Where an agent write-back ALWAYS lands: a task an agent finished inside a
+// published (agent-shared) playbook goes to Review / Input, never straight to
+// done — closing a task stays a human decision. `done` is still accepted on the
+// wire (existing playbooks + agents keep working, no 400) and coerced here, so
+// the review step can't be skipped by sending the "wrong" status.
+export const AGENT_RESULT_STATUS: AgentSettableStatus = "review_input";
+
+export function resolveAgentStatus(requested: AgentSettableStatus): {
+  status: AgentSettableStatus;
+  coerced: boolean;
+} {
+  return {
+    status: AGENT_RESULT_STATUS,
+    coerced: requested !== AGENT_RESULT_STATUS,
+  };
 }
 
 // Cap on the "write feedback" output — a report/proposal, not an upload.
@@ -257,9 +274,11 @@ function renderNode(node: PlaybookNode): string {
     case "skill":
       return `[skill] ${t || "(skill)"}`;
     case "output": {
+      // Always the review-first landing status — an [output] node can't send a
+      // task straight to done, whatever the playbook was authored with.
       const detail =
         node.outputKind === "set_status"
-          ? `set status → ${node.outputStatus ?? "review_input"}`
+          ? `set status → ${AGENT_RESULT_STATUS}`
           : "feedback";
       return `[output] ${detail}${t ? ` — ${t}` : ""}`;
     }
@@ -351,8 +370,13 @@ export function buildAgentFeed(
   lines.push("## Writing back");
   lines.push(
     "At an [output] node, PATCH the capability link below with `status` " +
-      "and/or `feedback` (send at least one; both may be sent together). " +
-      "Prefer `review_input` over `done` so a human confirms."
+      "and/or `feedback` (send at least one; both may be sent together)."
+  );
+  lines.push("");
+  lines.push(
+    `**Review-first:** a task you finish always lands in \`${AGENT_RESULT_STATUS}\` — ` +
+      "CNSL sets that for you, so a human confirms the result. `done` is " +
+      "accepted but treated the same way; it is never set by an agent."
   );
   lines.push("");
   lines.push("```http");
@@ -377,7 +401,8 @@ export function buildAgentFeed(
   lines.push("```");
   lines.push("");
   lines.push(
-    `Allowed statuses: ${AGENT_SETTABLE_STATUS.map((s) => `\`${s}\``).join(", ")}.`
+    `Accepted statuses: ${AGENT_SETTABLE_STATUS.map((s) => `\`${s}\``).join(", ")} — ` +
+      `both land the task in \`${AGENT_RESULT_STATUS}\`.`
   );
   lines.push("");
   return lines.join("\n");

@@ -137,6 +137,130 @@ export function FilterDropdown<T extends string>({
   );
 }
 
+// Single-select project narrowing ("show me only this one project"), next to
+// the multi-select Urgency/Status filters. Deliberately NOT a checkbox list:
+// the point is one project at a time — "All projects" is the way back.
+export function ProjectDropdown({
+  projects,
+  value,
+  onChange,
+}: {
+  projects: string[];
+  value: string | null;
+  onChange: (p: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const active = value !== null;
+  const options: { value: string | null; label: string }[] = [
+    { value: null, label: "All projects" },
+    ...projects.map((p) => ({ value: p, label: p })),
+  ];
+
+  return (
+    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((x) => !x)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "0 10px",
+          height: "26px",
+          borderRadius: "6px",
+          border: "1px solid var(--color-border-subtle)",
+          background: active
+            ? "color-mix(in srgb, var(--color-accent) 15%, transparent)"
+            : "transparent",
+          color: active ? "var(--color-accent)" : "var(--color-text-muted)",
+          fontSize: "var(--text-sm)",
+          cursor: "pointer",
+          fontWeight: active ? 600 : 500,
+          maxWidth: "240px",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {/* "All projects" rather than "Project" — the tab right next to this
+            one is already called Project; the label has to say the state. */}
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+          {value ?? "All projects"}
+        </span>
+        <ChevronDown size={12} strokeWidth={2} style={{ flexShrink: 0 }} />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            zIndex: 200,
+            background: "var(--color-bg-deep)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "8px",
+            padding: "6px",
+            minWidth: "160px",
+            maxHeight: "320px",
+            overflowY: "auto",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          }}
+        >
+          {options.map((o) => {
+            const selected = o.value === value;
+            return (
+              <button
+                key={o.value ?? "__all"}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "6px 8px",
+                  border: "none",
+                  borderRadius: "5px",
+                  background: selected
+                    ? "color-mix(in srgb, var(--color-accent) 14%, transparent)"
+                    : "transparent",
+                  fontSize: "var(--text-sm)",
+                  fontWeight: selected ? 700 : 400,
+                  color: selected
+                    ? "var(--color-accent)"
+                    : "color-mix(in srgb, var(--color-accent) 65%, transparent)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Tab strip + inline filter dropdown (same row).
 // position:relative + zIndex:20 ensures the dropdown panel paints above <main>
 // (later flex sibling), without clipping issues from overflowY:auto stacking contexts.
@@ -149,6 +273,9 @@ export default function ViewSelector({
   statusFilter,
   onStatusFilterChange,
   statusCount,
+  projects = [],
+  projectFilter = null,
+  onProjectFilterChange,
 }: {
   view: View;
   onViewChange: (v: View) => void;
@@ -158,9 +285,16 @@ export default function ViewSelector({
   statusFilter?: Set<StatusOrArchived>;
   onStatusFilterChange?: (f: Set<StatusOrArchived>) => void;
   statusCount?: number;
+  projects?: string[];
+  projectFilter?: string | null;
+  onProjectFilterChange?: (p: string | null) => void;
 }) {
   const showUrgencyFilter = view === "urgency" && urgencyFilter && onUrgencyFilterChange;
   const showStatusFilter  = view === "status"  && statusFilter  && onStatusFilterChange;
+  // The project narrowing applies to every task view (Project · Urgency ·
+  // Status) — one project at a time, whichever angle you're looking from.
+  const showProjectFilter =
+    !!onProjectFilterChange && view !== "stats" && projects.length > 0;
 
   return (
     <div
@@ -202,7 +336,7 @@ export default function ViewSelector({
         );
       })}
 
-      {(showUrgencyFilter || showStatusFilter) && (
+      {(showUrgencyFilter || showStatusFilter || showProjectFilter) && (
         <>
           <div
             style={{
@@ -213,6 +347,13 @@ export default function ViewSelector({
               flexShrink: 0,
             }}
           />
+          {showProjectFilter && (
+            <ProjectDropdown
+              projects={projects}
+              value={projectFilter}
+              onChange={onProjectFilterChange!}
+            />
+          )}
           {showUrgencyFilter && (
             <>
               <FilterDropdown<Urgency>

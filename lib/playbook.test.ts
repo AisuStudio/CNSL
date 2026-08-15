@@ -3,6 +3,7 @@ import {
   blankPlaybook,
   blankNode,
   isAgentSettableStatus,
+  resolveAgentStatus,
   playbookToMarkdown,
   buildAgentFeed,
   autoLayoutNodes,
@@ -40,6 +41,19 @@ describe("agent-settable status whitelist", () => {
   });
 });
 
+describe("resolveAgentStatus (review-first)", () => {
+  it("lands every agent write-back in review_input", () => {
+    expect(resolveAgentStatus("review_input")).toEqual({
+      status: "review_input",
+      coerced: false,
+    });
+    expect(resolveAgentStatus("done")).toEqual({
+      status: "review_input",
+      coerced: true,
+    });
+  });
+});
+
 // A hand-built flow: skill → branch (yes → skill, no → skill) → output.
 function sample(): Playbook {
   return {
@@ -67,6 +81,16 @@ describe("playbookToMarkdown", () => {
     expect(md).toContain("**If no →**");
     expect(md).toContain("Mach den Barriere-Test");
     expect(md).toContain("[output] set status → review_input");
+  });
+
+  it("renders an output node review-first, even when authored as done", () => {
+    const pb: Playbook = {
+      id: "pb_o",
+      name: "O",
+      entryId: "a",
+      nodes: [{ id: "a", kind: "output", title: "", outputKind: "set_status", outputStatus: "done" }],
+    };
+    expect(playbookToMarkdown(pb)).toContain("[output] set status → review_input");
   });
 
   it("renders a task node with its project/number reference", () => {
@@ -123,6 +147,12 @@ describe("buildAgentFeed", () => {
     expect(feed).toContain("PATCH /api/agent/design-system-review-ab12cd34");
     expect(feed).toContain('"status": "review_input"');
     expect(feed).toContain("`review_input`, `done`");
+  });
+
+  it("states that a finished task lands in review_input", () => {
+    const feed = buildAgentFeed(sample(), [], { writeBackUrl: "/api/agent/x" });
+    expect(feed).toContain("**Review-first:**");
+    expect(feed).toContain("both land the task in `review_input`");
   });
 
   it("renders '(none)' when no tasks are in scope", () => {
