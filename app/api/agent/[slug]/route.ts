@@ -4,8 +4,10 @@ import { playbookFromDb } from "@/lib/serialize";
 import {
   buildAgentFeed,
   isAgentSettableStatus,
+  resolveAgentStatus,
   renderTaskTable,
   MAX_FEEDBACK_LEN,
+  type AgentSettableStatus,
   type FeedTask,
 } from "@/lib/playbook";
 
@@ -270,13 +272,16 @@ export async function PATCH(
     return NextResponse.json({ error: "task not found in scope" }, { status: 404 });
   }
 
-  const updated = status
+  // Review-first: whatever the agent proposes, the task lands in `review_input`
+  // — an agent finishing work never closes it, a human confirms `done`.
+  // `completedAt` is left untouched (nothing gets completed here).
+  const resolved = status
+    ? resolveAgentStatus(status as AgentSettableStatus)
+    : null;
+  const updated = resolved
     ? await prisma.task.update({
         where: { id: taskId },
-        data: {
-          status,
-          completedAt: status === "done" ? new Date() : task.completedAt,
-        },
+        data: { status: resolved.status },
       })
     : task;
 
@@ -288,7 +293,9 @@ export async function PATCH(
   });
   if (board) {
     const head = `[agent] Task #${task.number} "${task.title}"${
-      status ? ` → ${status}` : ""
+      resolved
+        ? ` → ${resolved.status}${resolved.coerced ? ` (proposed ${status})` : ""}`
+        : ""
     } · playbook "${row.name}"`;
     await prisma.logEntry.create({
       data: {
@@ -308,6 +315,14 @@ export async function PATCH(
   return NextResponse.json({
     ok: true,
     task: { id: updated.id, number: updated.number, status: updated.status },
+    // Tell the agent when its proposal was rewritten, so it can report back
+    // honestly ("left for review") instead of claiming the task is closed.
+    ...(resolved?.coerced
+      ? {
+          requestedStatus: status,
+          note: `set to ${resolved.status} — CNSL keeps agent results review-first; a human confirms done`,
+        }
+      : {}),
   });
 }
 
