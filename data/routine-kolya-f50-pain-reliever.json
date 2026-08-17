@@ -1,0 +1,296 @@
+{
+  "name": "Kolya's F50 Pain Reliever",
+  "project": "Sport",
+  "autoPause": true,
+  "pauseBetweenSteps": 15,
+  "sections": [
+    {
+      "name": "Warm-up",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Ankommen & Atmen",
+          "description": "Aufrecht stehen, Fuesse hueftbreit. Tief in den Bauch einatmen, doppelt so lang ausatmen. Schultern bewusst sinken lassen.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Nacken loesen",
+          "description": "Kopf langsam von Schulter zu Schulter rollen, vorne herum. Nicht in den Nacken kippen. Ganz kleiner Bewegungsradius reicht.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Schulterkreisen",
+          "description": "Beide Schultern gross nach hinten kreisen. Nach der Haelfte die Richtung wechseln.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Armkreisen gross",
+          "description": "Gestreckte Arme vorwaerts kreisen, dann rueckwaerts. Tempo ruhig, Bewegung so gross wie angenehm.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Brustwirbelsaeule rotieren",
+          "description": "Leicht in die Knie, Arme locker haengen lassen und den Oberkoerper von links nach rechts pendeln. Die Arme schwingen einfach mit.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Seitneigung Rumpf",
+          "description": "Ein Arm ueber den Kopf, zur Gegenseite neigen. Im Wechsel links und rechts. Huefte bleibt mittig.",
+          "durationSeconds": 45,
+          "order": 5
+        },
+        {
+          "name": "Hueftkreisen",
+          "description": "Haende in die Huefte, grosse langsame Kreise mit dem Becken. Nach der Haelfte Richtung wechseln.",
+          "durationSeconds": 45,
+          "order": 6
+        },
+        {
+          "name": "Beinpendel",
+          "description": "An der Wand abstuetzen, ein Bein locker vor und zurueck schwingen. Nach ca. 20 Sekunden Seite wechseln.",
+          "durationSeconds": 45,
+          "order": 7
+        },
+        {
+          "name": "Knie- & Sprunggelenke",
+          "description": "Knie leicht gebeugt, beide Knie zusammen kreisen. Danach je Fuss auf den Zehen aufsetzen und das Sprunggelenk kreisen.",
+          "durationSeconds": 45,
+          "order": 8
+        },
+        {
+          "name": "Katze-Kuh",
+          "description": "Vierfuesslerstand. Einatmen: Bauch sinkt, Blick hoch. Ausatmen: Ruecken rund, Kinn zur Brust. Im Atemrhythmus.",
+          "durationSeconds": 60,
+          "order": 9
+        },
+        {
+          "name": "Marschieren mit Armzug",
+          "description": "Auf der Stelle marschieren, Knie hoch, Arme kraeftig mitziehen. Puls sanft hochbringen, nicht ausser Atem kommen.",
+          "durationSeconds": 45,
+          "order": 10
+        }
+      ]
+    },
+    {
+      "name": "Hauptteil",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Kniebeuge langsam",
+          "description": "Fuesse schulterbreit, Gewicht auf der ganzen Sohle. 3 Sekunden runter, 1 Sekunde hoch. Nur so tief, wie der Ruecken gerade bleibt.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Liegestuetz (Wand oder Knie)",
+          "description": "An der Wand oder auf den Knien. Koerper bleibt eine Linie, Ellbogen ca. 45 Grad zum Rumpf. Lieber sauber und langsam.",
+          "durationSeconds": 60,
+          "order": 1
+        },
+        {
+          "name": "Ausfallschritt rueckwaerts links",
+          "description": "Linkes Bein nach hinten absetzen, hinteres Knie Richtung Boden senken. Oberkoerper aufrecht. Bei Bedarf an der Wand abstuetzen.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Ausfallschritt rueckwaerts rechts",
+          "description": "Gleiche Bewegung mit dem rechten Bein nach hinten. Ruhiges Tempo, Knie bleibt ueber dem Fuss.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Glute Bridge",
+          "description": "Rueckenlage, Fuesse aufgestellt. Becken heben bis Knie-Huefte-Schulter eine Linie bilden, oben 2 Sekunden Po anspannen, langsam absenken.",
+          "durationSeconds": 60,
+          "order": 4
+        },
+        {
+          "name": "Wand-Sitz",
+          "description": "Mit dem Ruecken an die Wand, Knie ca. 90 Grad. Halten und ruhig weiteratmen. Hoeher rutschen macht es leichter.",
+          "durationSeconds": 45,
+          "order": 5
+        },
+        {
+          "name": "Superman",
+          "description": "Bauchlage, Arme nach vorn. Arme und Beine wenige Zentimeter anheben, Blick zum Boden. Kurz halten, absenken, wiederholen.",
+          "durationSeconds": 45,
+          "order": 6
+        },
+        {
+          "name": "Wadenheben im Stand",
+          "description": "Langsam auf die Zehenspitzen, oben 1 Sekunde halten, betont langsam absenken. Fingerspitzen an der Wand fuer die Balance.",
+          "durationSeconds": 45,
+          "order": 7
+        },
+        {
+          "name": "Unterarmstuetz",
+          "description": "Ellbogen unter den Schultern, Po anspannen, Bauch fest. Huefte nicht durchhaengen lassen. Auf den Knien ist voellig okay.",
+          "durationSeconds": 45,
+          "order": 8
+        },
+        {
+          "name": "Seitstuetz links",
+          "description": "Auf dem linken Unterarm, Koerper in einer Linie. Unteres Knie darf am Boden bleiben. Ruhig atmen.",
+          "durationSeconds": 40,
+          "order": 9
+        },
+        {
+          "name": "Seitstuetz rechts",
+          "description": "Gleiche Position auf dem rechten Unterarm. Huefte aktiv nach oben schieben.",
+          "durationSeconds": 40,
+          "order": 10
+        },
+        {
+          "name": "Dead Bug",
+          "description": "Rueckenlage, Arme hoch, Knie ueber der Huefte. Diagonal gegengleich Arm und Bein strecken. Unterer Ruecken bleibt am Boden.",
+          "durationSeconds": 60,
+          "order": 11
+        },
+        {
+          "name": "Bird Dog",
+          "description": "Vierfuesslerstand. Rechten Arm und linkes Bein strecken, 2 Sekunden halten, wechseln. Becken bleibt ruhig, kein Kippen.",
+          "durationSeconds": 60,
+          "order": 12
+        },
+        {
+          "name": "Bicycle langsam",
+          "description": "Rueckenlage, Haende leicht an den Schlaefen. Ellbogen und gegenueberliegendes Knie langsam zueinander fuehren. Kein Zug am Nacken.",
+          "durationSeconds": 45,
+          "order": 13
+        },
+        {
+          "name": "Hollow Hold (angepasst)",
+          "description": "Rueckenlage, Beine angewinkelt anheben, Schulterblaetter leicht vom Boden. Lendenwirbelsaeule bleibt am Boden gedrueckt.",
+          "durationSeconds": 40,
+          "order": 14
+        },
+        {
+          "name": "Beckenkippen",
+          "description": "Rueckenlage, Fuesse aufgestellt. Becken abwechselnd sanft nach vorn und hinten kippen. Kleine, bewusste Bewegung.",
+          "durationSeconds": 45,
+          "order": 15
+        },
+        {
+          "name": "90/90 Hueftwechsel",
+          "description": "Sitzend, beide Knie 90 Grad, ein Bein vorn, eins seitlich. Knie langsam von einer Seite zur anderen kippen lassen.",
+          "durationSeconds": 60,
+          "order": 16
+        },
+        {
+          "name": "Tiefer Ausfallschritt links",
+          "description": "Linker Fuss vor, rechtes Knie am Boden. Huefte nach vorn sinken lassen, dann den linken Ellbogen Richtung Innenseite des Fusses fuehren.",
+          "durationSeconds": 45,
+          "order": 17
+        },
+        {
+          "name": "Tiefer Ausfallschritt rechts",
+          "description": "Seite wechseln: rechter Fuss vor, linkes Knie am Boden. Gleiche Bewegung, ruhig atmen.",
+          "durationSeconds": 45,
+          "order": 18
+        },
+        {
+          "name": "Brustwirbel-Rotation links",
+          "description": "Vierfuesslerstand, linke Hand an den Hinterkopf. Ellbogen zur Decke oeffnen, Blick folgt. Dann wieder zur Mitte einrollen.",
+          "durationSeconds": 45,
+          "order": 19
+        },
+        {
+          "name": "Brustwirbel-Rotation rechts",
+          "description": "Gleiche Bewegung mit der rechten Hand am Hinterkopf. Huefte bleibt stabil ueber den Knien.",
+          "durationSeconds": 45,
+          "order": 20
+        },
+        {
+          "name": "Herabschauender Hund - Kobra",
+          "description": "Aus dem Hund die Huefte nach vorn absenken in die sanfte Kobra, dann zurueck. Fliessender Wechsel im Atemrhythmus.",
+          "durationSeconds": 60,
+          "order": 21
+        },
+        {
+          "name": "Tiefe Hocke",
+          "description": "Fuesse etwas breiter als schulterbreit, so tief in die Hocke wie moeglich. Fersen duerfen hoch. Ellbogen druecken die Knie sanft nach aussen.",
+          "durationSeconds": 60,
+          "order": 22
+        }
+      ]
+    },
+    {
+      "name": "Cool-down",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Kindhaltung",
+          "description": "Knie breit, Po zu den Fersen, Arme lang nach vorn. Mit jedem Ausatmen etwas tiefer sinken lassen.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Sanfte Kobra",
+          "description": "Bauchlage, Haende unter den Schultern, Oberkoerper nur so weit heben, wie es im Ruecken angenehm bleibt. Schultern weg von den Ohren.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Sitzende Vorbeuge",
+          "description": "Beine lang, Knie duerfen leicht gebeugt sein. Aus der Huefte nach vorn falten, Ruecken lang. Nicht ziehen, nur haengen lassen.",
+          "durationSeconds": 60,
+          "order": 2
+        },
+        {
+          "name": "Schmetterling",
+          "description": "Fusssohlen zusammen, Knie sinken lassen. Aufrecht sitzen und langsam nach vorn neigen. Adduktoren loslassen.",
+          "durationSeconds": 60,
+          "order": 3
+        },
+        {
+          "name": "Wirbelsaeulendrehung links",
+          "description": "Rueckenlage, Knie nach links ablegen, Kopf nach rechts drehen, Arme in T-Position. Einfach ausatmen und sinken lassen.",
+          "durationSeconds": 60,
+          "order": 4
+        },
+        {
+          "name": "Wirbelsaeulendrehung rechts",
+          "description": "Gleiche Position zur anderen Seite. Beide Schultern bleiben moeglichst am Boden.",
+          "durationSeconds": 60,
+          "order": 5
+        },
+        {
+          "name": "Figure-4 links",
+          "description": "Rueckenlage, linken Knoechel auf das rechte Knie legen, rechten Oberschenkel zu dir ziehen. Dehnt den Po und die tiefe Huefte.",
+          "durationSeconds": 60,
+          "order": 6
+        },
+        {
+          "name": "Figure-4 rechts",
+          "description": "Seite wechseln. Kopf und Schultern bleiben entspannt am Boden.",
+          "durationSeconds": 60,
+          "order": 7
+        },
+        {
+          "name": "Brustoeffnung an der Wand",
+          "description": "Unterarm an Wand oder Tuerrahmen, Ellbogen auf Schulterhoehe, langsam vom Arm wegdrehen. Nach der Haelfte Seite wechseln.",
+          "durationSeconds": 60,
+          "order": 8
+        },
+        {
+          "name": "Nackendehnung",
+          "description": "Aufrecht sitzen, Kopf sanft zur linken Schulter neigen, rechte Hand zieht leicht Richtung Boden. Nach 30 Sekunden Seite wechseln.",
+          "durationSeconds": 60,
+          "order": 9
+        },
+        {
+          "name": "Beine hoch & Endentspannung",
+          "description": "Beine an der Wand hoch oder einfach flach liegen. Augen zu, nichts mehr tun. Lang ausatmen und den Koerper schwer werden lassen.",
+          "durationSeconds": 90,
+          "order": 10
+        }
+      ]
+    }
+  ]
+}
