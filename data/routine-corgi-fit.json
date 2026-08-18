@@ -4,120 +4,120 @@
   "autoPause": false,
   "sections": [
     {
-      "name": "1 · Leine anlegen",
+      "name": "1 · Intake Call",
       "order": 0,
       "steps": [
         {
-          "name": "Atmung des Hundeführers",
-          "description": "Aufrecht stehen, Füße hüftbreit, Corgi bei Fuß. Vier Sekunden ein, sechs Sekunden aus. Der Corgi atmet schneller als du. Das ist kein Wettbewerb.",
+          "name": "Atmung vor dem Intake",
+          "description": "Aufrecht stehen, Füße hüftbreit, Corgi bei Fuß. Vier Sekunden ein, sechs Sekunden aus. Der Hiring Manager ist noch nicht im Call. Der Corgi atmet trotzdem schneller als du.",
           "durationSeconds": 40,
           "order": 0
         },
         {
-          "name": "Schnüffelrunde",
-          "description": "Lockeres Gehen durch den Raum, alle paar Schritte die Richtung wechseln. Die Route bestimmt der Corgi. Nimm es hin.",
+          "name": "Anforderungsprofil-Runde",
+          "description": "Lockeres Gehen durch den Raum, alle paar Schritte die Richtung wechseln. Die Route bestimmt der Corgi, so wie das Anforderungsprofil nach dem dritten Call auch niemand mehr bestimmt.",
           "durationSeconds": 45,
           "order": 1
         },
         {
-          "name": "Leinen-Durchzug",
-          "description": "Leine weit in beiden Händen, langsam über den Kopf nach hinten führen und zurück. Griff verbreitern, wenn die Schultern protestieren. Echte Schultermobilisation, ganz ohne Corgi.",
+          "name": "Boolean-Durchzug mit der Leine",
+          "description": "Leine weit in beiden Händen, langsam über den Kopf nach hinten führen und zurück. Griff verbreitern, wenn die Schultern protestieren. Echte Schultermobilisation, ganz ohne AND-Verknüpfung.",
           "durationSeconds": 40,
           "order": 2
         },
         {
-          "name": "Herabschauender Hund, unter Aufsicht",
-          "description": "Hände und Füße am Boden, Hüfte hoch, Rücken lang. Der Corgi prüft die Ausführung aus nächster Nähe. Position halten. Das Ablecken des Gesichts gehört zum Protokoll.",
+          "name": "Herabschauender Hund, Peer Review",
+          "description": "Hände und Füße am Boden, Hüfte hoch, Rücken lang. Der Corgi prüft die Ausführung aus nächster Nähe und ist der einzige Reviewer, der pünktlich liefert. Das Ablecken des Gesichts gilt als Approval.",
           "durationSeconds": 45,
           "order": 3
         },
         {
           "name": "Pause",
-          "description": "Kurz durchatmen. Wasser für beide.",
+          "description": "Kurz durchatmen. Wasser für beide. Kölsch erst nach dem Cool-down.",
           "durationSeconds": 20,
           "order": 4
         }
       ]
     },
     {
-      "name": "2 · Corgi-Kraft",
+      "name": "2 · Sourcing",
       "order": 1,
       "steps": [
         {
           "name": "Corgi Curls",
-          "description": "Corgi unter Brust und Vorderläufen gehalten, Rücken vollständig gestützt. Langsam zum Kinn curlen, kontrolliert absenken. Rund zwölf Kilo zutiefst unbeeindruckte Kurzhantel. Satz sofort beenden, wenn der Hund runter möchte.",
+          "description": "Corgi unter Brust und Vorderläufen gehalten, Rücken vollständig gestützt. Langsam zum Kinn curlen, kontrolliert absenken. Rund zwölf Kilo zutiefst unbeeindruckte Kurzhantel, reagiert auf Ansprache aber besser als jedes zweite Profil. Satz sofort beenden, wenn der Hund runter möchte.",
           "durationSeconds": 45,
           "order": 0
         },
         {
           "name": "Gobletkniebeuge mit Corgi",
-          "description": "Den Corgi eng an der Brust halten wie einen Kelch, Ellbogen angelegt. Langsam beugen, Brust aufrecht, Fersen am Boden. Ruhig absenken. Die Last hat klare Meinungen zum Thema Durchgeschüttelt-Werden.",
+          "description": "Den Corgi eng an der Brust halten wie eine Kölsch-Stange, Ellbogen angelegt. Langsam beugen, Brust aufrecht, Fersen am Boden. Ruhig absenken. Die Last hat klare Meinungen zum Thema Durchgeschüttelt-Werden.",
           "durationSeconds": 45,
           "order": 1
         },
         {
           "name": "Pause",
-          "description": "Absetzen, Schultern kreisen, Griff neu sortieren.",
+          "description": "Absetzen, Schultern kreisen, Griff neu sortieren. Der Köbes würde hier ungefragt nachschenken.",
           "durationSeconds": 25,
           "order": 2
         }
       ]
     },
     {
-      "name": "3 · Beinarbeit",
+      "name": "3 · Cold Outreach",
       "order": 2,
       "steps": [
         {
           "name": "Ausfallschritt rückwärts, links geführt",
-          "description": "Corgi in der Front-Rack-Position an der Brust. Linkes Bein nach hinten, Knie senken, hochdrücken. Die freie Hand bleibt jederzeit unter dem Hund.",
+          "description": "Corgi in der Front-Rack-Position an der Brust. Linkes Bein nach hinten, Knie senken, hochdrücken. Die freie Hand bleibt jederzeit unter dem Hund. Ein Schritt zurück ist noch keine Absage.",
           "durationSeconds": 35,
           "order": 0
         },
         {
           "name": "Ausfallschritt rückwärts, rechts geführt",
-          "description": "Gleiche Bewegung mit dem rechten Bein. Die Last schläft inzwischen meistens. Nicht wecken. Einfach weiter ausfallen.",
+          "description": "Gleiche Bewegung mit dem rechten Bein. Die Last schläft inzwischen meistens, so wie die Antwortquote im August. Nicht wecken. Einfach weiter ausfallen.",
           "durationSeconds": 35,
           "order": 1
         },
         {
           "name": "Pause",
-          "description": "Hund absetzen. Er legt sich sofort hin. Das ist sein gutes Recht.",
+          "description": "Hund absetzen. Er legt sich sofort hin und reagiert auf nichts mehr. Das Muster kennst du.",
           "durationSeconds": 25,
           "order": 2
         }
       ]
     },
     {
-      "name": "4 · Leine & Sprint",
+      "name": "4 · Screening",
       "order": 3,
       "steps": [
         {
           "name": "Seilspringen mit der Leine",
-          "description": "Leine doppelt nehmen und als Sprungseil verwenden, Corgi abgeleint und weit außerhalb des Schwungradius. Kleine Sprünge, leise Landung. Der Corgi wird die Leine anbellen. Das ist sein Beitrag.",
+          "description": "Leine doppelt nehmen und als Sprungseil verwenden, Corgi abgeleint und weit außerhalb des Schwungradius. Kleine Sprünge, leise Landung. Der Corgi wird die Leine anbellen. Das ist sein strukturiertes Feedback.",
           "durationSeconds": 45,
           "order": 0
         },
         {
           "name": "Apportier-Intervall",
-          "description": "Werfen, dann neben dem Hund zum Spielzeug sprinten. Der Corgi gewinnt. Der Corgi hat immer gewonnen. Es geht um den Sprint.",
+          "description": "Werfen, dann neben dem Hund zum Spielzeug sprinten. Der Corgi gewinnt. Der Corgi hat immer gewonnen. Es geht hier um den Sprint, nicht um die Time-to-Hire.",
           "durationSeconds": 45,
           "order": 1
         },
         {
           "name": "Pause",
-          "description": "Stehen bleiben, tief atmen. Das Spielzeug bekommst du nicht zurück.",
+          "description": "Stehen bleiben, tief atmen. Das Spielzeug bekommst du nicht zurück. Das Profil auch nicht.",
           "durationSeconds": 30,
           "order": 2
         }
       ]
     },
     {
-      "name": "5 · Tragen & Drücken",
+      "name": "5 · Onsite Loop",
       "order": 4,
       "steps": [
         {
           "name": "Corgi Farmer's Walk",
-          "description": "Corgi seitlich oder quer vor der Brust tragen, Schultern tief, Rippen gestapelt, aufrecht gehen. Kurze Beine, langer Rumpf, überraschende Dichte. Rumpf richtig anspannen.",
+          "description": "Corgi seitlich oder quer vor der Brust tragen, Schultern tief, Rippen gestapelt, aufrecht gehen. Kurze Beine, langer Rumpf, überraschende Dichte. Trägt sich wie ein Kranz Kölsch, nur wärmer und mit Meinung.",
           "durationSeconds": 45,
           "order": 0
         },
@@ -129,14 +129,14 @@
         },
         {
           "name": "Pause",
-          "description": "Arme ausschütteln. Der Corgi kontrolliert derweil den Boden auf Krümel.",
+          "description": "Arme ausschütteln. Der Corgi kontrolliert derweil den Boden auf Krümel, gründlicher als jedes Take-Home-Assignment.",
           "durationSeconds": 25,
           "order": 2
         }
       ]
     },
     {
-      "name": "6 · Rumpf",
+      "name": "6 · Debrief",
       "order": 5,
       "steps": [
         {
@@ -147,7 +147,7 @@
         },
         {
           "name": "Unterarmstütz, freiwillige Beladung",
-          "description": "Unterarmstütz. Der Corgi entert unaufgefordert. Linie halten, nicht durchhängen, nicht lachen. Lachen bringt den Stütz zum Einsturz.",
+          "description": "Unterarmstütz. Der Corgi entert unaufgefordert, so wie der vierte Interviewer im Loop. Linie halten, nicht durchhängen, nicht lachen. Lachen bringt den Stütz zum Einsturz.",
           "durationSeconds": 35,
           "order": 1
         },
@@ -166,24 +166,24 @@
       ]
     },
     {
-      "name": "7 · Doppelhund & Zoomies",
+      "name": "7 · Offer & Counter-Offer",
       "order": 6,
       "steps": [
         {
           "name": "Doppelhund",
-          "description": "Zwei Menschen, ein herabschauender Hund. Person A hält einen stabilen Hund. Person B stützt die Hände davor am Boden ab und legt die Schienbeine auf den unteren Rücken von A. Langsam aufbauen, miteinander sprechen, gemeinsam wieder runter. Der Corgi läuft unten durch und urteilt.",
+          "description": "Zwei Menschen, ein herabschauender Hund. Person A hält einen stabilen Hund. Person B stützt die Hände davor am Boden ab und legt die Schienbeine auf den unteren Rücken von A. Langsam aufbauen, miteinander sprechen, gemeinsam wieder runter. Alles, was ein guter Prozess auch braucht. Der Corgi läuft unten durch und urteilt.",
           "durationSeconds": 45,
           "order": 0
         },
         {
           "name": "Leckerli-Kreuzheben",
-          "description": "Leckerlidose auf dem Boden. Aus der Hüfte beugen, Rücken gerade, über die Fersen hochdrücken, wieder absetzen. Wiederholen. Der Corgi überwacht das direkt unter deinen Füßen, was die eigentliche Schwierigkeit darstellt.",
+          "description": "Leckerlidose auf dem Boden. Aus der Hüfte beugen, Rücken gerade, über die Fersen hochdrücken, wieder absetzen. Wiederholen. Nachverhandeln bringt hier nichts, die Dose wiegt jedes Mal gleich viel.",
           "durationSeconds": 45,
           "order": 1
         },
         {
           "name": "Zoomie-Intervalle",
-          "description": "Der Corgi gibt den Startschuss. Du hältst mit. Volle Intensität, enge Wenden, keine Würde. Endet, wenn der Corgi es für beendet erklärt.",
+          "description": "Der Corgi gibt den Startschuss. Du hältst mit. Volle Intensität, enge Wenden, keine Würde. Endet, wenn der Corgi es für beendet erklärt. Wie der Freitagnachmittag, an dem drei Kandidaten gleichzeitig zusagen.",
           "durationSeconds": 45,
           "order": 2
         },
@@ -196,18 +196,18 @@
       ]
     },
     {
-      "name": "8 · Auslaufen",
+      "name": "8 · Onboarding & Retro",
       "order": 7,
       "steps": [
         {
           "name": "Sitz. Bleib.",
-          "description": "Tiefe Hocke oder Schneidersitz, Wirbelsäule lang, Hände auf den Knien. Halten. Du machst jetzt genau das, was der Corgi die ganze Einheit über gemacht hat.",
+          "description": "Tiefe Hocke oder Schneidersitz, Wirbelsäule lang, Hände auf den Knien. Halten. Du machst jetzt genau das, was der Corgi die ganze Einheit über gemacht hat und was in jeder Retro als Maßnahme steht: erst mal nichts.",
           "durationSeconds": 45,
           "order": 0
         },
         {
           "name": "Napfgriff",
-          "description": "Sitzend, Beine lang, aus der Hüfte nach vorn falten, Rücken lang, als griffest du nach einem weit entfernten Futternapf. Du erreichst ihn nicht. Der Corgi auch nicht.",
+          "description": "Sitzend, Beine lang, aus der Hüfte nach vorn falten, Rücken lang, als griffest du nach einem weit entfernten Futternapf. Du erreichst ihn nicht. Der Corgi auch nicht. Trotzdem stehen beide im Forecast.",
           "durationSeconds": 45,
           "order": 1
         },
@@ -219,19 +219,19 @@
         },
         {
           "name": "Couch-Dehnung, echte Couch",
-          "description": "Hinterer Fuß auf der Couch, vorderer Fuß vorn, Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite. Macht rückgängig, was der Schreibtischstuhl mit deinen Hüftbeugern angestellt hat.",
+          "description": "Hinterer Fuß auf der Couch, vorderer Fuß vorn, Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite. Macht rückgängig, was acht Stunden Videocalls mit deinen Hüftbeugern angestellt haben.",
           "durationSeconds": 45,
           "order": 3
         },
         {
           "name": "Pause",
-          "description": "Nichts tun. Ernsthaft, nichts.",
+          "description": "Nichts tun. Kein Follow-up. Ernsthaft, nichts.",
           "durationSeconds": 20,
           "order": 4
         },
         {
           "name": "Letzte Bauchkraulung",
-          "description": "Flach liegen, Augen zu, eine Hand auf dem Hund. Nichts mehr zu heben. Lang ausatmen. Der Corgi wartet seit Minute eins auf diesen Moment.",
+          "description": "Flach liegen, Augen zu, eine Hand auf dem Hund. Nichts mehr zu heben, nichts mehr zu besetzen. Lang ausatmen. Et hätt noch immer jot jejange. Der Corgi wartet seit Minute eins auf diesen Moment.",
           "durationSeconds": 70,
           "order": 5
         }
