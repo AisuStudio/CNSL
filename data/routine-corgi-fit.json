@@ -1,168 +1,239 @@
 {
   "name": "Corgi Fit",
   "project": "Sport",
-  "autoPause": true,
-  "pauseBetweenSteps": 10,
+  "autoPause": false,
   "sections": [
     {
-      "name": "Leash-Up",
+      "name": "1 · Leine anlegen",
       "order": 0,
       "steps": [
         {
-          "name": "Handler's Breathing",
-          "description": "Stand tall, feet hip-width, corgi at heel. Inhale for four, exhale for six. The corgi will breathe faster than you. This is not a competition.",
+          "name": "Atmung des Hundeführers",
+          "description": "Aufrecht stehen, Füße hüftbreit, Corgi bei Fuß. Vier Sekunden ein, sechs Sekunden aus. Der Corgi atmet schneller als du. Das ist kein Wettbewerb.",
           "durationSeconds": 40,
           "order": 0
         },
         {
-          "name": "Sniff Walk Activation",
-          "description": "Walk the room at an easy pace, changing direction every few steps. Your corgi decides the route. Accept this.",
-          "durationSeconds": 40,
+          "name": "Schnüffelrunde",
+          "description": "Lockeres Gehen durch den Raum, alle paar Schritte die Richtung wechseln. Die Route bestimmt der Corgi. Nimm es hin.",
+          "durationSeconds": 45,
           "order": 1
         },
         {
-          "name": "Leash Pass-Through",
-          "description": "Hold the leash wide in both hands and pass it slowly over your head and behind you, then back. Widen the grip if the shoulders complain. A genuine mobility drill. No corgi required.",
+          "name": "Leinen-Durchzug",
+          "description": "Leine weit in beiden Händen, langsam über den Kopf nach hinten führen und zurück. Griff verbreitern, wenn die Schultern protestieren. Echte Schultermobilisation, ganz ohne Corgi.",
           "durationSeconds": 40,
           "order": 2
         },
         {
-          "name": "Downward Dog, Supervised",
-          "description": "Hands and feet down, hips high, spine long. Your corgi will inspect the form at close range. Hold the position. The face-licking is part of the protocol.",
-          "durationSeconds": 40,
+          "name": "Herabschauender Hund, unter Aufsicht",
+          "description": "Hände und Füße am Boden, Hüfte hoch, Rücken lang. Der Corgi prüft die Ausführung aus nächster Nähe. Position halten. Das Ablecken des Gesichts gehört zum Protokoll.",
+          "durationSeconds": 45,
           "order": 3
         },
         {
-          "name": "Hip Opener, 90/90",
-          "description": "Seated, both knees at 90 degrees, rocking the knees slowly side to side. The corgi may occupy the gap between your legs. Work around it.",
-          "durationSeconds": 40,
+          "name": "Pause",
+          "description": "Kurz durchatmen. Wasser für beide.",
+          "durationSeconds": 20,
           "order": 4
         }
       ]
     },
     {
-      "name": "Loaded Canine Work",
+      "name": "2 · Corgi-Kraft",
       "order": 1,
       "steps": [
         {
-          "name": "Corgi Curl",
-          "description": "Corgi held under the chest and front legs, back fully supported. Curl slowly to the chin, lower under control. Roughly twelve kilos of deeply unimpressed dumbbell. End the set the second the dog wants down.",
-          "durationSeconds": 40,
+          "name": "Corgi Curls",
+          "description": "Corgi unter Brust und Vorderläufen gehalten, Rücken vollständig gestützt. Langsam zum Kinn curlen, kontrolliert absenken. Rund zwölf Kilo zutiefst unbeeindruckte Kurzhantel. Satz sofort beenden, wenn der Hund runter möchte.",
+          "durationSeconds": 45,
           "order": 0
         },
         {
-          "name": "Corgi-Loaded Goblet Squat",
-          "description": "Hold the corgi close to the chest like a goblet, elbows tucked in. Squat slow, chest proud, heels planted. Keep the descent smooth. The load has strong opinions about being jostled.",
-          "durationSeconds": 40,
+          "name": "Gobletkniebeuge mit Corgi",
+          "description": "Den Corgi eng an der Brust halten wie einen Kelch, Ellbogen angelegt. Langsam beugen, Brust aufrecht, Fersen am Boden. Ruhig absenken. Die Last hat klare Meinungen zum Thema Durchgeschüttelt-Werden.",
+          "durationSeconds": 45,
           "order": 1
         },
         {
-          "name": "Reverse Lunge, Left Lead",
-          "description": "Corgi in the front-rack position against the chest. Step the left leg back, lower the knee, drive up. The free hand stays under the dog at all times.",
-          "durationSeconds": 35,
+          "name": "Pause",
+          "description": "Absetzen, Schultern kreisen, Griff neu sortieren.",
+          "durationSeconds": 25,
           "order": 2
-        },
-        {
-          "name": "Reverse Lunge, Right Lead",
-          "description": "Same movement, stepping the right leg back. By now the load has usually fallen asleep. Do not wake it. Just keep lunging.",
-          "durationSeconds": 35,
-          "order": 3
-        },
-        {
-          "name": "Leash Rope Skipping",
-          "description": "Double the leash over and use it as a skipping rope, corgi unclipped and well clear of the swing. Small hops, quiet landings. The corgi will bark at the rope. That is the corgi's contribution.",
-          "durationSeconds": 40,
-          "order": 4
-        },
-        {
-          "name": "Overhead Corgi Press",
-          "description": "Only if the dog is genuinely happy up there. Press to just above the head, no lockout, both hands under the ribcage and hips. If the corgi objects, press a full laundry bag instead and tell nobody.",
-          "durationSeconds": 35,
-          "order": 5
-        },
-        {
-          "name": "Fetch Interval Sprint",
-          "description": "Throw, then sprint alongside the dog to the toy. The corgi will win. The corgi has always won. The point is the sprint.",
-          "durationSeconds": 40,
-          "order": 6
-        },
-        {
-          "name": "Corgi Farmer's Carry",
-          "description": "Corgi carried at the side or across the chest, shoulders down, ribs stacked, walking tall. Short legs, long torso, surprising density. Brace like you mean it.",
-          "durationSeconds": 40,
-          "order": 7
-        },
-        {
-          "name": "Loaded Glute Bridge",
-          "description": "On your back, feet planted, corgi resting across the hips. Lift until knee, hip and shoulder line up, squeeze for two seconds, lower slowly. Steady the passenger with both hands.",
-          "durationSeconds": 40,
-          "order": 8
-        },
-        {
-          "name": "Weighted Plank, Voluntary Loading",
-          "description": "Forearm plank. The corgi will board without being asked. Hold the line, do not sag, do not laugh. Laughing collapses the plank.",
-          "durationSeconds": 35,
-          "order": 9
-        },
-        {
-          "name": "Treat-Level Deadlift",
-          "description": "Treat jar on the floor. Hinge at the hips, flat back, drive through the heels to stand, lower it back down. Repeat. The corgi supervises from directly underfoot, which is the actual difficulty.",
-          "durationSeconds": 40,
-          "order": 10
-        },
-        {
-          "name": "Double Dog",
-          "description": "Two humans, one downward dog. Partner A holds a solid down dog. Partner B plants their hands on the floor ahead and rests their shins on A's lower back. Build up slowly, talk to each other, come down together. The corgi walks underneath and judges.",
-          "durationSeconds": 45,
-          "order": 11
-        },
-        {
-          "name": "Zoomie Intervals",
-          "description": "The corgi initiates. You match the pace. Hard effort, sharp turns, no dignity. Ends when the corgi decides it ends.",
-          "durationSeconds": 45,
-          "order": 12
-        },
-        {
-          "name": "Belly-Rub Russian Twist",
-          "description": "Seated, heels light on the floor, leaning back to a strong angle. Rotate side to side, one hand landing on the corgi belly each rep. Slow and controlled. The belly is the metronome.",
-          "durationSeconds": 35,
-          "order": 13
         }
       ]
     },
     {
-      "name": "Post-Walk Decompression",
+      "name": "3 · Beinarbeit",
       "order": 2,
       "steps": [
         {
-          "name": "Sit. Stay.",
-          "description": "Deep squat or cross-legged sit, spine tall, hands resting on the knees. Hold. You are now doing exactly what the corgi has been doing all session.",
-          "durationSeconds": 40,
+          "name": "Ausfallschritt rückwärts, links geführt",
+          "description": "Corgi in der Front-Rack-Position an der Brust. Linkes Bein nach hinten, Knie senken, hochdrücken. Die freie Hand bleibt jederzeit unter dem Hund.",
+          "durationSeconds": 35,
           "order": 0
         },
         {
-          "name": "Bowl Reach",
-          "description": "Seated, legs long, fold forward from the hips with a long back, reaching as if for a distant food bowl. You will not reach it. Neither will the corgi.",
-          "durationSeconds": 40,
+          "name": "Ausfallschritt rückwärts, rechts geführt",
+          "description": "Gleiche Bewegung mit dem rechten Bein. Die Last schläft inzwischen meistens. Nicht wecken. Einfach weiter ausfallen.",
+          "durationSeconds": 35,
           "order": 1
         },
         {
-          "name": "Supine Twist, Corgi Optional",
-          "description": "On your back, knees dropped to one side, head turned the other way. Switch halfway through. If a corgi installs itself on your ribcage, that is added resistance.",
+          "name": "Pause",
+          "description": "Hund absetzen. Er legt sich sofort hin. Das ist sein gutes Recht.",
+          "durationSeconds": 25,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "name": "4 · Leine & Sprint",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Seilspringen mit der Leine",
+          "description": "Leine doppelt nehmen und als Sprungseil verwenden, Corgi abgeleint und weit außerhalb des Schwungradius. Kleine Sprünge, leise Landung. Der Corgi wird die Leine anbellen. Das ist sein Beitrag.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Apportier-Intervall",
+          "description": "Werfen, dann neben dem Hund zum Spielzeug sprinten. Der Corgi gewinnt. Der Corgi hat immer gewonnen. Es geht um den Sprint.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben, tief atmen. Das Spielzeug bekommst du nicht zurück.",
+          "durationSeconds": 30,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "name": "5 · Tragen & Drücken",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Corgi Farmer's Walk",
+          "description": "Corgi seitlich oder quer vor der Brust tragen, Schultern tief, Rippen gestapelt, aufrecht gehen. Kurze Beine, langer Rumpf, überraschende Dichte. Rumpf richtig anspannen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Corgi-Überkopfdrücken",
+          "description": "Nur wenn der Hund da oben wirklich zufrieden ist. Bis knapp über den Kopf drücken, kein Durchstrecken, beide Hände unter Brustkorb und Becken. Wenn der Corgi Einwände hat: Wäschesack drücken und niemandem davon erzählen.",
+          "durationSeconds": 35,
+          "order": 1
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln. Der Corgi kontrolliert derweil den Boden auf Krümel.",
+          "durationSeconds": 25,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "name": "6 · Rumpf",
+      "order": 5,
+      "steps": [
+        {
+          "name": "Beckenheben mit Auflage",
+          "description": "Rückenlage, Füße aufgestellt, Corgi quer auf der Hüfte. Heben bis Knie, Hüfte und Schulter eine Linie bilden, zwei Sekunden halten, langsam ab. Den Passagier mit beiden Händen sichern.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Unterarmstütz, freiwillige Beladung",
+          "description": "Unterarmstütz. Der Corgi entert unaufgefordert. Linie halten, nicht durchhängen, nicht lachen. Lachen bringt den Stütz zum Einsturz.",
+          "durationSeconds": 35,
+          "order": 1
+        },
+        {
+          "name": "Bauchkraul-Rumpfrotation",
+          "description": "Sitzend, Fersen leicht am Boden, weit zurücklehnen. Zur Seite drehen, dabei landet eine Hand pro Wiederholung auf dem Corgi-Bauch. Langsam und kontrolliert. Der Bauch ist das Metronom.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Liegen bleiben. Der Corgi wertet das als Einladung.",
+          "durationSeconds": 25,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "name": "7 · Doppelhund & Zoomies",
+      "order": 6,
+      "steps": [
+        {
+          "name": "Doppelhund",
+          "description": "Zwei Menschen, ein herabschauender Hund. Person A hält einen stabilen Hund. Person B stützt die Hände davor am Boden ab und legt die Schienbeine auf den unteren Rücken von A. Langsam aufbauen, miteinander sprechen, gemeinsam wieder runter. Der Corgi läuft unten durch und urteilt.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Leckerli-Kreuzheben",
+          "description": "Leckerlidose auf dem Boden. Aus der Hüfte beugen, Rücken gerade, über die Fersen hochdrücken, wieder absetzen. Wiederholen. Der Corgi überwacht das direkt unter deinen Füßen, was die eigentliche Schwierigkeit darstellt.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Zoomie-Intervalle",
+          "description": "Der Corgi gibt den Startschuss. Du hältst mit. Volle Intensität, enge Wenden, keine Würde. Endet, wenn der Corgi es für beendet erklärt.",
           "durationSeconds": 45,
           "order": 2
         },
         {
-          "name": "Couch Stretch, Actual Couch",
-          "description": "Rear foot up on the couch, front foot forward, hips pushed gently through. Half the time per side. Undoes everything a desk chair has done to your hip flexors.",
-          "durationSeconds": 40,
+          "name": "Pause",
+          "description": "Beide keuchen. Nur einer davon ist stolz darauf.",
+          "durationSeconds": 30,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "name": "8 · Auslaufen",
+      "order": 7,
+      "steps": [
+        {
+          "name": "Sitz. Bleib.",
+          "description": "Tiefe Hocke oder Schneidersitz, Wirbelsäule lang, Hände auf den Knien. Halten. Du machst jetzt genau das, was der Corgi die ganze Einheit über gemacht hat.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Napfgriff",
+          "description": "Sitzend, Beine lang, aus der Hüfte nach vorn falten, Rücken lang, als griffest du nach einem weit entfernten Futternapf. Du erreichst ihn nicht. Der Corgi auch nicht.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Wirbelsäulendrehung, Corgi optional",
+          "description": "Rückenlage, Knie zu einer Seite ablegen, Kopf zur anderen drehen. Nach der Hälfte wechseln. Falls sich ein Corgi auf dem Brustkorb einrichtet, ist das Zusatzwiderstand.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Couch-Dehnung, echte Couch",
+          "description": "Hinterer Fuß auf der Couch, vorderer Fuß vorn, Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite. Macht rückgängig, was der Schreibtischstuhl mit deinen Hüftbeugern angestellt hat.",
+          "durationSeconds": 45,
           "order": 3
         },
         {
-          "name": "Final Belly Rub",
-          "description": "Lie flat, eyes closed, one hand on the dog. Nothing left to lift. Long exhales. The corgi has been ready for this since minute one.",
-          "durationSeconds": 60,
+          "name": "Pause",
+          "description": "Nichts tun. Ernsthaft, nichts.",
+          "durationSeconds": 20,
           "order": 4
+        },
+        {
+          "name": "Letzte Bauchkraulung",
+          "description": "Flach liegen, Augen zu, eine Hand auf dem Hund. Nichts mehr zu heben. Lang ausatmen. Der Corgi wartet seit Minute eins auf diesen Moment.",
+          "durationSeconds": 70,
+          "order": 5
         }
       ]
     }
