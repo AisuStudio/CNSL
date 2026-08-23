@@ -1,0 +1,391 @@
+{
+  "name": "Ruhige 40",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Ankommen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Ankommen und atmen",
+          "description": "Rückenlage, Knie angestellt oder Beine lang. Eine Hand auf den Bauch, eine auf die Brust. Vier Sekunden einatmen, sechs Sekunden ausatmen. Nur die untere Hand soll sich heben. Sonst nichts tun.",
+          "durationSeconds": 80,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Liegen bleiben. Die Atmung läuft jetzt von allein weiter.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Körper durchgehen",
+          "description": "Liegen bleiben und weiteratmen. Wandere gedanklich von den Füßen bis zum Kopf und lass unterwegs jede Stelle einmal bewusst los. Wo etwas hält, atme dorthin.",
+          "durationSeconds": 75,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Nichts tun. Nur bemerken, was sich schon gelöst hat.",
+          "durationSeconds": 15,
+          "order": 3
+        },
+        {
+          "name": "Beckenkippen im Liegen",
+          "description": "Füße aufgestellt. Beim Ausatmen das Becken sanft nach hinten kippen, beim Einatmen wieder lösen. Ganz kleine Bewegung, von außen kaum sichtbar. Das weckt die Tiefenmuskulatur, ohne sie zu fordern.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Alles loslassen. Ruhig weiteratmen.",
+          "durationSeconds": 15,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "2 · Wirbelsäule wecken",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Katze-Kuh",
+          "description": "Vierfüßlerstand. Einatmen: Bauch sinkt, Blick hebt sich. Ausatmen: Rücken rund, Kinn zur Brust. Lass die Atmung das Tempo bestimmen, nicht umgekehrt.",
+          "durationSeconds": 75,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Im Vierfüßler bleiben, Schultern lösen.",
+          "durationSeconds": 20,
+          "order": 1
+        },
+        {
+          "name": "Hüftkreise im Vierfüßler",
+          "description": "Das Becken in großen, langsamen Kreisen bewegen, nach der Hälfte die Richtung wechseln. Der untere Rücken darf sich danach anfühlen wie geölt.",
+          "durationSeconds": 60,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz in die Kindhaltung absinken.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Kindhaltung mit Seitneigung",
+          "description": "Knie breit, Po zu den Fersen, Arme lang nach vorn. Beide Hände nach links wandern lassen und die rechte Flanke öffnen. Nach der Hälfte zur anderen Seite. Jeder Ausatmer bringt dich ein Stück tiefer.",
+          "durationSeconds": 80,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "In der Mitte ankommen. Zwei ruhige Atemzüge.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Herabschauender Hund, weich",
+          "description": "Hüfte hoch, die Knie dürfen deutlich gebeugt bleiben. Abwechselnd eine Ferse Richtung Boden schieben, wie langsames Gehen auf der Stelle. Kein Ziel, nur Bewegung.",
+          "durationSeconds": 45,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Zurück auf die Knie. Schultern kreisen.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "3 · Core, ruhig",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Dead Bug im Zeitlupentempo",
+          "description": "Rückenlage, Arme nach oben, Knie über der Hüfte. Gegengleich Arm und Bein langsam ausstrecken und zurückholen. Der untere Rücken bleibt die ganze Zeit am Boden. Wird es dort hohl, mach die Bewegung kleiner.",
+          "durationSeconds": 80,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ablegen, kurz nichts tun.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Bird Dog",
+          "description": "Vierfüßler. Rechten Arm und linkes Bein lang ausstrecken, zwei ruhige Atemzüge halten, dann wechseln. Das Becken bleibt waagerecht, als stünde ein Glas Wasser darauf.",
+          "durationSeconds": 80,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "In die Kindhaltung sinken.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Beckenheben, Wirbel für Wirbel",
+          "description": "Rückenlage, Füße aufgestellt. Beim Ausatmen die Wirbelsäule von unten nach oben vom Boden abrollen, oben einmal atmen, beim nächsten Ausatmen Wirbel für Wirbel wieder ablegen. Langsamer, als du denkst.",
+          "durationSeconds": 75,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Beine lang machen und ausschütteln.",
+          "durationSeconds": 35,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "4 · Hüfte öffnen",
+      "order": 3,
+      "steps": [
+        {
+          "name": "90/90 Hüftwechsel",
+          "description": "Sitzend, beide Knie 90 Grad, ein Bein vorn, eins zur Seite. Die Knie langsam von einer Seite zur anderen kippen lassen. Geht eine Seite deutlich schwerer, bleib dort einen Atemzug länger.",
+          "durationSeconds": 75,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausstrecken, kurz durchschütteln.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Tiefer Ausfallschritt links",
+          "description": "Linker Fuß vor, rechtes Knie am Boden, gern auf einem Kissen. Die Hüfte sanft nach vorn sinken lassen und dort atmen. Nicht drücken, nur warten.",
+          "durationSeconds": 65,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz zurück in den Vierfüßler.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Tiefer Ausfallschritt rechts",
+          "description": "Seite wechseln. Gleiche Zeit, gleiches Tempo, auch wenn diese Seite sich ganz anders anfühlt.",
+          "durationSeconds": 65,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Zurück in den Sitz.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Schmetterling",
+          "description": "Fußsohlen zusammen, Knie sinken lassen. Aufrecht sitzen und mit jedem Ausatmen ein wenig nach vorn neigen. Die Knie nicht nach unten drücken, sie kommen von allein.",
+          "durationSeconds": 70,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Beine lang ausstrecken.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "5 · Core, ruhig · Teil 2",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Unterarmstütz, ruhig",
+          "description": "Ellbogen unter den Schultern, Körper eine Linie. Auf den Knien ist hier ausdrücklich in Ordnung. Statt zu verkrampfen: normal weiteratmen und mitzählen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Auf den Bauch legen, Kopf zur Seite.",
+          "durationSeconds": 30,
+          "order": 1
+        },
+        {
+          "name": "Seitstütz links, Knie am Boden",
+          "description": "Auf dem linken Unterarm, Knie angewinkelt am Boden. Die Hüfte sanft nach oben schieben, ohne zu pressen. Ruhig atmen.",
+          "durationSeconds": 40,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Auf den Rücken rollen.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Seitstütz rechts, Knie am Boden",
+          "description": "Gleiche Position auf der rechten Seite, gleiche Zeit. Schulter bleibt über dem Ellbogen.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Auf den Rücken legen, Beine anstellen.",
+          "durationSeconds": 25,
+          "order": 5
+        },
+        {
+          "name": "Tiefe Bauchspannung im Liegen",
+          "description": "Rückenlage, Füße aufgestellt. Beim Ausatmen den Bauchnabel sanft nach innen und unten ziehen, drei Sekunden halten, beim Einatmen ganz lösen. Von außen sieht man fast nichts. Genau das ist der Punkt.",
+          "durationSeconds": 60,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Alles loslassen. Zwei tiefe Atemzüge.",
+          "durationSeconds": 35,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "6 · Schultern und Brustkorb",
+      "order": 5,
+      "steps": [
+        {
+          "name": "Brustwirbel-Rotation links",
+          "description": "Vierfüßler, linke Hand an den Hinterkopf. Den Ellbogen langsam zur Decke öffnen, der Blick folgt, dann wieder zur Mitte einrollen. Die Hüfte bleibt ruhig über den Knien.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz im Vierfüßler ruhen.",
+          "durationSeconds": 20,
+          "order": 1
+        },
+        {
+          "name": "Brustwirbel-Rotation rechts",
+          "description": "Gleiche Bewegung mit der rechten Hand. Langsam genug, dass du jede Etage der Wirbelsäule einzeln spürst.",
+          "durationSeconds": 60,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "In die Kindhaltung absinken.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Brustöffnung an der Wand",
+          "description": "Unterarm an Wand oder Türrahmen, Ellbogen auf Schulterhöhe. Langsam vom Arm wegdrehen, bis es vorn in der Brust zieht, und dort atmen. Nach der Hälfte die Seite wechseln.",
+          "durationSeconds": 70,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Nacken sanft dehnen",
+          "description": "Aufrecht sitzen, Kopf zur linken Schulter neigen, die rechte Hand zieht ganz leicht Richtung Boden. Nach der Hälfte wechseln. Sehr wenig Zug reicht hier völlig aus.",
+          "durationSeconds": 50,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Kopf zur Mitte, Schultern sinken lassen.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "7 · Rückseite dehnen",
+      "order": 6,
+      "steps": [
+        {
+          "name": "Sitzende Vorbeuge",
+          "description": "Beine lang, die Knie dürfen leicht gebeugt sein. Aus der Hüfte nach vorn falten und den Rücken lang lassen. Nicht ziehen, nur hängen und mit jedem Ausatmen ein Stück nachgeben.",
+          "durationSeconds": 75,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Aufrichten, kurz sitzen bleiben.",
+          "durationSeconds": 20,
+          "order": 1
+        },
+        {
+          "name": "Figure-4 links",
+          "description": "Rückenlage, linken Knöchel auf das rechte Knie legen, den rechten Oberschenkel zu dir heranziehen. Kopf und Schultern bleiben entspannt am Boden.",
+          "durationSeconds": 65,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Beide Füße kurz abstellen.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Figure-4 rechts",
+          "description": "Seite wechseln, gleiche Zeit. Wenn es zieht, atme dorthin, statt fester zu ziehen.",
+          "durationSeconds": 65,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Beine lang ablegen.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Wadendehnung an der Wand",
+          "description": "Fußballen an die Wand, Ferse am Boden, Bein gestreckt, Hüfte nach vorn schieben. Nach der Hälfte die Seite wechseln.",
+          "durationSeconds": 55,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Zurück auf die Matte.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "8 · Ausklang",
+      "order": 7,
+      "steps": [
+        {
+          "name": "Wirbelsäulendrehung links",
+          "description": "Rückenlage, Knie nach links ablegen, Kopf nach rechts drehen, Arme in T-Position. Nichts halten wollen, nur sinken lassen.",
+          "durationSeconds": 50,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Zur Mitte zurückkommen.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Wirbelsäulendrehung rechts",
+          "description": "Gleiche Position zur anderen Seite. Beide Schultern bleiben so nah am Boden, wie es angenehm ist.",
+          "durationSeconds": 50,
+          "order": 2
+        },
+        {
+          "name": "Endentspannung",
+          "description": "Flach liegen, Arme locker neben dem Körper, Augen zu. Nichts mehr korrigieren, nichts mehr halten. Lang ausatmen und den Körper schwer werden lassen.",
+          "durationSeconds": 65,
+          "order": 3
+        }
+      ]
+    }
+  ]
+}
