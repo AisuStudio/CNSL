@@ -1,0 +1,128 @@
+{
+  "name": "Volleyball Daily 10",
+  "project": "Sport",
+  "autoPause": true,
+  "pauseBetweenSteps": 15,
+  "sections": [
+    {
+      "name": "Warmmachen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Auf der Stelle laufen",
+          "description": "Locker auf der Stelle laufen, Knie hoch. Werde langsam schneller, bleib aber leise. Danach sind deine Beine wach.",
+          "durationSeconds": 30,
+          "order": 0
+        },
+        {
+          "name": "Armkreisen",
+          "description": "Arme lang ausstrecken und große Kreise machen. Die halbe Zeit nach vorne, die halbe Zeit nach hinten. Das macht deine Schultern bereit fürs Pritschen und Schmettern.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Hüfte und Fußgelenke lockern",
+          "description": "Erst mit der Hüfte große Kreise machen. Dann jeden Fuß auf die Zehenspitzen stellen und das Fußgelenk kreisen. Starke Fußgelenke halten dich beim Landen stabil.",
+          "durationSeconds": 25,
+          "order": 2
+        }
+      ]
+    },
+    {
+      "name": "Teil 1 · Beine und Sprung",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Abwehrstellung halten",
+          "description": "Füße etwas breiter als die Schultern, Knie beugen, Po nach hinten, Arme nach vorne. Tief bleiben und halten. Genau so wartest du im Spiel auf den Ball.",
+          "durationSeconds": 25,
+          "order": 0
+        },
+        {
+          "name": "Kniebeugen, langsam",
+          "description": "Aus der Abwehrstellung langsam tiefer gehen und wieder hoch. Zähle drei Sekunden nach unten, dann zügig nach oben. Die Knie zeigen nach vorne, nicht nach innen.",
+          "durationSeconds": 30,
+          "order": 1
+        },
+        {
+          "name": "Wadenheben",
+          "description": "Langsam auf die Zehenspitzen hoch, oben kurz halten, ganz langsam wieder runter. Ein Finger an der Wand hilft beim Gleichgewicht. Das macht deinen Sprung höher.",
+          "durationSeconds": 25,
+          "order": 2
+        },
+        {
+          "name": "Strecksprünge",
+          "description": "Kurz in die Knie gehen, dann mit beiden Armen nach oben abspringen, als wolltest du blocken. Zwischen den Sprüngen einmal durchatmen.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Leise landen üben",
+          "description": "Kleiner Sprung, und beim Landen machst du kein Geräusch. Erst der Fußballen, dann die Ferse, die Knie federn weich mit. Leise landen schützt deine Knie.",
+          "durationSeconds": 25,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "name": "Halbzeit",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Pause",
+          "description": "Halbzeit. Kurz durchatmen und einen Schluck Wasser trinken. Gleich geht es mit den Armen weiter.",
+          "durationSeconds": 30,
+          "order": 0
+        }
+      ]
+    },
+    {
+      "name": "Teil 2 · Arme und Körperspannung",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Schattenbaggern",
+          "description": "Arme zusammenlegen wie beim Baggern und die Bewegung aus den Beinen nach vorne oben schieben. Ganz ohne Ball, nur die Bewegung. Die Arme bleiben ruhig und gerade.",
+          "durationSeconds": 30,
+          "order": 0
+        },
+        {
+          "name": "Pritschhaltung über dem Kopf",
+          "description": "Hände über die Stirn, Finger gespreizt, dazwischen entsteht ein kleines Fenster. Arme kurz nach oben strecken, wieder beugen. So sitzen deine Finger beim Pritschen richtig.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Unterarmstütz",
+          "description": "Auf die Unterarme stützen, Körper gerade wie ein Brett. Po nicht hochstrecken und nicht durchhängen lassen. Auf den Knien ist auch völlig in Ordnung.",
+          "durationSeconds": 25,
+          "order": 2
+        },
+        {
+          "name": "Superman",
+          "description": "Auf den Bauch legen, Arme nach vorne strecken. Arme und Beine ein kleines Stück anheben, kurz halten, wieder ablegen. Das macht deinen Rücken stark.",
+          "durationSeconds": 25,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "name": "Auslaufen",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Schultern dehnen",
+          "description": "Einen Arm gerade vor der Brust zur anderen Seite ziehen und halten. Nach der Hälfte den anderen Arm. Dabei ruhig weiteratmen.",
+          "durationSeconds": 25,
+          "order": 0
+        },
+        {
+          "name": "Beine ausschütteln und dehnen",
+          "description": "Beine locker ausschütteln, dann im Stehen nach vorne beugen und die Hände Richtung Boden hängen lassen. Die Knie dürfen leicht gebeugt sein. Fertig für heute, super gemacht.",
+          "durationSeconds": 20,
+          "order": 1
+        }
+      ]
+    }
+  ]
+}
