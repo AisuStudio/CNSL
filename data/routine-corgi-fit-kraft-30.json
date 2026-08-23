@@ -1,0 +1,295 @@
+{
+  "name": "Corgi Fit Kraft 30",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Aufwärmen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Schnüffelrunde",
+          "description": "Zügiges Gehen oder lockeres Traben durch die Wohnung, alle paar Schritte die Richtung wechseln. Die Route bestimmt der Corgi, du bestimmst das Tempo. Ziel ist warm, nicht müde.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Hüfte und Schultern lösen",
+          "description": "Große Hüftkreise, dann Armkreisen vor und zurück, dann zehn mal Katze-Kuh im Vierfüßler. Alles langsam. Der Corgi wird sich unter dich legen. Rechne damit.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Leinen-Durchzug",
+          "description": "Leine weit in beiden Händen, gestreckt über den Kopf nach hinten führen und zurück. Griff so breit wählen, dass in den Schultern nichts klemmt. Bereitet das Überkopfdrücken vor.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Kniebeuge ohne Last",
+          "description": "Zehn bis fünfzehn langsame Kniebeugen ohne Corgi, unten jeweils zwei Sekunden halten. Das ist die Generalprobe, nicht der Satz.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Pause",
+          "description": "Corgi holen. Er weiß längst Bescheid.",
+          "durationSeconds": 25,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "name": "2 · Kniebeuge",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Gobletkniebeuge, Satz 1",
+          "description": "Corgi eng an der Brust, Ellbogen unter der Last, Rücken gerade. Drei Sekunden nach unten, unten eine Sekunde halten, zügig hoch. Acht bis zehn Wiederholungen. Zwölf Kilo vorn an der Brust sind deutlich mehr, als sie klingen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Absetzen, ausatmen, Griff neu sortieren. Der Corgi nutzt die Zeit zum Hinlegen.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Gobletkniebeuge, Satz 2",
+          "description": "Gleicher Satz, gleiches Tempo. War Satz 1 zu leicht, gehst du jetzt tiefer statt schneller. Die Tiefe ist deine Progression, das Gewicht bleibt bei zwölf Kilo.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln. Noch ein Satz.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Gobletkniebeuge, Satz 3",
+          "description": "Letzter Satz, zwei Wiederholungen mehr als eben. Fersen bleiben am Boden, Knie nach außen drücken, Brust offen.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Längere Pause. Der nächste Block geht auf den Oberkörper.",
+          "durationSeconds": 60,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "3 · Drücken",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Liegestütz, Satz 1",
+          "description": "Körper eine Linie, Ellbogen etwa fünfundvierzig Grad zum Rumpf. So viele saubere Wiederholungen wie möglich, dann auf die Knie wechseln und weitermachen. Der Corgi stellt sich darunter und findet das interessant.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Handgelenke kreisen. Der Corgi wird deine Position einnehmen wollen.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Corgi-Überkopfdrücken",
+          "description": "Nur mit einem Hund, der das wirklich mag. Beide Hände unter Brustkorb und Becken, bis knapp über den Kopf drücken, kein Durchstrecken, kontrolliert absetzen. Sechs bis acht Wiederholungen. Bei Einwänden: Rucksack mit Büchern, gleiche Bewegung, gleicher Effekt.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Schultern kreisen. Hund loben.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Liegestütz, Satz 2",
+          "description": "Zweiter Satz, diesmal betont langsam nach unten. Drei Sekunden runter, unten kurz stoppen, hoch. Weniger Wiederholungen, mehr Reiz.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Durchatmen. Jetzt kommt die Hüfte.",
+          "durationSeconds": 60,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "4 · Hüfte und Zug",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Hüftbeuge mit Corgi",
+          "description": "Corgi fest vor der Brust, Knie leicht gebeugt. Hüfte weit nach hinten schieben, Rücken gerade, bis es in den Oberschenkelrückseiten zieht, dann über die Fersen wieder aufrichten. Zehn Wiederholungen. Die Bewegung kommt aus der Hüfte, nicht aus dem Rücken.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Corgi absetzen. Er hat die ganze Zeit nichts getan und ist trotzdem erschöpft.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Umgekehrtes Rudern unter dem Tisch",
+          "description": "Unter einen stabilen Tisch legen, die Kante mit beiden Händen greifen, Körper gerade, Brust zur Kante ziehen, langsam ablassen. Der einzige echte Zug in dieser Einheit, also sauber ausführen. Der Corgi kommt dazu und findet die Lage vollkommen normal.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Schulterblätter kreisen. Tisch auf Kratzer prüfen.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Beckenheben mit Auflage",
+          "description": "Rückenlage, Füße aufgestellt, Corgi quer auf der Hüfte. Heben bis Knie, Hüfte und Schulter eine Linie bilden, oben zwei Sekunden fest anspannen, langsam ablassen. Zwölf Wiederholungen. Den Passagier mit beiden Händen sichern.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Liegen bleiben. Ab jetzt wird es einbeinig.",
+          "durationSeconds": 60,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "5 · Einbeinig und Tragen",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Ausfallschritt rückwärts, links",
+          "description": "Corgi vor der Brust, linkes Bein weit nach hinten, hinteres Knie Richtung Boden, über die Ferse des vorderen Beins hochdrücken. Acht Wiederholungen. Einbeinig fühlen sich zwölf Kilo an wie zwanzig.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz stehen bleiben. Seite wechseln, nicht das Tempo.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Ausfallschritt rückwärts, rechts",
+          "description": "Gleiche Zahl an Wiederholungen wie links, auch wenn diese Seite schlechter läuft. Genau deshalb steht sie hier.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln. Eine Übung noch in diesem Block.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Corgi Farmer's Walk",
+          "description": "Corgi quer vor der Brust oder seitlich an der Hüfte, Schultern tief, Rumpf fest, aufrecht und zügig gehen. Die volle Zeit ohne Absetzen. Zwölf Kilo, kurze Beine, erstaunliche Dichte.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Absetzen, Griff lockern, Unterarme ausschütteln.",
+          "durationSeconds": 60,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "6 · Rumpf",
+      "order": 5,
+      "steps": [
+        {
+          "name": "Unterarmstütz mit Auflage",
+          "description": "Unterarmstütz, der Corgi legt sich quer auf den unteren Rücken. Spielt er nicht mit, machst du den Stütz ohne Auflage, dafür die volle Zeit. Linie halten, Po anspannen, nicht durchhängen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz auf die Fersen setzen.",
+          "durationSeconds": 35,
+          "order": 1
+        },
+        {
+          "name": "Seitstütz links",
+          "description": "Auf dem linken Unterarm, Hüfte aktiv nach oben schieben, Körper in einer Linie. Das untere Knie darf am Boden bleiben. Ruhig atmen, nicht pressen.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Seite wechseln.",
+          "durationSeconds": 30,
+          "order": 3
+        },
+        {
+          "name": "Seitstütz rechts",
+          "description": "Gleiche Position auf dem rechten Unterarm, gleiche Zeit. Schulter über dem Ellbogen halten.",
+          "durationSeconds": 35,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Auf den Bauch drehen.",
+          "durationSeconds": 30,
+          "order": 5
+        },
+        {
+          "name": "Superman",
+          "description": "Bauchlage, Arme nach vorn gestreckt. Arme und Beine anheben, oben zwei Sekunden halten, ablegen. Zehn Wiederholungen. Das Gegengewicht zu allem, was heute vorne gearbeitet hat.",
+          "durationSeconds": 40,
+          "order": 6
+        }
+      ]
+    },
+    {
+      "name": "7 · Auslaufen",
+      "order": 6,
+      "steps": [
+        {
+          "name": "Tiefe Hocke",
+          "description": "Füße etwas breiter als schulterbreit, so tief in die Hocke wie möglich, Ellbogen drücken die Knie sanft nach außen. Fersen dürfen abheben. Holt zurück, was die Kniebeugen zugemacht haben.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Hüftbeuger-Dehnung",
+          "description": "Halbkniend, hinteres Knie am Boden, Po anspannen und die Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite. Nach den Ausfallschritten die wichtigste Dehnung der Einheit.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Brustöffnung an der Wand",
+          "description": "Unterarm an Wand oder Türrahmen, Ellbogen auf Schulterhöhe, langsam vom Arm wegdrehen. Halbe Zeit pro Seite. Öffnet, was Liegestütz und Drücken zugezogen haben.",
+          "durationSeconds": 40,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Hinlegen. Nichts mehr tun.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Letzte Bauchkraulung",
+          "description": "Flach liegen, Augen zu, eine Hand auf dem Hund. Lang ausatmen. Zwölf Kilo haben heute mehr getragen als du denkst, und zwar dich.",
+          "durationSeconds": 40,
+          "order": 4
+        }
+      ]
+    }
+  ]
+}
