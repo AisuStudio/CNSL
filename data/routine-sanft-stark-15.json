@@ -92,33 +92,33 @@
       "order": 2,
       "steps": [
         {
-          "name": "Dead Bug",
-          "description": "Rückenlage, Arme nach oben, Knie über der Hüfte. Gegengleich Arm und Bein langsam ausstrecken und zurückholen. Der Rücken bleibt vollflächig am Boden. Hebt er ab, mach die Bewegung kleiner. Genau darin liegt der Trainingseffekt.",
+          "name": "Stehende Crunches",
+          "description": "Aufrecht stehen, Hände locker an den Schläfen. Das rechte Knie auf Hüfthöhe anheben und den linken Ellbogen entgegenkommen lassen, dann die Seite wechseln. Die Drehung kommt aus dem Brustkorb, der Oberkörper bleibt lang. Nicht nach vorn einknicken und nicht mit Schwung arbeiten.",
           "durationSeconds": 45,
           "order": 0
         },
         {
           "name": "Pause",
-          "description": "Beine ablegen, kurz nichts tun.",
+          "description": "Stehen bleiben, einmal durchatmen.",
           "durationSeconds": 25,
           "order": 1
         },
         {
-          "name": "Unterarmstütz",
-          "description": "Ellbogen unter den Schultern, Körper eine gerade Linie. Auf den Knien ist völlig in Ordnung und hier sogar die klügere Wahl. Po anspannen, ruhig weiteratmen, nicht durchhängen lassen.",
-          "durationSeconds": 35,
+          "name": "Mini-Crunch mit Beinen auf dem Stuhl",
+          "description": "Rückenlage vor einem Stuhl, die Unterschenkel flach auf der Sitzfläche, Knie und Hüfte jeweils 90 Grad. Nur Kopf und Schulterblätter ein paar Zentimeter vom Boden lösen, kurz halten, wieder ablegen. Die 90-Grad-Stellung nimmt den Zug der Hüftbeuger heraus, dadurch bleibt der untere Rücken flach am Boden liegen. Kein Stuhl in der Nähe? Dann die Beine frei in der Luft halten, Unterschenkel waagerecht.",
+          "durationSeconds": 40,
           "order": 2
         },
         {
           "name": "Pause",
-          "description": "Auf die Fersen setzen.",
+          "description": "Beine ablegen, kurz nichts tun.",
           "durationSeconds": 20,
           "order": 3
         },
         {
           "name": "Seitstütz links, Knie am Boden",
           "description": "Auf dem linken Unterarm, Knie angewinkelt am Boden. Die Hüfte sanft nach oben schieben. Die seitliche Rumpfmuskulatur arbeitet, ohne dass sich die Wirbelsäule beugen oder strecken muss.",
-          "durationSeconds": 30,
+          "durationSeconds": 25,
           "order": 4
         },
         {
@@ -130,13 +130,13 @@
         {
           "name": "Seitstütz rechts, Knie am Boden",
           "description": "Gleiche Position rechts, gleiche Zeit. Die Schulter bleibt über dem Ellbogen.",
-          "durationSeconds": 30,
+          "durationSeconds": 25,
           "order": 6
         },
         {
           "name": "Pause",
           "description": "Auf den Rücken drehen.",
-          "durationSeconds": 15,
+          "durationSeconds": 20,
           "order": 7
         }
       ]
