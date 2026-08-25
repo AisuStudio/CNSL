@@ -1,0 +1,217 @@
+{
+  "name": "Sanft Stark 15",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Ankommen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Ankommen und atmen",
+          "description": "Aufrecht stehen oder auf einem Stuhl sitzen, Füße fest am Boden. Vier Sekunden einatmen, sechs Sekunden ausatmen. Die Schultern bewusst sinken lassen. Kein Bücken, kein Strecken, nur atmen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben, ruhig weiteratmen.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Schultern und Arme lösen",
+          "description": "Die Schultern groß nach hinten kreisen, dann die Arme locker vor und zurück schwingen. Der Rumpf bleibt dabei ruhig und aufrecht, die Bewegung kommt nur aus den Schultern.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln. Gleich geht es an den Oberkörper.",
+          "durationSeconds": 25,
+          "order": 3
+        }
+      ]
+    },
+    {
+      "name": "2 · Oberkörper",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Wall Angels",
+          "description": "Mit dem Rücken an die Wand, Füße eine Fußlänge davor, Knie leicht gebeugt. Die Arme wie ein Schneeengel an der Wand nach oben und unten führen. Bleib in der kleineren Bewegung, solange der Kontakt zur Wand hält. Öffnet Brust und Schultern gegen die Bürohaltung.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Von der Wand lösen, Schultern kreisen.",
+          "durationSeconds": 20,
+          "order": 1
+        },
+        {
+          "name": "Liegestütz an der Wand",
+          "description": "Hände auf Schulterhöhe an die Wand, Körper eine schräge Linie. Langsam heranbeugen, kontrolliert wieder wegdrücken. Je weiter die Füße von der Wand weg stehen, desto schwerer wird es. Fang leicht an.",
+          "durationSeconds": 40,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme locker hängen lassen.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Schulterblatt-Liegestütz",
+          "description": "Gleiche Position an der Wand, aber die Arme bleiben gestreckt. Nur die Schulterblätter bewegen sich: zusammenziehen, dann auseinanderschieben. Kleine Bewegung, große Wirkung für die Schulterstabilität.",
+          "durationSeconds": 30,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz ausschütteln.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Umgekehrtes Rudern unter dem Tisch",
+          "description": "Unter einen stabilen Tisch legen, Knie angewinkelt, Füße flach am Boden. Die Tischkante greifen und die Brust dorthin ziehen, langsam ablassen. Die angewinkelten Knie nehmen dem Rumpf die Arbeit ab. Der einzige Zug im Programm und deshalb wichtig.",
+          "durationSeconds": 40,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Unter dem Tisch hervorkommen, kurz sitzen bleiben.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "3 · Core",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Dead Bug",
+          "description": "Rückenlage, Arme nach oben, Knie über der Hüfte. Gegengleich Arm und Bein langsam ausstrecken und zurückholen. Der Rücken bleibt vollflächig am Boden. Hebt er ab, mach die Bewegung kleiner. Genau darin liegt der Trainingseffekt.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ablegen, kurz nichts tun.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Unterarmstütz",
+          "description": "Ellbogen unter den Schultern, Körper eine gerade Linie. Auf den Knien ist völlig in Ordnung und hier sogar die klügere Wahl. Po anspannen, ruhig weiteratmen, nicht durchhängen lassen.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Auf die Fersen setzen.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Seitstütz links, Knie am Boden",
+          "description": "Auf dem linken Unterarm, Knie angewinkelt am Boden. Die Hüfte sanft nach oben schieben. Die seitliche Rumpfmuskulatur arbeitet, ohne dass sich die Wirbelsäule beugen oder strecken muss.",
+          "durationSeconds": 30,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Seite wechseln.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Seitstütz rechts, Knie am Boden",
+          "description": "Gleiche Position rechts, gleiche Zeit. Die Schulter bleibt über dem Ellbogen.",
+          "durationSeconds": 30,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Auf den Rücken drehen.",
+          "durationSeconds": 15,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "4 · Beine und Gesäß",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Kniebeuge zum Stuhl",
+          "description": "Vor einem Stuhl stehen, langsam absetzen bis der Po die Sitzfläche berührt, dann wieder aufstehen. Der Oberkörper bleibt aufrecht, der Stuhl gibt dir die Tiefe vor. Acht bis zehn Wiederholungen genügen.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben, einmal durchatmen.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Beckenheben",
+          "description": "Rückenlage, Füße aufgestellt. Das Becken heben, bis Knie, Hüfte und Schulter eine Linie bilden, oben zwei Sekunden den Po fest anspannen, langsam ablassen. Nicht höher als bis zur Linie. Die Arbeit macht das Gesäß.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Beine lang machen und ausschütteln.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Seitliches Beinheben im Stehen",
+          "description": "An der Wand abstützen, ein gestrecktes Bein langsam zur Seite heben und wieder senken. Der Oberkörper bleibt aufrecht, nicht zur Seite kippen. Nach der Hälfte das Bein wechseln. Kräftigt die seitliche Hüfte.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Beide Beine kurz ausschütteln.",
+          "durationSeconds": 30,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "5 · Ausklang",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Brustöffnung an der Wand",
+          "description": "Unterarm an Wand oder Türrahmen, Ellbogen auf Schulterhöhe, langsam vom Arm wegdrehen. Nach der Hälfte die Seite wechseln. Öffnet wieder, was die Liegestütze zugezogen haben.",
+          "durationSeconds": 35,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Arme sinken lassen.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Nacken sanft dehnen",
+          "description": "Aufrecht sitzen, den Kopf zur linken Schulter neigen, die rechte Hand zieht ganz leicht Richtung Boden. Nach der Hälfte wechseln. Sehr wenig Zug reicht hier aus.",
+          "durationSeconds": 25,
+          "order": 2
+        },
+        {
+          "name": "Endentspannung",
+          "description": "Bequem sitzen oder flach liegen, Augen zu. Ein paar lange Atemzüge, Schultern schwer werden lassen. Fertig für heute.",
+          "durationSeconds": 35,
+          "order": 3
+        }
+      ]
+    }
+  ]
+}
