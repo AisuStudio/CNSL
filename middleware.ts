@@ -35,6 +35,8 @@ export async function middleware(request: NextRequest) {
   const isPublic =
     path === "/" || // public start/landing page (has its own login form)
     path.startsWith("/login") ||
+    path === "/forgot-password" || // request a reset link
+    path === "/reset-password" || // recovery link lands here (page checks session itself)
     path.startsWith("/auth") ||
     path.startsWith("/api") || // API routes self-guard (return 401)
     path.startsWith("/note/") || // published notes are public (read-only)

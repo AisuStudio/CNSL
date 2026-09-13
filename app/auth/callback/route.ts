@@ -14,7 +14,8 @@ function safeNext(raw: string | null): string {
   return raw;
 }
 
-// Magic-link lands here. Handle both the PKCE `code` flow and the
+// Magic-link and password-recovery links land here (recovery passes
+// ?next=/reset-password). Handle both the PKCE `code` flow and the
 // `token_hash` (verifyOtp) flow so it works regardless of the email template.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;

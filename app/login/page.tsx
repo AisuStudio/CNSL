@@ -22,7 +22,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("error") === "auth") {
       setError(
-        "That sign-in link couldn't be verified — it may have expired or been opened in a different browser. Enter your email below to get a fresh link."
+        "That link couldn't be verified — it may have expired or been opened in a different browser. Sign in below, or request a fresh reset link."
       );
     }
   }, []);
@@ -225,6 +225,19 @@ export default function LoginPage() {
             ? "New here? Create an account"
             : "Already have an account? Sign in"}
         </button>
+        {mode === "signin" && (
+          <Link
+            href="/forgot-password"
+            style={{
+              color: "var(--color-text-muted)",
+              fontSize: "var(--text-sm)",
+              textAlign: "center",
+              textDecoration: "none",
+            }}
+          >
+            Forgot password?
+          </Link>
+        )}
 
         {note && (
           <p style={{ color: "var(--color-running)", fontSize: "var(--text-sm)", margin: 0 }}>

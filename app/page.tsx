@@ -490,6 +490,14 @@ function LoginCard({ initialMode = "signin", onClose }: { initialMode?: "signin"
         >
           {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
+        {mode === "signin" && (
+          <Link
+            href="/forgot-password"
+            style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)", textAlign: "center", textDecoration: "none" }}
+          >
+            Forgot password?
+          </Link>
+        )}
 
         {note && <p style={{ color: "var(--color-running)", fontSize: "var(--text-sm)", margin: 0 }}>{note}</p>}
         {error && <p style={{ color: "#e0709a", fontSize: "var(--text-sm)", margin: 0 }}>{error}</p>}

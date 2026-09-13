@@ -28,7 +28,7 @@ jobs:
         # Every `dynamic = "force-dynamic"` route has to go — `output: "export"`
         # has no runtime server to render them. Adding such a page WITHOUT
         # adding it here breaks this build, so keep the two in sync.
-        run: rm -rf app/api app/auth app/login app/note app/app/publisher app/submit middleware.ts
+        run: rm -rf app/api app/auth app/login app/forgot-password app/reset-password app/note app/app/publisher app/submit middleware.ts
       - name: Build static demo
         env:
           GHPAGES: "true"
