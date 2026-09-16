@@ -1,0 +1,307 @@
+{
+  "name": "Volleyball Outdoor 20",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Warmmachen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Zwei Runden locker laufen",
+          "description": "Lauf zweimal locker um den Platz herum. Kein Wettrennen. Danach sollst du warm sein und trotzdem noch reden können.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz stehen bleiben und durchatmen.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Armkreisen und Schultern",
+          "description": "Große Kreise mit gestreckten Armen, erst vorwärts, dann rückwärts. Danach die Schultern ein paar Mal hochziehen und fallen lassen. Deine Schultern arbeiten gleich viel.",
+          "durationSeconds": 40,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 15,
+          "order": 3
+        },
+        {
+          "name": "Hüfte und Fußgelenke",
+          "description": "Hüftkreise, dann jeden Fuß auf die Zehenspitzen stellen und das Fußgelenk kreisen. Zum Schluss ein paar Mal in die Knie gehen. Starke Fußgelenke sind beim Volleyball Gold wert.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Such dir eine Bank oder eine niedrige Plattform für den nächsten Teil.",
+          "durationSeconds": 30,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "2 · Sprung und Landung",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Aufsteigen auf die Bank",
+          "description": "Mit einem Fuß auf die Bank steigen, den anderen nachziehen, wieder runter. Abwechselnd links und rechts führen. Ruhig und kontrolliert, das ist noch kein Sprung.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz stehen bleiben.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Sprünge auf die Bank, leise landen",
+          "description": "Mit beiden Beinen auf die Bank springen und dabei kein Geräusch machen. Runter gehst du im Schritt, nicht im Sprung. Nimm eine Höhe, die dir sicher vorkommt.",
+          "durationSeconds": 40,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Blocksprünge an der Stange",
+          "description": "Stell dich unter eine Stange, geh kurz in die Knie und spring mit beiden Armen hoch, als wolltest du blocken. Wenn du die Stange berührst, super. Wenn nicht, auch gut.",
+          "durationSeconds": 35,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Einmal tief durchatmen.",
+          "durationSeconds": 25,
+          "order": 5
+        },
+        {
+          "name": "Wadenheben auf der Kante",
+          "description": "Stell dich mit den Fußballen auf eine Bank- oder Stufenkante und halt dich fest. Langsam hoch auf die Zehenspitzen, langsam wieder runter. Das macht deinen Sprung höher.",
+          "durationSeconds": 20,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Ab zur Klimmzugstange.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "3 · An der Stange",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Hängen an der Stange",
+          "description": "Such dir eine Stange, an die du gut rankommst, und häng dich einfach dran. Die Schultern nicht ganz locker lassen, sondern leicht aktiv halten. Das dehnt und kräftigt gleichzeitig.",
+          "durationSeconds": 35,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Hände ausschütteln.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Schulterblatt-Klimmzüge",
+          "description": "Wieder an die Stange hängen, die Arme bleiben gestreckt. Zieh dich nur mit den Schulterblättern ein kleines Stück nach oben, dann wieder ablassen. Ganz kleine Bewegung. Das ist der Anfang von jedem Klimmzug.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz absetzen.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Schräges Rudern an niedriger Stange",
+          "description": "Such dir eine niedrige Stange, greif sie und lauf mit den Füßen nach vorn, sodass du schräg darunter hängst. Brust zur Stange ziehen, langsam wieder ablassen. Je aufrechter du stehst, desto leichter wird es.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 25,
+          "order": 5
+        },
+        {
+          "name": "Liegestütz an der Bank",
+          "description": "Hände auf die Bank, Füße hinten am Boden, Körper eine gerade Linie. Langsam runter, kontrolliert wieder hochdrücken.",
+          "durationSeconds": 25,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Gleich wird es schnell.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "4 · Schnell und Ballgefühl",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Abwehrschritte seitlich",
+          "description": "Geh in die Abwehrstellung: Knie gebeugt, Po nach hinten, Arme nach vorn. Jetzt seitlich hin und her, ohne die Beine zu kreuzen. Bleib die ganze Zeit tief.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Aufrichten und durchatmen.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Schattenbaggern",
+          "description": "Arme zusammenlegen wie beim Baggern und die Bewegung aus den Beinen nach vorne oben schieben. Ganz ohne Ball. Die Arme bleiben ruhig und gerade.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme lockern.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Pritschhaltung über dem Kopf",
+          "description": "Hände über die Stirn, Finger gespreizt, dazwischen entsteht ein kleines Fenster. Arme kurz nach oben strecken, wieder beugen. So sitzen deine Finger beim Pritschen richtig.",
+          "durationSeconds": 30,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Such dir eine freie gerade Strecke.",
+          "durationSeconds": 20,
+          "order": 5
+        },
+        {
+          "name": "Antritt-Sprints",
+          "description": "Kurze Sprints über ungefähr zehn Meter, danach locker zurückgehen. So oft du in der Zeit schaffst. Volle Geschwindigkeit gleich ab dem ersten Schritt.",
+          "durationSeconds": 25,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Stark gemacht. Kurz ausschnaufen.",
+          "durationSeconds": 15,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "5 · Rumpf",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Knieheben im Hang",
+          "description": "An der Stange hängen und beide Knie langsam Richtung Bauch ziehen, dann wieder senken. Nicht schaukeln. Wenn die Hände nicht mehr können, mach auf dem Boden liegend weiter.",
+          "durationSeconds": 30,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Hände ausschütteln.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Unterarmstütz",
+          "description": "Auf die Unterarme stützen, Körper gerade wie ein Brett. Po nicht hochstrecken und nicht durchhängen lassen. Auf den Knien ist auch in Ordnung.",
+          "durationSeconds": 30,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz auf die Fersen setzen.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Seitstütz links",
+          "description": "Auf dem linken Unterarm, Körper in einer Linie. Das untere Knie darf am Boden bleiben.",
+          "durationSeconds": 20,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Seite wechseln.",
+          "durationSeconds": 15,
+          "order": 5
+        },
+        {
+          "name": "Seitstütz rechts",
+          "description": "Gleiche Position rechts, gleiche Zeit. Die Schulter bleibt über dem Ellbogen.",
+          "durationSeconds": 20,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Aufstehen und ausschütteln.",
+          "durationSeconds": 20,
+          "order": 7
+        }
+      ]
+    },
+    {
+      "name": "6 · Auslaufen",
+      "order": 5,
+      "steps": [
+        {
+          "name": "Locker austraben",
+          "description": "Eine Runde ganz locker traben oder gehen. Der Puls darf jetzt wieder runterkommen.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Schultern dehnen",
+          "description": "Einen Arm gerade vor der Brust zur anderen Seite ziehen und halten. Nach der Hälfte den anderen Arm.",
+          "durationSeconds": 30,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme sinken lassen.",
+          "durationSeconds": 10,
+          "order": 3
+        },
+        {
+          "name": "Beine dehnen",
+          "description": "Beine ausschütteln, dann im Stehen langsam nach vorne beugen und die Hände Richtung Boden hängen lassen. Die Knie dürfen leicht gebeugt sein.",
+          "durationSeconds": 30,
+          "order": 4
+        },
+        {
+          "name": "Durchatmen und fertig",
+          "description": "Aufrichten, dreimal tief ein und aus. Fertig für heute, das war stark.",
+          "durationSeconds": 25,
+          "order": 5
+        }
+      ]
+    }
+  ]
+}

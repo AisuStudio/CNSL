@@ -1,0 +1,103 @@
+{
+  "name": "OKR Workshop",
+  "project": "Workshop",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Start",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Intro",
+          "description": "Ankommen und Rahmen setzen. Ziel der Session in einem Satz, Agenda kurz zeigen, Regeln klären: Kamera an wenn möglich, stumm wenn nicht am Reden, Fragen jederzeit in den Chat. Sag, wer moderiert, wer mitschreibt und wo das gemeinsame Dokument liegt.",
+          "durationSeconds": 300,
+          "order": 0
+        },
+        {
+          "name": "Erklärung",
+          "description": "OKR-Grundlagen. Ein Objective ist qualitativ, richtungsweisend und motivierend. Key Results sind messbar und beschreiben ein Ergebnis, keine Aktivität, drei bis fünf pro Objective. Zeig je ein gutes und ein schlechtes Beispiel und mach den Unterschied zu KPIs und zu Tasks explizit, das ist die häufigste Verwechslung. Zum Schluss Ambitionsniveau und Zyklus.",
+          "durationSeconds": 900,
+          "order": 1
+        }
+      ]
+    },
+    {
+      "name": "2 · Arbeitsphase",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Breakout rooms",
+          "description": "Gruppen zu dritt oder viert. Auftrag: ein Objective plus drei Key Results für den eigenen Bereich. Jede Gruppe braucht eine Person, die im gemeinsamen Dokument mitschreibt. Geh durch die Räume und schick bei fünf Minuten Restzeit eine Ansage.",
+          "durationSeconds": 1200,
+          "order": 0
+        },
+        {
+          "name": "Puffer",
+          "description": "Rückkehr ins Plenum. Technik sortieren, Ergebnisse an die richtige Stelle im Dokument, kurz prüfen ob alle wieder da sind. Wenn alles glattlief, ist das geschenkte Zeit.",
+          "durationSeconds": 300,
+          "order": 1
+        }
+      ]
+    },
+    {
+      "name": "3 · Pause",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Pause",
+          "description": "Echte Pause. Kameras aus. Schreib die Uhrzeit der Rückkehr in den Chat, damit sie sichtbar bleibt.",
+          "durationSeconds": 600,
+          "order": 0
+        }
+      ]
+    },
+    {
+      "name": "4 · Review",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Review",
+          "description": "Jede Gruppe stellt ihr Objective und die Key Results vor. Leg die Zeit pro Gruppe vorher fest und sag sie an, sonst frisst die erste Gruppe die Hälfte. Gib dem Feedback feste Kriterien: Ist das Objective qualitativ? Sind die Key Results Ergebnisse statt Aktivitäten? Sind sie messbar? Merkt man in drei Monaten, ob sie erreicht wurden?",
+          "durationSeconds": 1800,
+          "order": 0
+        },
+        {
+          "name": "Puffer",
+          "description": "Auffangzeit für Überzug und offene Fragen aus dem Review. Wenn nichts liegen geblieben ist, geh früher in die Korrektur.",
+          "durationSeconds": 600,
+          "order": 1
+        }
+      ]
+    },
+    {
+      "name": "5 · Korrektur",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Korrektur",
+          "description": "Die Gruppen überarbeiten ihre OKRs anhand des Feedbacks. Entweder nochmal in Breakouts oder gemeinsam im Plenum, je nachdem wie viel zu tun ist. Ziel ist keine perfekte Fassung, sondern eine, mit der man arbeiten kann.",
+          "durationSeconds": 900,
+          "order": 0
+        },
+        {
+          "name": "Review",
+          "description": "Kurzer zweiter Durchgang. Jede Gruppe sagt nur, was sie geändert hat und warum. Keine neue Feedbackrunde, sonst läuft die Zeit über.",
+          "durationSeconds": 600,
+          "order": 1
+        }
+      ]
+    },
+    {
+      "name": "6 · Abschluss",
+      "order": 5,
+      "steps": [
+        {
+          "name": "Outro",
+          "description": "Nächste Schritte festhalten: Wer besitzt welches Objective, wann ist der erste Check-in, wo liegt das Ergebnis. Eine kurze Feedbackrunde zur Session, dann Schluss.",
+          "durationSeconds": 300,
+          "order": 0
+        }
+      ]
+    }
+  ]
+}
