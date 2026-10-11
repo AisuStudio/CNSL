@@ -124,3 +124,42 @@ export function unarchivingInChanged(
   }
   return out;
 }
+
+// Log diff-save: the log baseline is one JSON string of the whole array (it's
+// also the dirty-check). Only entries that are new or changed against it need to
+// go to the server — it upserts what it receives and deletes only explicit
+// `deletedLogIds`, so omitting unchanged entries is safe. Sending the full log
+// made every autosave re-write every log entry (one UPDATE each).
+export function diffChangedLog<T extends { id: string }>(log: T[], savedJson: string): T[] {
+  let saved: T[] = [];
+  try {
+    const parsed = JSON.parse(savedJson);
+    if (Array.isArray(parsed)) saved = parsed;
+  } catch {
+    return log; // unknown baseline → send everything (old behaviour)
+  }
+  const byId = new Map(saved.map((l) => [l.id, JSON.stringify(l)] as const));
+  return log.filter((l) => byId.get(l.id) !== JSON.stringify(l));
+}
+
+// Merge a server log into the local one. The log has no per-entry version, so:
+// adopt the server list, but keep local entries that are unsaved against the
+// baseline (new or edited here) and drop entries with a pending local delete.
+// Without this, a resync (or the first server load after the cached board
+// rendered) would silently discard a just-captured log entry.
+export function mergeLog<T extends { id: string }>(
+  server: T[],
+  local: T[],
+  savedJson: string,
+  deletedIds: Set<string>
+): T[] {
+  const pending = diffChangedLog(local, savedJson);
+  if (pending.length === 0) return server.filter((l) => !deletedIds.has(l.id));
+  const pendingById = new Map(pending.map((l) => [l.id, l] as const));
+  const out = server
+    .filter((l) => !deletedIds.has(l.id))
+    .map((l) => pendingById.get(l.id) ?? l);
+  const serverIds = new Set(server.map((l) => l.id));
+  for (const l of pending) if (!serverIds.has(l.id)) out.push(l);
+  return out;
+}

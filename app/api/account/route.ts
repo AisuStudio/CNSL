@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/prisma";
+import { forgetUserBoards } from "@/lib/board";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,7 @@ export async function DELETE() {
     },
     { timeout: 20_000 }
   );
+  forgetUserBoards(userId);
   } catch (e) {
     // The data deletion is atomic — on any error nothing was deleted, so the
     // account is intact. Surface the real reason (the user is deleting their own

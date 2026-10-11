@@ -34,6 +34,33 @@ export async function ensureUserBoards(
   userId: string,
   email?: string | null
 ): Promise<{ trackerId: string; notesId: string }> {
+  // Perf: every /api/state GET and every autosave POST used to run the full
+  // provisioning below (5–7 sequential queries incl. a write). Board ids never
+  // change for a user, so a warm serverless instance reuses them for a short
+  // window. The TTL keeps the side duties (invite accept-on-login, empty-board
+  // re-seed) running at most a minute late.
+  const hit = boardCache.get(userId);
+  if (hit && hit.email === (email ?? null) && hit.expires > Date.now()) return hit.ids;
+  const ids = await provisionUserBoards(userId, email);
+  boardCache.set(userId, { ids, email: email ?? null, expires: Date.now() + BOARD_CACHE_TTL_MS });
+  return ids;
+}
+
+const BOARD_CACHE_TTL_MS = 60_000;
+const boardCache = new Map<
+  string,
+  { ids: { trackerId: string; notesId: string }; email: string | null; expires: number }
+>();
+
+// Drop a user's cached board ids (account deletion removes their boards).
+export function forgetUserBoards(userId: string) {
+  boardCache.delete(userId);
+}
+
+async function provisionUserBoards(
+  userId: string,
+  email?: string | null
+): Promise<{ trackerId: string; notesId: string }> {
   await prisma.profile.upsert({
     where: { id: userId },
     update: email ? { email } : {},

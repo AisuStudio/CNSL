@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { SettingsIcon } from "./icons";
 import SidePanel from "./SidePanel";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { clearBoardCache } from "@/lib/boardCache";
 import type { Task } from "@/lib/mock-data";
 import type { RestoreCandidate } from "@/lib/restore";
 import BackupRestoreSection from "./BackupRestoreSection";
@@ -37,6 +38,7 @@ function AccountSection() {
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
+    await clearBoardCache(); // don't leave the board readable on this device
     window.location.href = "/login";
   }
   // GDPR Art. 20 — download everything we hold about this account as JSON.
@@ -65,6 +67,7 @@ function AccountSection() {
     try {
       const res = await fetch("/api/account", { method: "DELETE" });
       if (!res.ok) throw new Error();
+      await clearBoardCache();
       window.location.href = "/"; // account gone — leave the app
     } catch {
       setDeleting(false);

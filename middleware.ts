@@ -27,9 +27,12 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally (asymmetric signing keys, JWKS cached)
+  // instead of a round-trip to Supabase Auth on every page load like getUser().
+  // With legacy symmetric keys it falls back to getUser() — no worse than before.
+  // It still refreshes an expired session (cookies via setAll above).
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const path = request.nextUrl.pathname;
   const isPublic =

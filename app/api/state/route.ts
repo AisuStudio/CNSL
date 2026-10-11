@@ -29,12 +29,15 @@ import type { Schedule, Activity } from "@/lib/scheduler";
 
 export const dynamic = "force-dynamic";
 
-async function getUser() {
+// Hot path (initial load + every autosave): verify the JWT locally via
+// getClaims() instead of a getUser() round-trip to Supabase Auth. Falls back to
+// getUser() internally with legacy symmetric keys. Only id + email are needed.
+async function getUser(): Promise<{ id: string; email: string | null } | null> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  const { data } = await supabase.auth.getClaims();
+  const sub = data?.claims?.sub;
+  if (!sub) return null;
+  return { id: sub, email: typeof data.claims.email === "string" ? data.claims.email : null };
 }
 
 // Load the user's board as { tasks, log, projectColors } (same shape the app

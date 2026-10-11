@@ -2,6 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
+
+// Perf (mobile): the heavy tools/modals load on first use instead of shipping in
+// the initial bundle (Tiptap, xyflow, dnd-kit, calendar, chat, settings, …).
+// The capture path (Backlog/Today, Log, task edit) stays in the main chunk.
+const ShareModal = dynamic(() => import("@/components/ShareModal"));
+const InfoModal = dynamic(() => import("@/components/InfoModal"));
+const StatsView = dynamic(() => import("@/components/StatsView"));
+const SettingsModal = dynamic(() => import("@/components/SettingsModal"));
+const NotePad = dynamic(() => import("@/components/NotePad"));
+const CalendarView = dynamic(() => import("@/components/CalendarView"));
+const NoderView = dynamic(() => import("@/components/NoderView"));
+const SchedulerView = dynamic(() => import("@/components/SchedulerView"));
+const SchedulerPlayer = dynamic(() => import("@/components/SchedulerPlayer"));
+const ChatView = dynamic(() => import("@/components/ChatView"));
 import { stateToSlug, slugToState } from "@/components/viewDefs";
 import Header, { type View, type Tool } from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -17,17 +32,7 @@ import ProjectView from "@/components/ProjectView";
 import ArchiveView from "@/components/ArchiveView";
 import TrackingLogView from "@/components/TrackingLogView";
 import EditTaskModal from "@/components/EditTaskModal";
-import ShareModal from "@/components/ShareModal";
-import InfoModal from "@/components/InfoModal";
-import StatsView from "@/components/StatsView";
-import SettingsModal from "@/components/SettingsModal";
-import NotePad from "@/components/NotePad";
-import CalendarView from "@/components/CalendarView";
-import NoderView from "@/components/NoderView";
 import EventModal, { blankEvent } from "@/components/EventModal";
-import SchedulerView from "@/components/SchedulerView";
-import SchedulerPlayer from "@/components/SchedulerPlayer";
-import ChatView from "@/components/ChatView";
 import SearchResultsView from "@/components/SearchResultsView";
 import { type SyncState } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -72,7 +77,8 @@ import {
   contactsFromApi,
 } from "@/lib/chat";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { diffChangedTasks, mergeResync, reconcileSave } from "@/lib/boardSync";
+import { diffChangedTasks, mergeResync, reconcileSave, diffChangedLog, mergeLog } from "@/lib/boardSync";
+import { readBoardCache, writeBoardCache } from "@/lib/boardCache";
 import { toJson, toMarkdown, downloadFile, copyText } from "@/lib/export";
 import { logText, type RestoreCandidate } from "@/lib/restore";
 import { coworkTasks } from "@/lib/coworkTasks";
@@ -81,6 +87,25 @@ export type Sort = { key: string; dir: "asc" | "desc" } | null;
 
 // Demo mode (GitHub Pages): visitors can add/edit but not delete (#127).
 const DEMO = process.env.NEXT_PUBLIC_DEMO === "true";
+
+// GET /api/state payload — also the shape of the device board cache.
+type ServerBoard = {
+  tasks?: Task[];
+  log?: LogEntry[];
+  projectColors?: ProjectColors;
+  notes?: Note[];
+  events?: CalendarEvent[];
+  projects?: Project[];
+  schedules?: Schedule[];
+  activities?: Activity[];
+  sharedProjects?: { name: string; role: "editor" | "viewer" | "contributor" }[];
+  sharedTaskIds?: string[];
+  sharedOutProjectNames?: string[];
+  rev?: number;
+  boardId?: string;
+  notesId?: string;
+  ownerId?: string; // device cache only: the user it belongs to
+};
 
 // Chat Phase-1 mock seed (deterministic ids/timestamps → SSR-safe). Persisted
 // chat overrides this on load; in the real app (no chat backend yet) it just
@@ -292,6 +317,11 @@ export default function Home() {
   const [navOpen, setNavOpen] = useState(false); // mobile nav drawer
   const isMobile = useIsMobile();
   const [loadError, setLoadError] = useState(false);
+  // Server load failed while the cached board is on screen: keep it readable,
+  // but saving stays off (not hydrated) — the banner says so.
+  const [cacheOffline, setCacheOffline] = useState(false);
+  // Supabase user id the device board cache belongs to (set on load).
+  const cacheOwner = useRef<string | null>(null);
   // Save-hardening: board version for optimistic concurrency + conflict state.
   const [rev, setRev] = useState<number | null>(null);
   const [conflict, setConflict] = useState(false);
@@ -331,6 +361,56 @@ export default function Home() {
   const didLoad = useRef(false);
   const [hydrated, setHydrated] = useState(false);
 
+  // Adopt a full board payload (GET /api/state shape, or the device cache which
+  // stores exactly that) as the new state AND the diff-save baseline.
+  const adoptServerData = useCallback((data: ServerBoard) => {
+    const caught = catchUpTimers(data.tasks ?? []);
+    const loaded = dedupeTaskNumbers(caught);
+    setTasks(loaded);
+    // Seed the diff baseline so the first save sends only real changes.
+    // BUT if dedup renumbered anything, baseline = pre-dedup so the fix gets
+    // persisted to the DB (otherwise dedup would re-run every load forever).
+    const renumbered = loaded.some((t, i) => t.number !== caught[i].number);
+    savedRef.current = new Map(
+      (renumbered ? caught : loaded).map((t) => [t.id, JSON.stringify(t)])
+    );
+    setLog(data.log ?? []);
+    logSavedRef.current = JSON.stringify(data.log ?? []);
+    if (data.projectColors) setProjectColors(data.projectColors);
+    projectColorsSavedRef.current = JSON.stringify(data.projectColors ?? {});
+    const loadedNotes: Note[] = data.notes ?? [];
+    setNotes(loadedNotes);
+    // seed the notes diff baseline so the first save sends only real changes
+    notesSavedRef.current = new Map(
+      loadedNotes.map((n) => [n.id, JSON.stringify(n)])
+    );
+    const loadedEvents: CalendarEvent[] = data.events ?? [];
+    setEvents(loadedEvents);
+    eventsSavedRef.current = new Map(
+      loadedEvents.map((e) => [e.id, JSON.stringify(e)])
+    );
+    const loadedProjects: Project[] = data.projects ?? [];
+    setProjectList(loadedProjects);
+    projectsSavedRef.current = new Map(
+      loadedProjects.map((p) => [p.id, JSON.stringify(p)])
+    );
+    setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
+    setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
+    setSharedOutNames(data.sharedOutProjectNames ?? []); // C4 — projects I shared out
+    const loadedSchedules: Schedule[] = data.schedules ?? [];
+    setSchedules(loadedSchedules);
+    schedulesSavedRef.current = new Map(
+      loadedSchedules.map((s) => [s.id, JSON.stringify(s)])
+    );
+    const loadedActivities: Activity[] = data.activities ?? [];
+    setActivities(loadedActivities);
+    activitiesSavedRef.current = new Map(
+      loadedActivities.map((a) => [a.id, JSON.stringify(a)])
+    );
+    setRev(typeof data.rev === "number" ? data.rev : 0);
+    boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
+  }, []);
+
   // Load persisted state once on mount (avoids SSR hydration mismatch).
   useEffect(() => {
     if (didLoad.current) return;
@@ -347,61 +427,50 @@ export default function Home() {
     };
 
 
-    // Real app: load the board from the DB-backed API (auth via middleware).
+    // Real app: render the last synced board from the device cache at once
+    // (perf: no empty shell while auth + DB + a cold start run), then load the
+    // board from the DB-backed API (auth via middleware) and merge it on top.
+    // Saves stay off (hydrated=false) until the server load lands, so a cached
+    // snapshot can never be written back; edits made meanwhile are kept by the
+    // newer-wins merge and saved right after.
     if (!DEMO) {
+      let cachedBoardId: string | null = null;
+      let settled = false;
+      // The cache is bound to the signed-in user (read from the local session
+      // cookie, no network unless the token needs a refresh): another account
+      // on this device never sees the previous user's board.
+      Promise.all([
+        readBoardCache(),
+        createSupabaseBrowserClient()
+          .auth.getSession()
+          .then(({ data }) => data.session?.user.id ?? null)
+          .catch(() => null),
+      ]).then(([snap, uid]) => {
+        cacheOwner.current = uid;
+        if (!snap || settled || !uid || snap.ownerId !== uid) return;
+        if (typeof snap.boardId !== "string") return;
+        cachedBoardId = snap.boardId;
+        adoptServerData(snap as ServerBoard);
+      });
       fetch("/api/state")
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-        .then((data) => {
-          const caught = catchUp(data.tasks ?? []);
-          const loaded = dedupeTaskNumbers(caught);
-          setTasks(loaded);
-          // Seed the diff baseline so the first save sends only real changes.
-          // BUT if dedup renumbered anything, baseline = pre-dedup so the fix gets
-          // persisted to the DB (otherwise dedup would re-run every load forever).
-          const renumbered = loaded.some((t, i) => t.number !== caught[i].number);
-          savedRef.current = new Map(
-            (renumbered ? caught : loaded).map((t) => [t.id, JSON.stringify(t)])
-          );
-          setLog(data.log ?? []);
-          logSavedRef.current = JSON.stringify(data.log ?? []);
-          if (data.projectColors) setProjectColors(data.projectColors);
-          projectColorsSavedRef.current = JSON.stringify(data.projectColors ?? {});
-          const loadedNotes: Note[] = data.notes ?? [];
-          setNotes(loadedNotes);
-          // seed the notes diff baseline so the first save sends only real changes
-          notesSavedRef.current = new Map(
-            loadedNotes.map((n) => [n.id, JSON.stringify(n)])
-          );
-          const loadedEvents: CalendarEvent[] = data.events ?? [];
-          setEvents(loadedEvents);
-          eventsSavedRef.current = new Map(
-            loadedEvents.map((e) => [e.id, JSON.stringify(e)])
-          );
-          const loadedProjects: Project[] = data.projects ?? [];
-          setProjectList(loadedProjects);
-          projectsSavedRef.current = new Map(
-            loadedProjects.map((p) => [p.id, JSON.stringify(p)])
-          );
-          setSharedProjects(data.sharedProjects ?? []); // C4 — projects shared with me
-          setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
-          setSharedOutNames(data.sharedOutProjectNames ?? []); // C4 — projects I shared out
-          const loadedSchedules: Schedule[] = data.schedules ?? [];
-          setSchedules(loadedSchedules);
-          schedulesSavedRef.current = new Map(
-            loadedSchedules.map((s) => [s.id, JSON.stringify(s)])
-          );
-          const loadedActivities: Activity[] = data.activities ?? [];
-          setActivities(loadedActivities);
-          activitiesSavedRef.current = new Map(
-            loadedActivities.map((a) => [a.id, JSON.stringify(a)])
-          );
-          setRev(typeof data.rev === "number" ? data.rev : 0);
-          boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
+        .then((data: ServerBoard) => {
+          settled = true;
+          // Same board as the cache → merge (keeps edits made while it showed);
+          // otherwise (first run, other account) adopt the server as-is.
+          if (cachedBoardId && cachedBoardId === data.boardId) applyServerMerge(data);
+          else adoptServerData(data);
+          setCacheOffline(false);
           setHydrated(true);
         })
         // On failure DO NOT hydrate — keeps the save effect off so an empty
-        // board can never overwrite real data in the DB (data-loss guard).
-        .catch(() => setLoadError(true));
+        // (or cached) board can never overwrite real data in the DB (data-loss
+        // guard). With a cached board on screen, keep it readable + say so.
+        .catch(() => {
+          settled = true;
+          if (cachedBoardId) setCacheOffline(true);
+          else setLoadError(true);
+        });
       return;
     }
 
@@ -587,7 +656,9 @@ export default function Home() {
         headers: { "content-type": "application/json", "X-CNSL-Device": getDeviceId() },
         body: JSON.stringify({
           tasks: changed,
-          log,
+          // Only new/changed log entries (the server upserts what it gets and
+          // deletes only deletedLogIds) — not one UPDATE per entry per save.
+          log: diffChangedLog(log, logSavedRef.current),
           projectColors,
           notes: changedNotes,
           events: changedEvents,
@@ -829,7 +900,7 @@ export default function Home() {
           keepalive: true,
           body: JSON.stringify({
             tasks: changed,
-            log: l.log,
+            log: diffChangedLog(l.log, logSavedRef.current),
             projectColors: l.projectColors,
             notes: changedNotes,
             events: changedEvents,
@@ -866,85 +937,126 @@ export default function Home() {
   // Re-sync from the server, adopting server truth while keeping local unsaved
   // edits on top (last-write-wins per task). Shared by the on-focus handler and
   // the Realtime live-sync effect below.
+  // Merge a server board into the current state, newer-wins per item, keeping
+  // local unsaved edits on top. Shared by the on-focus/Realtime resync and the
+  // first server load after the cached board was shown.
+  const applyServerMerge = useCallback((data: ServerBoard) => {
+    const server = catchUpTimers(data.tasks ?? []);
+    // Newer-wins merge: server truth is adopted unless a local edit was made
+    // against the current server version. A stale local copy can no longer
+    // resurrect an archived task. `supersededIds` are local unsaved edits the
+    // server outran (intentional, not a bug).
+    const { tasks: merged, nextSaved } = mergeResync(
+      server,
+      latest.current.tasks,
+      savedRef.current
+    );
+    setTasks(dedupeTaskNumbers(merged.filter((t) => !deletedTaskIds.current.has(t.id))));
+    savedRef.current = nextSaved;
+    // Log: keep unsaved local captures (new/edited/deleted) on top.
+    const serverLog: LogEntry[] = data.log ?? [];
+    setLog(
+      mergeLog(serverLog, latest.current.log, logSavedRef.current, deletedLogIds.current)
+    );
+    logSavedRef.current = JSON.stringify(serverLog);
+    // Same newer-wins merge for notes (keeps an unsaved local edit/new note,
+    // adopts server truth otherwise), then drop any note whose delete is still
+    // pending so a resync that races ahead of the delete-save can't resurrect it.
+    const serverNotes: Note[] = data.notes ?? [];
+    const { tasks: mergedNotes, nextSaved: nextNotesSaved } = mergeResync(
+      serverNotes,
+      latest.current.notes,
+      notesSavedRef.current
+    );
+    setNotes(mergedNotes.filter((n) => !deletedNoteIds.current.has(n.id)));
+    notesSavedRef.current = nextNotesSaved;
+    // Same newer-wins merge for events (Phase B).
+    const serverEvents: CalendarEvent[] = data.events ?? [];
+    const { tasks: mergedEvents, nextSaved: nextEventsSaved } = mergeResync(
+      serverEvents,
+      latest.current.events,
+      eventsSavedRef.current
+    );
+    setEvents(mergedEvents.filter((e) => !deletedEventIds.current.has(e.id)));
+    eventsSavedRef.current = nextEventsSaved;
+    // Same newer-wins merge for the project registry (Phase C1).
+    const serverProjects: Project[] = data.projects ?? [];
+    const { tasks: mergedProjects, nextSaved: nextProjectsSaved } = mergeResync(
+      serverProjects,
+      latest.current.projectList,
+      projectsSavedRef.current
+    );
+    setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
+    projectsSavedRef.current = nextProjectsSaved;
+    setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
+    setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
+    setSharedOutNames(data.sharedOutProjectNames ?? []);
+    // Same newer-wins merge for schedules + activities (Phase 2).
+    const serverSchedules: Schedule[] = data.schedules ?? [];
+    const { tasks: mergedSchedules, nextSaved: nextSchedulesSaved } = mergeResync(
+      serverSchedules,
+      latest.current.schedules,
+      schedulesSavedRef.current
+    );
+    setSchedules(mergedSchedules.filter((s) => !deletedScheduleIds.current.has(s.id)));
+    schedulesSavedRef.current = nextSchedulesSaved;
+    const serverActivities: Activity[] = data.activities ?? [];
+    const { tasks: mergedActivities, nextSaved: nextActivitiesSaved } = mergeResync(
+      serverActivities,
+      latest.current.activities,
+      activitiesSavedRef.current
+    );
+    setActivities(mergedActivities.filter((a) => !deletedActivityIds.current.has(a.id)));
+    activitiesSavedRef.current = nextActivitiesSaved;
+    if (data.projectColors) {
+      setProjectColors(data.projectColors);
+      projectColorsSavedRef.current = JSON.stringify(data.projectColors);
+    }
+    setRev(typeof data.rev === "number" ? data.rev : 0);
+    if (data.boardId) boardIds.current = { trackerId: data.boardId, notesId: data.notesId };
+  }, []);
+
   const resyncFromServer = useCallback(() => {
     if (DEMO) return;
     if (!hydrated || conflict) return;
     fetch("/api/state")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+      .then((data: ServerBoard | null) => {
         if (!data) return;
-        const server = catchUpTimers(data.tasks ?? []);
-        // Newer-wins merge: server truth is adopted unless a local edit was made
-        // against the current server version. A stale local copy can no longer
-        // resurrect an archived task. `supersededIds` are local unsaved edits the
-        // server outran (intentional, not a bug).
-        const { tasks: merged, nextSaved } = mergeResync(
-          server,
-          latest.current.tasks,
-          savedRef.current
-        );
-        setTasks(dedupeTaskNumbers(merged));
-        savedRef.current = nextSaved;
-        setLog(data.log ?? []);
-        logSavedRef.current = JSON.stringify(data.log ?? []);
-        // Same newer-wins merge for notes (keeps an unsaved local edit/new note,
-        // adopts server truth otherwise), then drop any note whose delete is still
-        // pending so a resync that races ahead of the delete-save can't resurrect it.
-        const serverNotes: Note[] = data.notes ?? [];
-        const { tasks: mergedNotes, nextSaved: nextNotesSaved } = mergeResync(
-          serverNotes,
-          latest.current.notes,
-          notesSavedRef.current
-        );
-        setNotes(mergedNotes.filter((n) => !deletedNoteIds.current.has(n.id)));
-        notesSavedRef.current = nextNotesSaved;
-        // Same newer-wins merge for events (Phase B).
-        const serverEvents: CalendarEvent[] = data.events ?? [];
-        const { tasks: mergedEvents, nextSaved: nextEventsSaved } = mergeResync(
-          serverEvents,
-          latest.current.events,
-          eventsSavedRef.current
-        );
-        setEvents(mergedEvents.filter((e) => !deletedEventIds.current.has(e.id)));
-        eventsSavedRef.current = nextEventsSaved;
-        // Same newer-wins merge for the project registry (Phase C1).
-        const serverProjects: Project[] = data.projects ?? [];
-        const { tasks: mergedProjects, nextSaved: nextProjectsSaved } = mergeResync(
-          serverProjects,
-          latest.current.projectList,
-          projectsSavedRef.current
-        );
-        setProjectList(mergedProjects.filter((p) => !deletedProjectIds.current.has(p.id)));
-        projectsSavedRef.current = nextProjectsSaved;
-        setSharedProjects(data.sharedProjects ?? []); // C4 — refresh shared-with-me
-        setSharedTaskIds(new Set(data.sharedTaskIds ?? []));
-        setSharedOutNames(data.sharedOutProjectNames ?? []);
-        // Same newer-wins merge for schedules + activities (Phase 2).
-        const serverSchedules: Schedule[] = data.schedules ?? [];
-        const { tasks: mergedSchedules, nextSaved: nextSchedulesSaved } = mergeResync(
-          serverSchedules,
-          latest.current.schedules,
-          schedulesSavedRef.current
-        );
-        setSchedules(mergedSchedules.filter((s) => !deletedScheduleIds.current.has(s.id)));
-        schedulesSavedRef.current = nextSchedulesSaved;
-        const serverActivities: Activity[] = data.activities ?? [];
-        const { tasks: mergedActivities, nextSaved: nextActivitiesSaved } = mergeResync(
-          serverActivities,
-          latest.current.activities,
-          activitiesSavedRef.current
-        );
-        setActivities(mergedActivities.filter((a) => !deletedActivityIds.current.has(a.id)));
-        activitiesSavedRef.current = nextActivitiesSaved;
-        if (data.projectColors) {
-          setProjectColors(data.projectColors);
-          projectColorsSavedRef.current = JSON.stringify(data.projectColors);
-        }
-        setRev(typeof data.rev === "number" ? data.rev : 0);
+        applyServerMerge(data);
         setSyncState("synced");
       })
       .catch(() => {});
-  }, [hydrated, conflict]);
+  }, [hydrated, conflict, applyServerMerge]);
+
+  // Keep the device board cache current: whenever everything is saved, store the
+  // board (debounced) so the next app start can render it instantly. Written
+  // only with nothing pending, so the cache is always server-confirmed state.
+  useEffect(() => {
+    if (DEMO || !hydrated || conflict || syncState !== "synced") return;
+    const id = setTimeout(() => {
+      const l = latest.current;
+      if (pendingChanges(l) || !boardIds.current.trackerId || !cacheOwner.current) return;
+      void writeBoardCache({
+        ownerId: cacheOwner.current,
+        tasks: l.tasks,
+        log: l.log,
+        projectColors: l.projectColors,
+        notes: l.notes,
+        events: l.events,
+        projects: l.projectList,
+        schedules: l.schedules,
+        activities: l.activities,
+        sharedProjects,
+        sharedTaskIds: [...sharedTaskIds],
+        sharedOutProjectNames: sharedOutNames,
+        rev: l.rev ?? 0,
+        boardId: boardIds.current.trackerId,
+        notesId: boardIds.current.notesId,
+      } satisfies ServerBoard);
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [hydrated, conflict, syncState, tasks, log, projectColors, notes, events, projectList, schedules, activities, sharedProjects, sharedTaskIds, sharedOutNames, pendingChanges]);
 
   useEffect(() => {
     if (DEMO) return;
@@ -2120,6 +2232,42 @@ export default function Home() {
           <span style={{ flex: 1 }}>
             Dieses Board wurde woanders geändert (anderer Tab/Gerät). Zur
             Sicherheit wird hier nicht mehr gespeichert. Bitte neu laden.
+          </span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            style={{
+              background: "var(--color-text-primary)",
+              color: "var(--color-accent)",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 12px",
+              fontSize: "var(--text-sm)",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Neu laden
+          </button>
+        </div>
+      )}
+      {cacheOffline && !conflict && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "8px 16px",
+            background: "var(--color-accent)",
+            color: "var(--color-text-primary)",
+            fontSize: "var(--text-sm)",
+            fontWeight: 700,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            Server nicht erreichbar: du siehst den zuletzt synchronisierten
+            Stand. Änderungen hier werden nicht gespeichert. Neu laden, sobald
+            du wieder online bist.
           </span>
           <button
             type="button"

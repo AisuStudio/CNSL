@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { Task } from "./mock-data";
 import type { Note } from "./notes";
-import { diffChangedTasks, mergeResync, reconcileSave } from "./boardSync";
+import { diffChangedTasks, mergeResync, reconcileSave, diffChangedLog, mergeLog } from "./boardSync";
 
 function mkNote(over: Partial<Note> & { id: string }): Note {
   return { folderId: null, title: "t", body: "", ...over };
@@ -199,5 +199,48 @@ describe("reconcileSave — notes", () => {
     const { tasks } = reconcileSave(local, sent, returned);
     expect(tasks[0].body).toBe("typed during save");
     expect(tasks[0].updatedAt).toBe(V2);
+  });
+});
+
+type L = { id: string; text: string; processed: boolean };
+const l = (id: string, text = id, processed = false): L => ({ id, text, processed });
+
+describe("diffChangedLog — send only new/changed log entries", () => {
+  it("returns nothing when the log matches the baseline", () => {
+    const log = [l("a"), l("b")];
+    expect(diffChangedLog(log, JSON.stringify(log))).toEqual([]);
+  });
+  it("returns new and edited entries only", () => {
+    const base = [l("a"), l("b")];
+    const now = [l("a"), l("b", "b", true), l("c")];
+    expect(diffChangedLog(now, JSON.stringify(base)).map((x) => x.id)).toEqual(["b", "c"]);
+  });
+  it("falls back to the full log on an unreadable baseline", () => {
+    const now = [l("a")];
+    expect(diffChangedLog(now, "not json")).toEqual(now);
+  });
+});
+
+describe("mergeLog — keep unsaved local captures across a server merge", () => {
+  it("adopts the server log when nothing is pending locally", () => {
+    const base = [l("a")];
+    const server = [l("a"), l("x")];
+    expect(mergeLog(server, base, JSON.stringify(base), new Set())).toEqual(server);
+  });
+  it("keeps a new local entry the server doesn't have yet", () => {
+    const base = [l("a")];
+    const local = [l("a"), l("new")];
+    const out = mergeLog([l("a"), l("x")], local, JSON.stringify(base), new Set());
+    expect(out.map((x) => x.id)).toEqual(["a", "x", "new"]);
+  });
+  it("keeps a local edit over the server row", () => {
+    const base = [l("a")];
+    const local = [l("a", "a", true)];
+    expect(mergeLog([l("a")], local, JSON.stringify(base), new Set())[0].processed).toBe(true);
+  });
+  it("drops entries with a pending local delete", () => {
+    const base = [l("a"), l("b")];
+    const local = [l("a")];
+    expect(mergeLog(base, local, JSON.stringify(base), new Set(["b"])).map((x) => x.id)).toEqual(["a"]);
   });
 });
