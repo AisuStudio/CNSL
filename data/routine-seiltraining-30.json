@@ -1,0 +1,223 @@
+{
+  "name": "Seiltraining 30",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Aufwärmen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Lockere Einzelsprünge",
+          "description": "Ruhiges Tempo, flache Sprünge, Landung auf dem Fußballen. Nur Einzelsprünge, keine Tricks. Wenn du dich verhedderst, direkt weitermachen.",
+          "durationSeconds": 90,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Seil ablegen.",
+          "durationSeconds": 20,
+          "order": 1
+        },
+        {
+          "name": "Schultern und Handgelenke",
+          "description": "Armkreisen vor und zurück, dann die Handgelenke in beide Richtungen kreisen und ausschütteln. Die Handgelenke machen heute die eigentliche Arbeit, nicht die Arme.",
+          "durationSeconds": 50,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 15,
+          "order": 3
+        },
+        {
+          "name": "Sprunggelenke und Waden",
+          "description": "Sprunggelenke in beide Richtungen kreisen, dann zwanzigmal locker auf die Zehenspitzen. Zum Schluss ein paar kleine Hüpfer ohne Seil, ganz flach.",
+          "durationSeconds": 50,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Seil holen. Jetzt kommt die Technik, solange du frisch bist.",
+          "durationSeconds": 15,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "2 · Technik · Double Unders",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Penguin Taps ohne Seil",
+          "description": "Ohne Seil. Flach abspringen und währenddessen zweimal mit den Händen seitlich an die Hüfte tippen. Zwei Taps pro Sprung bei flacher Höhe. Das ist genau die Kadenz, die ein Double Under braucht, und sie zeigt dir, dass du dafür nicht hoch springen musst.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Seil nehmen.",
+          "durationSeconds": 30,
+          "order": 1
+        },
+        {
+          "name": "Single-Single-Double, Satz 1",
+          "description": "Zwei Einzelsprünge, dann ein Double Under, im festen Rhythmus. Die Einzelsprünge halten den Takt, der Double ist nur ein kurzer Beschleuniger aus dem Handgelenk. Für den Double nicht höher springen.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Durchatmen.",
+          "durationSeconds": 45,
+          "order": 3
+        },
+        {
+          "name": "Single-Single-Double, Satz 2",
+          "description": "Gleicher Rhythmus. Achte auf die Ellbogen: eng am Körper, Hände leicht vor der Hüfte. Wandern die Arme nach außen, wird das Seil effektiv länger und du musst höher springen.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Schultern lockern.",
+          "durationSeconds": 45,
+          "order": 5
+        },
+        {
+          "name": "Double Unders, Satz 1",
+          "description": "Jetzt am Stück, aber höchstens acht. Bewusst flach bleiben. Sobald du die Knie anziehst oder die Fersen nach hinten kickst, ist der Satz vorbei, auch wenn noch Zeit übrig ist.",
+          "durationSeconds": 30,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Volle Pause. Double Unders sind Sprint, nicht Dauerlauf.",
+          "durationSeconds": 60,
+          "order": 7
+        },
+        {
+          "name": "Double Unders, Satz 2",
+          "description": "Gleicher Satz, gleiche Regel. Lieber sechs flache als zehn hohe. Die flachen sind die, die dich später auf zwanzig bringen.",
+          "durationSeconds": 30,
+          "order": 8
+        },
+        {
+          "name": "Pause",
+          "description": "Letzte lange Pause.",
+          "durationSeconds": 60,
+          "order": 9
+        },
+        {
+          "name": "Schnelle Einzelsprünge",
+          "description": "Einzelsprünge, so schnell du das Seil aus dem Handgelenk drehen kannst, Sprunghöhe bleibt minimal. Das trainiert genau das Tempo, das dir beim Double Under fehlt.",
+          "durationSeconds": 30,
+          "order": 10
+        },
+        {
+          "name": "Pause",
+          "description": "Technikteil fertig. Ab jetzt nur noch Einzelsprünge.",
+          "durationSeconds": 20,
+          "order": 11
+        }
+      ]
+    },
+    {
+      "name": "3 · Dauer am Seil",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Dauerblock 1",
+          "description": "Vier Minuten durchgehend, ausschließlich Einzelsprünge. Keine Crossovers, keine Side Swings, keine Double Unders. Tempo so, dass du nebenbei reden könntest. Flach, gleichmäßig, langweilig. Genau das ist das Ziel.",
+          "durationSeconds": 240,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben, Atmung beruhigen.",
+          "durationSeconds": 60,
+          "order": 1
+        },
+        {
+          "name": "Dauerblock 2",
+          "description": "Nochmal vier Minuten, gleiches Tempo. Wenn du dich verhedderst: sofort weitermachen, ohne Pause. Es zählt der Block, nicht die fehlerfreie Serie.",
+          "durationSeconds": 240,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Waden lockern.",
+          "durationSeconds": 60,
+          "order": 3
+        },
+        {
+          "name": "Dauerblock 3",
+          "description": "Zweieinhalb Minuten zum Abschluss. Hier darf das Tempo etwas raus, die Technik bleibt.",
+          "durationSeconds": 150,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Seil weg.",
+          "durationSeconds": 30,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "4 · Auslaufen",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Waden und Achillessehne dehnen",
+          "description": "Fußballen an die Wand, Ferse am Boden, Hüfte nach vorn schieben. Danach dasselbe mit leicht gebeugtem Knie, das trifft die tiefere Wade. Etwa siebzehn Sekunden pro Variante und Seite.",
+          "durationSeconds": 70,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Schienbein und Fußrücken dehnen",
+          "description": "Im Knien die Fußrücken flach auf den Boden legen und dich vorsichtig zurück auf die Fersen setzen. Der Schienbeinmuskel arbeitet beim Seilspringen ständig mit und wird fast nie gedehnt.",
+          "durationSeconds": 50,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Füße ausschütteln.",
+          "durationSeconds": 10,
+          "order": 3
+        },
+        {
+          "name": "Brust und Schultern öffnen",
+          "description": "Unterarm an Wand oder Türrahmen, Ellbogen auf Schulterhöhe, langsam vom Arm wegdrehen. Halbe Zeit pro Seite.",
+          "durationSeconds": 50,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Arme sinken lassen.",
+          "durationSeconds": 10,
+          "order": 5
+        },
+        {
+          "name": "Hüftbeuger dehnen",
+          "description": "Halbkniend, hinteres Knie am Boden, Po anspannen und die Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite.",
+          "durationSeconds": 60,
+          "order": 6
+        },
+        {
+          "name": "Durchatmen",
+          "description": "Aufrichten, ein paar tiefe Atemzüge. Fertig für heute.",
+          "durationSeconds": 35,
+          "order": 7
+        }
+      ]
+    }
+  ]
+}
