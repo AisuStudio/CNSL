@@ -51,75 +51,87 @@
       "steps": [
         {
           "name": "Penguin Taps ohne Seil",
-          "description": "Ohne Seil. Flach abspringen und währenddessen zweimal mit den Händen seitlich an die Hüfte tippen. Zwei Taps pro Sprung bei flacher Höhe. Das ist genau die Kadenz, die ein Double Under braucht, und sie zeigt dir, dass du dafür nicht hoch springen musst.",
-          "durationSeconds": 40,
+          "description": "Ohne Seil. Flach abspringen und währenddessen zweimal seitlich an die Hüfte tippen. Entscheidend ist, dass der Körper dabei lang bleibt: Po fest anspannen, Zehen nach unten. Ein angespannter Po streckt die Hüfte, und damit kannst du die Knie gar nicht nach vorn ziehen.",
+          "durationSeconds": 35,
           "order": 0
         },
         {
           "name": "Pause",
-          "description": "Seil nehmen.",
-          "durationSeconds": 30,
+          "description": "Kurz ausschütteln.",
+          "durationSeconds": 20,
           "order": 1
         },
         {
-          "name": "Single-Single-Double, Satz 1",
-          "description": "Zwei Einzelsprünge, dann ein Double Under, im festen Rhythmus. Die Einzelsprünge halten den Takt, der Double ist nur ein kurzer Beschleuniger aus dem Handgelenk. Für den Double nicht höher springen.",
-          "durationSeconds": 45,
+          "name": "Pogo an der Wand",
+          "description": "Ohne Seil. Stell dich mit den Fußspitzen etwa eine Handbreit vor eine Wand und hüpfe flach auf der Stelle. Ziehst du die Knie nach vorn, stößt du an. Die Wand ist dein Rückmeldegerät. Körper lang, die Sprunggelenke federn, die Knie bleiben unter der Hüfte.",
+          "durationSeconds": 40,
           "order": 2
         },
         {
           "name": "Pause",
-          "description": "Durchatmen.",
-          "durationSeconds": 45,
+          "description": "Seil nehmen.",
+          "durationSeconds": 20,
           "order": 3
         },
         {
-          "name": "Single-Single-Double, Satz 2",
-          "description": "Gleicher Rhythmus. Achte auf die Ellbogen: eng am Körper, Hände leicht vor der Hüfte. Wandern die Arme nach außen, wird das Seil effektiv länger und du musst höher springen.",
-          "durationSeconds": 45,
+          "name": "Single-Single-Double, Satz 1",
+          "description": "Zwei Einzelsprünge, dann ein Double Under, im festen Rhythmus. Die Einzelsprünge halten den Takt, der Double ist nur ein kurzer Beschleuniger aus dem Handgelenk. Für den Double nicht höher springen und nichts anziehen.",
+          "durationSeconds": 40,
           "order": 4
         },
         {
           "name": "Pause",
-          "description": "Schultern lockern.",
-          "durationSeconds": 45,
+          "description": "Durchatmen.",
+          "durationSeconds": 40,
           "order": 5
         },
         {
-          "name": "Double Unders, Satz 1",
-          "description": "Jetzt am Stück, aber höchstens acht. Bewusst flach bleiben. Sobald du die Knie anziehst oder die Fersen nach hinten kickst, ist der Satz vorbei, auch wenn noch Zeit übrig ist.",
-          "durationSeconds": 30,
+          "name": "Single-Single-Double, Satz 2",
+          "description": "Gleicher Rhythmus, diesmal mit dem Fokus auf dem Po: halt ihn im Sprung fest angespannt. Das blockiert das Anziehen der Beine mechanisch und schiebt das Tempo dorthin, wo es hingehört, ins Handgelenk. Ellbogen eng am Körper, Hände leicht vor der Hüfte.",
+          "durationSeconds": 40,
           "order": 6
         },
         {
           "name": "Pause",
-          "description": "Volle Pause. Double Unders sind Sprint, nicht Dauerlauf.",
-          "durationSeconds": 60,
+          "description": "Schultern lockern.",
+          "durationSeconds": 40,
           "order": 7
         },
         {
-          "name": "Double Unders, Satz 2",
-          "description": "Gleicher Satz, gleiche Regel. Lieber sechs flache als zehn hohe. Die flachen sind die, die dich später auf zwanzig bringen.",
+          "name": "Double Unders, Satz 1",
+          "description": "Jetzt am Stück, aber höchstens acht. Körper lang, Knie unter der Hüfte, Zehen nach unten. Beim ersten Mal, wo du die Beine nach vorn ziehst, ist der Satz vorbei, auch wenn noch Zeit übrig ist.",
           "durationSeconds": 30,
           "order": 8
         },
         {
           "name": "Pause",
-          "description": "Letzte lange Pause.",
-          "durationSeconds": 60,
+          "description": "Volle Pause. Double Unders sind Sprint, nicht Dauerlauf.",
+          "durationSeconds": 50,
           "order": 9
         },
         {
-          "name": "Schnelle Einzelsprünge",
-          "description": "Einzelsprünge, so schnell du das Seil aus dem Handgelenk drehen kannst, Sprunghöhe bleibt minimal. Das trainiert genau das Tempo, das dir beim Double Under fehlt.",
+          "name": "Double Unders, Satz 2",
+          "description": "Gleicher Satz, gleiche Regel. Lieber fünf lange, flache als zehn zusammengezogene. Nur die flachen bringen dich später auf zwanzig.",
           "durationSeconds": 30,
           "order": 10
         },
         {
           "name": "Pause",
+          "description": "Letzte lange Pause.",
+          "durationSeconds": 50,
+          "order": 11
+        },
+        {
+          "name": "Schnelle Einzelsprünge",
+          "description": "Einzelsprünge, so schnell du das Seil aus dem Handgelenk drehen kannst, Sprunghöhe bleibt minimal. Das ist genau die Seilgeschwindigkeit, die dir beim Double Under fehlt und wegen der du dir die Zeit mit den Beinen kaufst.",
+          "durationSeconds": 25,
+          "order": 12
+        },
+        {
+          "name": "Pause",
           "description": "Technikteil fertig. Ab jetzt nur noch Einzelsprünge.",
           "durationSeconds": 20,
-          "order": 11
+          "order": 13
         }
       ]
     },
