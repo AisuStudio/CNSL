@@ -1,0 +1,301 @@
+{
+  "name": "Seil und Stange 30",
+  "project": "Sport",
+  "autoPause": false,
+  "sections": [
+    {
+      "name": "1 · Aufwärmen",
+      "order": 0,
+      "steps": [
+        {
+          "name": "Lockeres Seilspringen",
+          "description": "Ruhiges Tempo, kleine Sprünge, Landung auf dem Fußballen. Das ist Technik und Aufwärmen, kein Satz. Wenn du dich verhedderst, einfach weitermachen.",
+          "durationSeconds": 90,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Seil ablegen, kurz durchatmen.",
+          "durationSeconds": 30,
+          "order": 1
+        },
+        {
+          "name": "Schultern vorbereiten",
+          "description": "Armkreisen vor und zurück. Dann an der Wand: Rücken anlehnen, Arme wie ein Schneeengel hoch und runter führen. Zum Schluss zehnmal die Schulterblätter zusammenziehen und lösen. Das bereitet die Stange vor.",
+          "durationSeconds": 60,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 20,
+          "order": 3
+        },
+        {
+          "name": "Hüfte und Sprunggelenke",
+          "description": "Hüftkreise, ein paar tiefe Kniebeugen ohne Last, dann jedes Sprunggelenk kreisen und zehnmal auf die Zehenspitzen. Die Waden bekommen heute viel ab, die sollen vorbereitet sein.",
+          "durationSeconds": 50,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Ab an die Stange.",
+          "durationSeconds": 20,
+          "order": 5
+        }
+      ]
+    },
+    {
+      "name": "2 · Klimmzüge",
+      "order": 1,
+      "steps": [
+        {
+          "name": "Hängen und Schulterblatt-Klimmzüge",
+          "description": "Erst zehn Sekunden locker hängen. Dann die Arme gestreckt lassen und dich nur mit den Schulterblättern ein Stück hochziehen, sechs bis acht Mal. Das ist die Position, aus der jeder Klimmzug startet.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Absetzen, Hände lockern.",
+          "durationSeconds": 45,
+          "order": 1
+        },
+        {
+          "name": "Klimmzug, Satz 1",
+          "description": "Ein bis zwei saubere Wiederholungen, langsam und ohne Schwung. Nicht bis zum Versagen. Du hast heute noch vier Sätze vor dir, und genau das ist der Trick: viele saubere Sätze schlagen einen erschöpften.",
+          "durationSeconds": 30,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Volle Pause. Die brauchst du, damit der nächste Satz wieder sauber wird.",
+          "durationSeconds": 60,
+          "order": 3
+        },
+        {
+          "name": "Negativ-Klimmzüge, Satz 1",
+          "description": "Spring oder steig hoch, bis das Kinn über der Stange ist, dann lass dich so langsam wie möglich ab. Vier bis fünf Sekunden pro Wiederholung, drei bis vier Wiederholungen. Das ist der stärkste Reiz im ganzen Block.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Hände ausschütteln, Schultern lockern.",
+          "durationSeconds": 60,
+          "order": 5
+        },
+        {
+          "name": "Negativ-Klimmzüge, Satz 2",
+          "description": "Gleicher Satz. Wenn das Absenken unter drei Sekunden fällt, ist der Satz vorbei, auch wenn noch Zeit übrig ist. Die Geschwindigkeit ist dein Abbruchkriterium.",
+          "durationSeconds": 45,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Letzte lange Pause in diesem Block.",
+          "durationSeconds": 60,
+          "order": 7
+        },
+        {
+          "name": "Klimmzug, Satz 2",
+          "description": "Noch einmal ein bis zwei saubere Wiederholungen. Wenn heute nur eine geht, ist das auch eine. Nichts erzwingen.",
+          "durationSeconds": 30,
+          "order": 8
+        },
+        {
+          "name": "Pause",
+          "description": "Seil holen.",
+          "durationSeconds": 30,
+          "order": 9
+        }
+      ]
+    },
+    {
+      "name": "3 · Seilspringen",
+      "order": 2,
+      "steps": [
+        {
+          "name": "Intervall 1",
+          "description": "Eine Minute durchspringen, gleichmäßiges Tempo. Lieber langsam und ohne Fehler als schnell und abgehackt.",
+          "durationSeconds": 60,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Stehen bleiben, Atmung beruhigen.",
+          "durationSeconds": 30,
+          "order": 1
+        },
+        {
+          "name": "Intervall 2",
+          "description": "Gleiches Tempo wie eben. Alle fünf Intervalle sollen gleich aussehen, nicht das erste schnell und das letzte zäh.",
+          "durationSeconds": 60,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Weiteratmen, Waden lockern.",
+          "durationSeconds": 30,
+          "order": 3
+        },
+        {
+          "name": "Intervall 3",
+          "description": "Halbzeit. Schultern tief, die Arbeit machen die Handgelenke, nicht die Arme.",
+          "durationSeconds": 60,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz lockern.",
+          "durationSeconds": 30,
+          "order": 5
+        },
+        {
+          "name": "Intervall 4",
+          "description": "Jetzt wird es zäh. Kleine Sprünge, nur so hoch wie nötig, das spart die meiste Kraft.",
+          "durationSeconds": 60,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Ein Intervall noch.",
+          "durationSeconds": 30,
+          "order": 7
+        },
+        {
+          "name": "Intervall 5",
+          "description": "Letzte Minute. Technik halten bis zum Schluss, auch wenn das Tempo rausgeht.",
+          "durationSeconds": 60,
+          "order": 8
+        },
+        {
+          "name": "Pause",
+          "description": "Seil weg. Lange Pause, der Kraftteil kommt noch.",
+          "durationSeconds": 60,
+          "order": 9
+        }
+      ]
+    },
+    {
+      "name": "4 · Kraft im Wechsel",
+      "order": 3,
+      "steps": [
+        {
+          "name": "Liegestütz",
+          "description": "So viele saubere Wiederholungen wie möglich, dann auf die Knie wechseln und weitermachen. Körper bleibt eine Linie, Ellbogen etwa fünfundvierzig Grad zum Rumpf.",
+          "durationSeconds": 45,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Arme ausschütteln.",
+          "durationSeconds": 25,
+          "order": 1
+        },
+        {
+          "name": "Einbeinige Hüftbeuge",
+          "description": "Auf einem Bein stehen, das andere nach hinten strecken und den Oberkörper nach vorn kippen, bis er fast waagerecht ist, Rücken gerade. Langsam zurück. Halbe Zeit pro Seite. Das ist die Rückseite, die beim Seilspringen komplett leer ausgeht.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Kurz stehen bleiben.",
+          "durationSeconds": 25,
+          "order": 3
+        },
+        {
+          "name": "Dips an der Bank",
+          "description": "Hände hinter dir auf eine Bank oder Stufe, Beine nach vorn, langsam absenken und wieder hochdrücken. Nur so tief, wie die Schultern es mögen.",
+          "durationSeconds": 40,
+          "order": 4
+        },
+        {
+          "name": "Pause",
+          "description": "Schultern kreisen.",
+          "durationSeconds": 25,
+          "order": 5
+        },
+        {
+          "name": "Ausfallschritte im Wechsel",
+          "description": "Abwechselnd ein Bein nach hinten absetzen, Knie Richtung Boden, über die vordere Ferse hochdrücken. Oberkörper bleibt aufrecht.",
+          "durationSeconds": 45,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln.",
+          "durationSeconds": 25,
+          "order": 7
+        },
+        {
+          "name": "Unterarmstütz",
+          "description": "Ellbogen unter den Schultern, Po anspannen, Linie halten. Lieber kürzer und sauber als lang und durchgehängt.",
+          "durationSeconds": 40,
+          "order": 8
+        },
+        {
+          "name": "Pause",
+          "description": "Auf die Fersen setzen.",
+          "durationSeconds": 25,
+          "order": 9
+        },
+        {
+          "name": "Wadenheben, langsam ab",
+          "description": "Mit den Fußballen auf eine Kante, hoch auf die Zehenspitzen, dann fünf Sekunden lang absenken bis unter die Kante. Zehn Wiederholungen. Das langsame Absenken ist das, was deine Achillessehne für die Seilarbeit robust macht.",
+          "durationSeconds": 45,
+          "order": 10
+        },
+        {
+          "name": "Pause",
+          "description": "Fertig mit dem Kraftteil.",
+          "durationSeconds": 35,
+          "order": 11
+        }
+      ]
+    },
+    {
+      "name": "5 · Auslaufen",
+      "order": 4,
+      "steps": [
+        {
+          "name": "Waden und Achillessehne dehnen",
+          "description": "Fußballen an die Wand, Ferse am Boden, Hüfte nach vorn schieben. Danach dasselbe mit leicht gebeugtem Knie, das trifft die tiefere Wade. Halbe Zeit pro Seite.",
+          "durationSeconds": 50,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Beine ausschütteln.",
+          "durationSeconds": 15,
+          "order": 1
+        },
+        {
+          "name": "Brust und Schultern öffnen",
+          "description": "Unterarm an Wand oder Türrahmen, Ellbogen auf Schulterhöhe, langsam vom Arm wegdrehen. Halbe Zeit pro Seite. Gleicht aus, was Klimmzüge und Liegestütze zuziehen.",
+          "durationSeconds": 45,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Arme sinken lassen.",
+          "durationSeconds": 10,
+          "order": 3
+        },
+        {
+          "name": "Hüftbeuger dehnen",
+          "description": "Halbkniend, hinteres Knie am Boden, Po anspannen und die Hüfte sanft nach vorn schieben. Halbe Zeit pro Seite.",
+          "durationSeconds": 45,
+          "order": 4
+        },
+        {
+          "name": "Durchatmen",
+          "description": "Aufrichten, dreimal tief ein und aus. Fertig für heute.",
+          "durationSeconds": 15,
+          "order": 5
+        }
+      ]
+    }
+  ]
+}
