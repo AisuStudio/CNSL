@@ -171,27 +171,51 @@
         },
         {
           "name": "Pause",
-          "description": "Waden lockern.",
+          "description": "Waden lockern. Leichtes Seil weg.",
           "durationSeconds": 60,
           "order": 3
-        },
-        {
-          "name": "Dauerblock 3",
-          "description": "Zweieinhalb Minuten zum Abschluss. Hier darf das Tempo etwas raus, die Technik bleibt.",
-          "durationSeconds": 150,
-          "order": 4
-        },
-        {
-          "name": "Pause",
-          "description": "Seil weg.",
-          "durationSeconds": 30,
-          "order": 5
         }
       ]
     },
     {
-      "name": "4 · Auslaufen",
+      "name": "4 · Schweres Seil · Schultern",
       "order": 3,
+      "steps": [
+        {
+          "name": "Schweres Seil, Satz 1",
+          "description": "Einzelsprünge mit dem schweren Seil, ruhiges gleichmäßiges Tempo. Arme eng am Körper, aufrecht bleiben. Hier arbeiten Schultern, Unterarme und Griff, die Beine fahren nur mit.",
+          "durationSeconds": 40,
+          "order": 0
+        },
+        {
+          "name": "Pause",
+          "description": "Seil ablegen, Hände und Schultern ausschütteln.",
+          "durationSeconds": 40,
+          "order": 1
+        },
+        {
+          "name": "Schweres Seil, Satz 2",
+          "description": "Etwas kürzer als eben, weil der Griff schon gearbeitet hat. Wenn die Schultern hochwandern, einmal bewusst sinken lassen und weiter. Hochgezogene Schultern machen aus der Übung eine Nackenübung.",
+          "durationSeconds": 35,
+          "order": 2
+        },
+        {
+          "name": "Pause",
+          "description": "Griff lockern, Finger öffnen und schließen.",
+          "durationSeconds": 40,
+          "order": 3
+        },
+        {
+          "name": "Schweres Seil, Satz 3",
+          "description": "Kurzer letzter Satz. Wenn Griff oder Haut vorher aufgeben, ist das völlig in Ordnung, dann war es genug. Seil weglegen und direkt ins Auslaufen gehen.",
+          "durationSeconds": 25,
+          "order": 4
+        }
+      ]
+    },
+    {
+      "name": "5 · Auslaufen",
+      "order": 4,
       "steps": [
         {
           "name": "Waden und Achillessehne dehnen",
