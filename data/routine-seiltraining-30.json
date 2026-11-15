@@ -9,20 +9,20 @@
       "steps": [
         {
           "name": "Lockere Einzelsprünge",
-          "description": "Ruhiges Tempo, flache Sprünge, Landung auf dem Fußballen. Nur Einzelsprünge, keine Tricks. Wenn du dich verhedderst, direkt weitermachen.",
-          "durationSeconds": 90,
+          "description": "Leichtes Seil. Ruhiges Tempo, flache Sprünge, Landung auf dem Fußballen. Nur Einzelsprünge, keine Tricks. Wenn du dich verhedderst, direkt weitermachen.",
+          "durationSeconds": 60,
           "order": 0
         },
         {
           "name": "Pause",
           "description": "Seil ablegen.",
-          "durationSeconds": 20,
+          "durationSeconds": 15,
           "order": 1
         },
         {
           "name": "Schultern und Handgelenke",
           "description": "Armkreisen vor und zurück, dann die Handgelenke in beide Richtungen kreisen und ausschütteln. Die Handgelenke machen heute die eigentliche Arbeit, nicht die Arme.",
-          "durationSeconds": 50,
+          "durationSeconds": 45,
           "order": 2
         },
         {
@@ -34,14 +34,26 @@
         {
           "name": "Sprunggelenke und Waden",
           "description": "Sprunggelenke in beide Richtungen kreisen, dann zwanzigmal locker auf die Zehenspitzen. Zum Schluss ein paar kleine Hüpfer ohne Seil, ganz flach.",
-          "durationSeconds": 50,
+          "durationSeconds": 40,
           "order": 4
         },
         {
           "name": "Pause",
-          "description": "Seil holen. Jetzt kommt die Technik, solange du frisch bist.",
-          "durationSeconds": 15,
+          "description": "Jetzt das schwere Seil holen.",
+          "durationSeconds": 10,
           "order": 5
+        },
+        {
+          "name": "Schweres Seil, Einzelsprünge",
+          "description": "Nur Einzelsprünge mit dem schweren Seil, ruhiges Tempo, Arme eng am Körper. Keine Double Unders, dafür ist es zu schwer. Das ist ein Kontrastreiz: danach fühlt sich das leichte Seil schwerelos an, und genau diese Handgelenksgeschwindigkeit brauchst du gleich.",
+          "durationSeconds": 40,
+          "order": 6
+        },
+        {
+          "name": "Pause",
+          "description": "Zurück zum leichten Seil. Jetzt kommt die Technik, solange du frisch bist.",
+          "durationSeconds": 15,
+          "order": 7
         }
       ]
     },
